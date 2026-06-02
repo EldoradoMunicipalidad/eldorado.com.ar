@@ -65,9 +65,7 @@ export const HomePage = () => {
       {/* Guía de trámites */}
       <div className="flex justify-center py-6 bg-white">
         <a 
-          href="https://guiadetramites.eldorado.gob.ar/"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/guia-de-tramites"
           className="inline-flex items-center gap-2 px-8 py-4 bg-[#009EE3] text-white font-semibold rounded-xl hover:bg-[#007bb5] transition-all shadow-md hover:shadow-lg text-lg"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

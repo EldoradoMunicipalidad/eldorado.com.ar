@@ -73,7 +73,8 @@ import {
   PlantaPersonalPage,
   EscalaSalarialPage,
   EmpleadoMunicipalPage,
-  BalancetesTrimestralesPage
+  BalancetesTrimestralesPage,
+  GuiaDeTramitesPage
 
 } from './pages/Index.jsx';
 import { allNavigationLinks } from './data/navigationData' // Importamos la unión de links
@@ -199,6 +200,7 @@ function App() {
           <Route path='/gobierno-abierto/planta-personal' element={<PlantaPersonalPage />} />
           <Route path='/gobierno-abierto/escala-salarial' element={<EscalaSalarialPage />} />
           <Route path='/gobierno-abierto/balancetes-trimestrales' element={<BalancetesTrimestralesPage />} />
+          <Route path='/guia-de-tramites' element={<GuiaDeTramitesPage />} />
           
           <Route path='/empleado-municipal' element={<EmpleadoMunicipalPage />} />
 
