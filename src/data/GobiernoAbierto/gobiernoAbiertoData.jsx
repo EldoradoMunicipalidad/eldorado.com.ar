@@ -45,7 +45,7 @@ export const FINANZAS_PUBLICAS_DATA = [
                 title: "Balancetes Trimestrales",
                 description: "Ejecución presupuestaria, Deuda Pública, Coparticipación, Resultado del Ejercicio",
                 icon: "financeModeIcon",
-                to: "/gobierno-abierto/finanzas-publicas"
+                to: "/gobierno-abierto/balancetes-trimestrales"
             },
             {
                 title: "Resumen Consolidado de Finanzas Públicas",

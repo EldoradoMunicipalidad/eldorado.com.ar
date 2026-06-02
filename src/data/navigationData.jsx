@@ -763,7 +763,7 @@ export const itemsGobiernoAbierto = [
       {
         title: "Balancetes trimestrales",
         keywords: [{ label: "Ejecucion presupuestaria, deuda publica, coparticipacion y resultado del ejercicio.", to: "" }],
-        to: "/gobierno-abierto/finanzas-publicas"
+        to: "/gobierno-abierto/balancetes-trimestrales"
       },
       {
         title: "Resumen Consolidado de Finanzas Publicas",

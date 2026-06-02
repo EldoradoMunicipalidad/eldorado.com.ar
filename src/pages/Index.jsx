@@ -96,3 +96,4 @@ export { default as PlantaPersonalPage } from './GobiernoAbierto/PlantaPersonalP
 export { default as EscalaSalarialPage } from './GobiernoAbierto/EscalaSalarialPage';
 
 export { default as EmpleadoMunicipalPage } from './EmpleadoMunicipalPage';
+export { default as BalancetesTrimestralesPage } from './GobiernoAbierto/BalancetesTrimestralesPage';
