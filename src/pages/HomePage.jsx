@@ -7,13 +7,6 @@ import { NoticiasSection } from '../assets/components/HomePage/Noticias/Noticias
 import { Footer } from '../assets/components/Footer/Footer'
 
 export const HomePage = () => {
-  const misEstadisticas = [
-    { count: "12,000+", label: "Trámites anuales" },
-    { count: "89%", label: "Satisfacción" },
-    { count: "1,200+", label: "Servicios activos" },
-    { count: "125+", label: "Puntos de atención" }
-  ];
-
   const misCards = [
     {
       id: 1,
@@ -89,8 +82,7 @@ export const HomePage = () => {
       <InformacionAdicionalSection
         tag="Lorem ipsum dolor"
         title="Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero, totam?"
-        cardsData={misCards}
-        statsData={misEstadisticas} />
+        cardsData={misCards} />
 
       <AppSection />
 
