@@ -17,8 +17,14 @@ export const CiudadanoDigitalPage = () => {
       <SectionLayout
         title="Ciudadano"
         highlight="Digital"
-        description="Lorem ipsum dolor sit amet consectetur adipisicing elit. Voluptas, voluptate."
+        description="Accedé a todos los servicios municipales desde un solo lugar. Trámites, consultas, gestiones y más, disponibles de forma rápida y segura."
       />
+
+      <div className="max-w-7xl mx-auto px-6 mb-6">
+        <p className="text-[#4d4d4d] text-base leading-relaxed">
+          Gestioná tus trámites municipales sin moverte de casa. Seleccioná el servicio que necesitás y accedé con un clic.
+        </p>
+      </div>
 
       {CIUDADANO_DIGITAL_DATA.map((section, index) => (
         <SectionCardGrid
@@ -36,7 +42,7 @@ export const CiudadanoDigitalPage = () => {
           key={index}
           id={section.id}
           icon={section.icon}
-          bgColor="bg-white"
+          bgColor="bg-[#fafafa]"
           categoryTitle={section.categoryTitle}
           cards={section.cards}
         />
@@ -58,7 +64,7 @@ export const CiudadanoDigitalPage = () => {
           key={index}
           id={section.id}
           icon={section.icon}
-          bgColor="bg-white"
+          bgColor="bg-[#fafafa]"
           categoryTitle={section.categoryTitle}
           cards={section.cards}
         />
