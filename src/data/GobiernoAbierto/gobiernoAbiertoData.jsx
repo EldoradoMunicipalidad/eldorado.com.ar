@@ -42,14 +42,14 @@ export const FINANZAS_PUBLICAS_DATA = [
                 to: "/gobierno-abierto/finanzas-publicas"
             },
             {
-                title: "Balancetes trimestrales",
-                description: "Ejecución presupuestaria, Deuda Pública, Coparticipacion, Resultado del Ejercicio",
+                title: "Balancetes Trimestrales",
+                description: "Ejecución presupuestaria, Deuda Pública, Coparticipación, Resultado del Ejercicio",
                 icon: "financeModeIcon",
                 to: "/gobierno-abierto/finanzas-publicas"
             },
             {
                 title: "Resumen Consolidado de Finanzas Públicas",
-                description: "Resumen consolidado de finanzas públicas",
+                description: "Resumen consolidado de la situación financiera del municipio",
                 icon: "databaseIcon",
                 to: "/gobierno-abierto/finanzas-publicas"
             }
@@ -72,7 +72,7 @@ export const TRIBUTOS_DATA = [
 
 export const OBRAS_PUBLICAS_DATA = [
     {
-        categoryTitle: "Obras Públicas",
+        categoryTitle: "Obras Públicas y Compras",
         id: "obras-publicas",
         cards: [
             {
@@ -104,13 +104,13 @@ export const RECURSOS_HUMANOS_DATA = [
         cards: [
             {
                 title: "Organigrama Municipal",
-                description: "Estructura organiativa del municipio",
+                description: "Estructura organizativa del municipio",
                 icon: "hubIcon",
                 to: "/gobierno-abierto/organigrama"
             },
             {
                 title: "Planta de Personal",
-                description: "Personal por área, identificado en cantidades y por categorias",
+                description: "Personal por área, identificado en cantidades y por categorías",
                 icon: "groupsIcon",
                 to: "/gobierno-abierto/planta-personal"
             },
