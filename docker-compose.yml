@@ -1,0 +1,9 @@
+services:
+  municipalidad_page:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: municipalidad_page
+    ports:
+      - "80:80"
+    restart: unless-stopped

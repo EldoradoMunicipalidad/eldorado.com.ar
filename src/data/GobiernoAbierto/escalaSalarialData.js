@@ -1,0 +1,30 @@
+export const ESCALA_SALARIAL_DATA = {
+  titulo: 'Tabla de Sueldos Basicos por Categoria',
+  columnas: ['CATEGORIA', 'SUELDO BASICO'],
+  filas: [
+    { categoria: '1', sueldoBasico: '$130.854,00' },
+    { categoria: '2', sueldoBasico: '$141.311,00' },
+    { categoria: '3', sueldoBasico: '$152.642,00' },
+    { categoria: '4', sueldoBasico: '$164.811,00' },
+    { categoria: '5', sueldoBasico: '$173.082,00' },
+    { categoria: '6', sueldoBasico: '$181.699,00' },
+    { categoria: '7', sueldoBasico: '$190.826,00' },
+    { categoria: '8', sueldoBasico: '$200.299,00' },
+    { categoria: '9', sueldoBasico: '$210.373,00' },
+    { categoria: '10', sueldoBasico: '$214.559,00' },
+    { categoria: '11', sueldoBasico: '$218.866,00' },
+    { categoria: '12', sueldoBasico: '$223.234,00' },
+    { categoria: '13', sueldoBasico: '$227.703,00' },
+    { categoria: '14- DIR. POLITICO', sueldoBasico: '$306.487,00' },
+    { categoria: '14- DIR. CARRERA', sueldoBasico: '$306.487,00' },
+    { categoria: '14- PRO SECR. BLOQUE', sueldoBasico: '$210.373,00' },
+    { categoria: '15- SECR. POLITICO', sueldoBasico: '$250.305,00' },
+    { categoria: '15- SECR. BLOQUE', sueldoBasico: '$214.559,00' },
+    { categoria: '16- ASESOR', sueldoBasico: '$281.183,00' },
+    { categoria: '16- VICEINTENDENTE', sueldoBasico: '$229.960,00' },
+    { categoria: '16- INTENDENTE', sueldoBasico: '$255.497,00' },
+    { categoria: '18- PRO SECR. HCD', sueldoBasico: '$285.628,00' },
+    { categoria: '19- SECR. HCD', sueldoBasico: '$393.784,00' },
+    { categoria: '20- CONCEJALES', sueldoBasico: '$359.026,00' }
+  ]
+}

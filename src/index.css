@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:root {
+  /* Altura total del Navbar: barra de gradiente (16px) + contenedor (96px) */
+  --nav-height: 64px;
+}
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+}

@@ -1,0 +1,40 @@
+export const PLANTA_PERSONAL_DATA = {
+  periodo: 'DICIEMBRE 2024',
+  subtitulo: 'CANTIDAD EMPLEADOS',
+  columnas: ['CATEGORIA', 'ADMINISTRACION', 'OBRAS PUBLICAS', 'CDE', 'JUZGADO DE FALTAS'],
+  filas: [
+    { categoria: '1', administracion: 343, obrasPublicas: 91, cde: 13, juzgadoDeFaltas: 5 },
+    { categoria: '2', administracion: 23, obrasPublicas: 15, cde: 4, juzgadoDeFaltas: 0 },
+    { categoria: '3', administracion: 6, obrasPublicas: 2, cde: 1, juzgadoDeFaltas: 0 },
+    { categoria: '4', administracion: 10, obrasPublicas: 13, cde: 10, juzgadoDeFaltas: 1 },
+    { categoria: '5', administracion: 14, obrasPublicas: 19, cde: 0, juzgadoDeFaltas: 0 },
+    { categoria: '6', administracion: 11, obrasPublicas: 2, cde: 4, juzgadoDeFaltas: 0 },
+    { categoria: '7', administracion: 9, obrasPublicas: 23, cde: 19, juzgadoDeFaltas: 18 },
+    { categoria: '8', administracion: 38, obrasPublicas: 17, cde: 5, juzgadoDeFaltas: 0 },
+    { categoria: '9', administracion: 24, obrasPublicas: 9, cde: 1, juzgadoDeFaltas: 4 },
+    { categoria: '10', administracion: 25, obrasPublicas: 12, cde: 4, juzgadoDeFaltas: 1 },
+    { categoria: '11', administracion: 34, obrasPublicas: 9, cde: 0, juzgadoDeFaltas: 4 },
+    { categoria: '12', administracion: 11, obrasPublicas: 4, cde: 0, juzgadoDeFaltas: 7 },
+    { categoria: '13', administracion: 33, obrasPublicas: 10, cde: 4, juzgadoDeFaltas: 6 },
+    { categoria: '14- DIR. POLITICO', administracion: 18, obrasPublicas: 2, cde: null, juzgadoDeFaltas: null },
+    { categoria: '14- DIR. CARRERA', administracion: 2, obrasPublicas: null, cde: null, juzgadoDeFaltas: null },
+    { categoria: '14- PRO SECR. BLOQUE', administracion: 4, obrasPublicas: null, cde: null, juzgadoDeFaltas: null },
+    { categoria: '15- SECR. POLITICO', administracion: 5, obrasPublicas: 1, cde: null, juzgadoDeFaltas: null },
+    { categoria: '15- SECR. BLOQUE', administracion: 5, obrasPublicas: null, cde: null, juzgadoDeFaltas: null },
+    { categoria: '16- ASESOR', administracion: 2, obrasPublicas: null, cde: null, juzgadoDeFaltas: null },
+    { categoria: '16- VICEINTENDENTE', administracion: 1, obrasPublicas: null, cde: null, juzgadoDeFaltas: null },
+    { categoria: '16- INTENDENTE', administracion: 1, obrasPublicas: null, cde: null, juzgadoDeFaltas: null },
+    { categoria: '18- PRO SECR. HCD', administracion: null, obrasPublicas: null, cde: 6, juzgadoDeFaltas: null },
+    { categoria: '19- SECR. HCD', administracion: null, obrasPublicas: null, cde: 7, juzgadoDeFaltas: null },
+    { categoria: '20- CONCEJALES', administracion: null, obrasPublicas: null, cde: 7, juzgadoDeFaltas: null },
+    { categoria: '19- SECR. JUEZ', administracion: null, obrasPublicas: null, cde: null, juzgadoDeFaltas: 2 },
+    { categoria: '20- JUEZ', administracion: null, obrasPublicas: null, cde: null, juzgadoDeFaltas: 1 }
+  ],
+  totales: {
+    administracion: 380,
+    obrasPublicas: 175,
+    cde: 104,
+    juzgadoDeFaltas: 37,
+    totalEmpleados: 696
+  }
+}
