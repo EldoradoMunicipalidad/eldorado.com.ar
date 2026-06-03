@@ -196,6 +196,12 @@ import AppsIcon from "./MaterialIcons/AppsIcon";
 import ChevronRightIcon from "./MaterialIcons/ChevronRightIcon";
 import ChevronLeftIcon from "./MaterialIcons/ChevronLeftIcon";
 import CloseIcon from "./MaterialIcons/CloseIcon";
+import InboxIcon from "./MaterialIcons/InboxIcon";
+import AddIcon from "./MaterialIcons/AddIcon";
+import EditIcon from "./MaterialIcons/EditIcon";
+import StraightenIcon from "./MaterialIcons/StraightenIcon";
+import CheckCircleIcon from "./MaterialIcons/CheckCircleIcon";
+import EventBusyIcon from "./MaterialIcons/EventBusyIcon";
 
 export const ICONS_MAP = {
     'departamentos': DepartamentosIcon,
@@ -396,4 +402,10 @@ export const ICONS_MAP = {
     'chevronRightIcon': ChevronRightIcon,
     'chevronLeftIcon': ChevronLeftIcon,
     'closeIcon': CloseIcon,
+    'inboxIcon': InboxIcon,
+    'addIcon': AddIcon,
+    'editIcon': EditIcon,
+    'straightenIcon': StraightenIcon,
+    'checkCircleIcon': CheckCircleIcon,
+    'eventBusyIcon': EventBusyIcon,
 }

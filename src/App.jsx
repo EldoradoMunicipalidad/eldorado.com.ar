@@ -74,7 +74,9 @@ import {
   EscalaSalarialPage,
   EmpleadoMunicipalPage,
   BalancetesTrimestralesPage,
-  GuiaDeTramitesPage
+  GuiaDeTramitesPage,
+  TurneroPage,
+  TurneroAdminPage,
 
 } from './pages/Index.jsx';
 import { allNavigationLinks } from './data/navigationData' // Importamos la unión de links
@@ -155,6 +157,8 @@ function App() {
           <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/mantenimiento-y-servicios" element={<DirMantenimientoAndServiciosPage />} />
           <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/obras-publicas" element={<DirObrasPublicasPage />} />
           <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento" element={<DirPlaneamientoPage />} />
+          <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero" element={<TurneroPage />} />
+          <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero/admin" element={<TurneroAdminPage />} />
           <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/planta-asfaltica" element={<PlantaAsfalticaPage />} />
           <Route path="/gobierno/secretaria-de-obras-y-servicios-publicos/planta-hormigon" element={<PlantaHormigonPage />} />
           
@@ -167,6 +171,8 @@ function App() {
           <Route path="/gobierno/secretaria-obras-publicas/mantenimiento-y-servicios" element={<DirMantenimientoAndServiciosPage />} />
           <Route path="/gobierno/secretaria-obras-publicas/obras-publicas" element={<DirObrasPublicasPage />} />
           <Route path="/gobierno/secretaria-obras-publicas/planeamiento" element={<DirPlaneamientoPage />} />
+          <Route path="/gobierno/secretaria-obras-publicas/planeamiento/turnero" element={<TurneroPage />} />
+          <Route path="/gobierno/secretaria-obras-publicas/planeamiento/turnero/admin" element={<TurneroAdminPage />} />
           <Route path="/gobierno/secretaria-obras-publicas/planta-asfaltica" element={<PlantaAsfalticaPage />} />
           <Route path="/gobierno/secretaria-obras-publicas/planta-hormigon" element={<PlantaHormigonPage />} />
           

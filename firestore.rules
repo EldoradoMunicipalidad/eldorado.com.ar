@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Permitir lectura/escritura a cualquier persona
+    // (público — es un sistema de turnos municipal)
+    match /{document=**} {
+      allow read, write: if true;
+    }
+
+  }
+}

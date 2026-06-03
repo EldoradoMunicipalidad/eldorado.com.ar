@@ -61,6 +61,8 @@ export { default as Guarderias } from './Gobierno/Departamentos/Sec. Accion Soci
 
 //Ficheros dentro de /pages/Gobierno/Departamentos/Sec. Obras Publicas
 export { default as DirPlaneamientoPage } from './Gobierno/Departamentos/Sec. Obras Publicas/DirPlaneamientoPage';
+export { default as TurneroPage } from './Gobierno/Departamentos/Sec. Obras Publicas/TurneroPlaneamiento/TurneroPage';
+export { default as TurneroAdminPage } from './Gobierno/Departamentos/Sec. Obras Publicas/TurneroPlaneamiento/TurneroAdminPage';
 export { default as PlantaAsfalticaPage } from './Gobierno/Departamentos/Sec. Obras Publicas/PlantaAsfalticaPage';
 export { default as PlantaHormigonPage } from './Gobierno/Departamentos/Sec. Obras Publicas/PlantaHormigonPage';
 export { default as DirObrasPublicasPage } from './Gobierno/Departamentos/Sec. Obras Publicas/Dir. Obras Publicas/DirObrasPublicasPage';

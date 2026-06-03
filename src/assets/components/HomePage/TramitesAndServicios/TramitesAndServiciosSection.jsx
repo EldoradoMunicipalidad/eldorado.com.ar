@@ -45,7 +45,7 @@ export const TramitesAndServiciosSection = () => {
       Icon: Icons.TurnosPlaneamientoIcon,
       title: "Turnos Planeamiento",
       subtitle: "Reservá tu turno para trámites de obras y planeamiento",
-      to: "https://turnosplaneamiento.eldorado.gob.ar/"
+      to: "/gobierno/secretaria-obras-publicas/planeamiento/turnero"
     },
     {
       id: 7,
