@@ -183,7 +183,7 @@ app.post('/api/seed', async (req, res) => {
 })
 
 // ─── START ─────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 4000
+const PORT = process.env.PORT || 3000
 
 // SPA fallback: serve index.html for any non-API route after all routes
 app.use((req, res) => {
