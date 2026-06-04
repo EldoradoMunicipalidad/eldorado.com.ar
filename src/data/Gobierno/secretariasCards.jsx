@@ -1686,24 +1686,6 @@ export const SECRETARIA_OBRAS_PUBLICAS = [
         ],
         accordionItems: [
             {
-                title: 'Profesionales Listados',
-                icon: 'badgeIcon',
-                cards: [
-                    {
-                        title: 'Profesionales en Eldorado',
-                        description: 'Listado de profesionales habilitados en Eldorado.',
-                        to: 'https://docs.google.com/document/d/1UB5MPj5pGI9K8JJEHnCK8o3PR1H1mtSy/edit',
-                        icon: 'groupsIcon'
-                    },
-                    {
-                        title: 'Profesionales para Plan de Contingencia',
-                        description: 'Listado de profesionales para plan de contingencia y seguridad contra incendio.',
-                        to: 'https://docs.google.com/spreadsheets/d/1vBa8m1EVbHUJyoql1U0-oOWuRswZFjjC/edit?gid=55213740#gid=55213740',
-                        icon: 'assignmentTurnedInIcon'
-                    }
-                ]
-            },
-            {
                 title: 'Codigos y Ordenanzas',
                 icon: 'gavelIcon',
                 cards: [
