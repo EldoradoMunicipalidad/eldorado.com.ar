@@ -1,10 +1,15 @@
 const express = require('express')
+const path = require('path')
 const cors = require('cors')
-const pool = require('./db')
+const pool = require('./db.cjs')
 
 const app = express()
 app.use(cors())
 app.use(express.json())
+
+// Serve static files in production
+const distPath = path.join(__dirname, '..', 'dist')
+app.use(express.static(distPath))
 
 // ─── Simple hash function (mirrors frontend) ─────────────────────────────
 function simpleHash(str) {
@@ -179,6 +184,15 @@ app.post('/api/seed', async (req, res) => {
 
 // ─── START ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 4000
+
+// SPA fallback: serve index.html for any non-API route after all routes
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not found' })
+  }
+  res.sendFile(path.join(distPath, 'index.html'))
+})
+
 app.listen(PORT, () => {
-  console.log(`✅ Turnero API server running on http://localhost:${PORT}`)
+  console.log(`✅ Turnero API + static server running on http://localhost:${PORT}`)
 })
