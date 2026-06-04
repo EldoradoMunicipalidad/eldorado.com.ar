@@ -12,7 +12,7 @@ import {
   getConfig,
   saveConfig,
   DAYS_OF_WEEK,
-} from '../../../../../data/turneroFirebase'
+} from '../../../../../data/turneroPostgres'
 
 const TABS = [
   { id: 'areas', label: 'Áreas', icon: 'appsIcon' },
@@ -55,14 +55,15 @@ export default function TurneroAdminPage() {
   const [loading, setLoading] = useState(true)
   const [turneroPaused, setTurneroPaused] = useState(false)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError('')
     if (!loginUser.trim() || !loginPass.trim()) {
       setLoginError('Completá usuario y contraseña')
       return
     }
-    if (authenticateAdmin(loginUser.trim(), loginPass)) {
+    const ok = await authenticateAdmin(loginUser.trim(), loginPass)
+    if (ok) {
       sessionStorage.setItem('turnero_admin_auth', 'true')
       setIsAuthenticated(true)
     } else {

@@ -13,7 +13,7 @@ import {
   getTodayAppointmentsCount,
   getTodayAreaIds,
   getDayName,
-} from '../../../../../data/turneroFirebase'
+} from '../../../../../data/turneroPostgres'
 
 const STEPS = ['Tus Datos', 'Seleccionar Área', 'Elegir Fecha', 'Elegir Horario', 'Confirmar']
 

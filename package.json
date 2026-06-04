@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
+    "dev:server": "node server/index.js",
+    "dev:all": "node server/index.js & vite --host",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:init": "node server/init-db.js"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.18",
