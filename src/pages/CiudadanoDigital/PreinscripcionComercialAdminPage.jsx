@@ -4,6 +4,7 @@ import { Section } from '../../assets/components/Section';
 import {
   Search,
   Filter,
+  CalendarDays,
   ChevronDown,
   ChevronUp,
   Eye,
@@ -54,6 +55,8 @@ export default function PreinscripcionComercialAdminPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [sortField, setSortField] = useState('fecha');
   const [sortDirection, setSortDirection] = useState('desc');
   const [selectedItem, setSelectedItem] = useState(null);
@@ -186,15 +189,37 @@ export default function PreinscripcionComercialAdminPage() {
       data = data.filter(
         (item) =>
           (item.dni && item.dni.toLowerCase().includes(term)) ||
+          (item.cuit && item.cuit.toLowerCase().includes(term)) ||
           (item.apellido && item.apellido.toLowerCase().includes(term)) ||
           (item.email && item.email.toLowerCase().includes(term)) ||
-          (item.apellido_alt && item.apellido_alt.toLowerCase().includes(term))
+          (item.telefono && item.telefono.toLowerCase().includes(term)) ||
+          (item.direccion && item.direccion.toLowerCase().includes(term)) ||
+          (item.apellido_alt && item.apellido_alt.toLowerCase().includes(term)) ||
+          (item.categoria && item.categoria.toLowerCase().includes(term)) ||
+          (item.sub_categoria && item.sub_categoria.toLowerCase().includes(term))
       );
     }
 
     // Status filter
     if (statusFilter !== 'todos') {
       data = data.filter((item) => item.status === statusFilter);
+    }
+
+    // Date range filter
+    if (filterDateFrom) {
+      const from = new Date(filterDateFrom);
+      data = data.filter((item) => {
+        const d = new Date(item.created_at || item.fecha);
+        return d >= from;
+      });
+    }
+    if (filterDateTo) {
+      const to = new Date(filterDateTo);
+      to.setHours(23, 59, 59, 999);
+      data = data.filter((item) => {
+        const d = new Date(item.created_at || item.fecha);
+        return d <= to;
+      });
     }
 
     // Sort
@@ -494,11 +519,47 @@ export default function PreinscripcionComercialAdminPage() {
         </div>
       )}
 
+      {/* Dashboard Stats */}
+      <Section>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-slate-500 font-medium">Total</p>
+                <FileText className="w-5 h-5 text-sky-500" />
+              </div>
+              <p className="text-3xl font-bold text-slate-800 mt-2">{solicitudes.length}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-amber-600 font-medium">Pendientes</p>
+                <Clock className="w-5 h-5 text-amber-500" />
+              </div>
+              <p className="text-3xl font-bold text-amber-700 mt-2">{solicitudes.filter(s => s.status === 'pendiente').length}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-blue-200 shadow-sm p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-blue-600 font-medium">En Revisión</p>
+                <Loader2 className="w-5 h-5 text-blue-500" />
+              </div>
+              <p className="text-3xl font-bold text-blue-700 mt-2">{solicitudes.filter(s => s.status === 'en_revision').length}</p>
+            </div>
+            <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-emerald-600 font-medium">Finalizados</p>
+                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+              </div>
+              <p className="text-3xl font-bold text-emerald-700 mt-2">{solicitudes.filter(s => s.status === 'finalizado').length}</p>
+            </div>
+          </div>
+        </div>
+      </Section>
+
       <Section>
         <div className="max-w-7xl mx-auto">
           {/* Search and Filters */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
@@ -508,8 +569,26 @@ export default function PreinscripcionComercialAdminPage() {
                     setSearchTerm(e.target.value);
                     setVisibleCount(10);
                   }}
-                  placeholder="Buscar por DNI, Apellido, Email..."
+                  placeholder="Buscar por DNI, CUIT, Apellido, Email, Teléfono..."
                   className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all text-sm"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <CalendarDays className="w-4 h-4 text-gray-400" />
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => { setFilterDateFrom(e.target.value); setVisibleCount(10); }}
+                  className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm bg-white w-[150px]"
+                  title="Desde"
+                />
+                <span className="text-gray-400 text-sm">—</span>
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => { setFilterDateTo(e.target.value); setVisibleCount(10); }}
+                  className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm bg-white w-[150px]"
+                  title="Hasta"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -525,10 +604,29 @@ export default function PreinscripcionComercialAdminPage() {
                   {STATUS_FILTER_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
+                      {opt.value !== 'todos' && ` (${solicitudes.filter(s => opt.value === 'todos' || s.status === opt.value).length})`}
                     </option>
                   ))}
                 </select>
               </div>
+              <button
+                onClick={() => {
+                  const headers = ['Estado,Tipo,DNI/CUIT,Apellido/Razón Social,Email,Teléfono,Categoría,Trámite,Dirección,Barrio,Fecha'];
+                  const rows = filteredData.map(item =>
+                    `"${item.status}","${item.tipo_persona}","${item.dni || item.cuit}","${item.apellido || ''}","${item.email || ''}","${item.telefono || ''}","${item.categoria || ''}","${item.sub_categoria || ''}","${item.direccion || ''}","${item.barrio || ''}","${item.created_at || item.fecha || ''}"`
+                  );
+                  const csv = [...headers, ...rows].join('\n');
+                  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                  const link = document.createElement('a');
+                  link.href = URL.createObjectURL(blob);
+                  link.download = `preinscripciones_${new Date().toISOString().slice(0,10)}.csv`;
+                  link.click();
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg font-semibold text-sm hover:bg-emerald-600 transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                Exportar CSV
+              </button>
             </div>
           </div>
 
