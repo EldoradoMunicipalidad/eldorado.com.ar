@@ -8,7 +8,13 @@ export const CIUDADANO_DIGITAL_DATA = [
                 title: "Solicitud de Reclamo",
                 description: "Presentar reclamos y solicitudes a la municipalidad",
                 icon: "assignmentIcon",
-                to: "https://kzmisqtjirm90nt0359x.lite.vusercontent.net/"
+                to: "/ciudadano-digital/reclamos"
+            },
+            {
+                title: "Seguimiento de Reclamos",
+                description: "Hacé seguimiento de tu reclamo con tu código RC-XXXXXX",
+                icon: "searchIcon",
+                to: "/ciudadano-digital/reclamos/seguimiento"
             },
             {
                 title: "CTC Atención Ciudadana y Autogestión",
@@ -71,7 +77,7 @@ export const CIUDADANO_DIGITAL_HACIENDA_DATA = [
                 title: "Habilitacion Comercial",
                 description: "Trámite de habilitación para comercios.",
                 icon: "habilitacionComercialIcon",
-                to: "https://sistema-de-gestion-comercial.vercel.app/formulario"
+                to: "/ciudadano-digital/preinscripcion-comercial"
             }
         ]
     }]; 

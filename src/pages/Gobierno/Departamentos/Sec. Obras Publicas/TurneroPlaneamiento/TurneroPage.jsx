@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SectionLayout from '../../../../../assets/components/SectionLayout'
 import { Section } from '../../../../../assets/components/Section'
@@ -15,7 +15,7 @@ import {
   getDayName,
 } from '../../../../../data/turneroPostgres'
 
-const STEPS = ['Tus Datos', 'Seleccionar Área', 'Elegir Fecha', 'Elegir Horario', 'Confirmar']
+const STEPS = ['Tus Datos', 'Seleccionar Áreas', 'Elegir Fecha', 'Elegir Horarios', 'Confirmar']
 
 const initialForm = {
   nombre: '',
@@ -30,15 +30,16 @@ export default function TurneroPage() {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [form, setForm] = useState(initialForm)
-  const [selectedArea, setSelectedArea] = useState(null)
+  const [selectedAreas, setSelectedAreas] = useState([])
   const [selectedDate, setSelectedDate] = useState(null)
-  const [selectedTime, setSelectedTime] = useState(null)
+  const [selectedTimes, setSelectedTimes] = useState({})
   const [error, setError] = useState('')
-  const [confirmedAppt, setConfirmedAppt] = useState(null)
+  const [confirmedAppts, setConfirmedAppts] = useState(null)
   const [areas, setAreas] = useState([])
   const [appointments, setAppointments] = useState([])
   const [config, setConfig] = useState({ maxPerDay: 3, turneroPaused: false })
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
 
   // Real-time subscriptions
   useEffect(() => {
@@ -57,9 +58,9 @@ export default function TurneroPage() {
 
   const goToStep = (s) => {
     setError('')
-    if (s <= 1) setSelectedArea(null)
-    if (s <= 2) { setSelectedDate(null); setSelectedTime(null) }
-    if (s <= 3) setSelectedTime(null)
+    if (s <= 1) { setSelectedAreas([]); setSelectedTimes({}) }
+    if (s <= 2) { setSelectedDate(null); setSelectedTimes({}) }
+    if (s <= 3) setSelectedTimes({})
     setStep(s)
   }
 
@@ -89,57 +90,123 @@ export default function TurneroPage() {
     goToStep(1)
   }
 
-  const handleAreaSelect = (area) => {
-    const todayAreas = getTodayAreaIds(form.dni, appointments)
-    if (todayAreas.has(area.id)) {
-      setError('Ya tenés un turno en esta área hoy. Seleccioná otra área.')
+  // ─── Multi-area selection ────────────────────────────
+  const todayAreaIds = useMemo(() => getTodayAreaIds(form.dni, appointments), [form.dni, appointments])
+
+  const handleToggleArea = (area) => {
+    setError('')
+
+    // If already selected, remove it
+    if (selectedAreas.some((a) => a.id === area.id)) {
+      const newSelected = selectedAreas.filter((a) => a.id !== area.id)
+      setSelectedAreas(newSelected)
+      // Clean up associated time
+      setSelectedTimes((prev) => {
+        const { [area.id]: _, ...rest } = prev
+        return rest
+      })
       return
     }
-    setSelectedArea(area)
-    setError('')
-    goToStep(2)
+
+    // Check if already has a turno in this area today
+    if (todayAreaIds.has(area.id)) {
+      setError('Ya tenés un turno en ' + area.name + ' hoy. Seleccioná otra área.')
+      return
+    }
+
+    // Max 3 areas
+    if (selectedAreas.length >= 3) {
+      setError('Podés seleccionar hasta 3 áreas como máximo.')
+      return
+    }
+
+    setSelectedAreas([...selectedAreas, area])
   }
 
+  // Available dates = intersection of all selected areas' available dates
   const availableDates = useMemo(() => {
-    if (!selectedArea) return []
-    return getAvailableDates(selectedArea, 30)
-  }, [selectedArea])
+    if (selectedAreas.length === 0) return []
+    const dateSets = selectedAreas.map((area) => new Set(getAvailableDates(area, 30)))
+    // Intersection of all date sets
+    const reference = dateSets[0]
+    const intersection = []
+    for (const dateStr of reference) {
+      if (dateSets.every((ds) => ds.has(dateStr))) {
+        intersection.push(dateStr)
+      }
+    }
+    return intersection.sort()
+  }, [selectedAreas])
 
-  const timeSlots = useMemo(() => {
-    if (!selectedArea || !selectedDate) return []
-    return generateTimeSlots(
-      selectedArea.startTime,
-      selectedArea.endTime,
-      selectedArea.interval,
-      selectedDate,
-      selectedArea.id,
-      appointments
-    )
-  }, [selectedArea, selectedDate, appointments])
+  // Time slots for each area on the selected date
+  const timeSlotsByArea = useMemo(() => {
+    if (!selectedDate) return {}
+    const result = {}
+    for (const area of selectedAreas) {
+      result[area.id] = generateTimeSlots(
+        area.startTime,
+        area.endTime,
+        area.interval,
+        selectedDate,
+        area.id,
+        appointments
+      )
+    }
+    return result
+  }, [selectedAreas, selectedDate, appointments])
 
-  const handleConfirm = async () => {
-    const apptId = await createAppointment({
-      areaId: selectedArea.id,
-      areaName: selectedArea.name,
-      date: selectedDate,
-      time: selectedTime,
-      ...form,
-    })
-    if (apptId) {
-      setConfirmedAppt({
-        id: apptId,
-        areaId: selectedArea.id,
-        areaName: selectedArea.name,
+  const allTimesChosen = useMemo(() => {
+    return selectedAreas.length > 0 && selectedAreas.every((a) => selectedTimes[a.id])
+  }, [selectedAreas, selectedTimes])
+
+  const getAppointmentsLimit = useCallback(() => {
+    return config.maxPerDay - getTodayAppointmentsCount(form.dni, appointments)
+  }, [config.maxPerDay, form.dni, appointments])
+
+  // ─── Confirm all appointments ────────────────────────
+  const handleConfirmAll = async () => {
+    setSubmitting(true)
+    setError('')
+
+    const remaining = getAppointmentsLimit()
+    if (selectedAreas.length > remaining) {
+      setError(`Solo podés solicitar ${remaining} turno(s) más hoy. Seleccioná menos áreas.`)
+      setSubmitting(false)
+      return
+    }
+
+    const results = []
+    for (const area of selectedAreas) {
+      const apptId = await createAppointment({
+        areaId: area.id,
+        areaName: area.name,
         date: selectedDate,
-        time: selectedTime,
+        time: selectedTimes[area.id],
         ...form,
-        status: 'pending',
       })
-    } else {
-      setError('Error al guardar el turno. Intentá de nuevo.')
+      if (apptId) {
+        results.push({
+          id: apptId,
+          areaId: area.id,
+          areaName: area.name,
+          date: selectedDate,
+          time: selectedTimes[area.id],
+          ...form,
+          status: 'pending',
+        })
+      } else {
+        setError(`Error al guardar el turno para "${area.name}". Los turnos anteriores se guardaron correctamente.`)
+        break
+      }
+    }
+
+    setSubmitting(false)
+    if (results.length > 0) {
+      setConfirmedAppts(results)
     }
   }
 
+  // ─── RENDER: Paused ──────────────────────────────────
   if (config.turneroPaused) {
     return (
       <>
@@ -171,68 +238,73 @@ export default function TurneroPage() {
     )
   }
 
+  // ─── RENDER: Loading ─────────────────────────────────
   if (loading) {
     return (
       <SectionLayout title="Sistema de" highlight="Turnos" description="Cargando..." />
     )
   }
 
-  if (confirmedAppt) {
+  // ─── RENDER: Confirmed ───────────────────────────────
+  if (confirmedAppts) {
     return (
       <>
         <SectionLayout
-          title="Turno"
-          highlight="Confirmado"
-          description="Tu turno fue registrado correctamente."
+          title="Turnos"
+          highlight="Confirmados"
+          description={confirmedAppts.length > 1
+            ? `Tus ${confirmedAppts.length} turnos fueron registrados correctamente.`
+            : 'Tu turno fue registrado correctamente.'}
         />
         <Section>
-          <div className="max-w-xl mx-auto">
+          <div className="max-w-2xl mx-auto">
             <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm text-center">
               <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Icon name="checkCircleIcon" size={40} className="text-emerald-600" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">¡Turno Confirmado!</h3>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">¡Turno{confirmedAppts.length > 1 ? 's' : ''} Confirmado{confirmedAppts.length > 1 ? 's' : ''}!</h3>
               <p className="text-slate-500 mb-6">Presentate en la Dirección de Planeamiento</p>
 
-              <div className="bg-slate-50 rounded-xl p-6 text-left space-y-3 mb-6">
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Área</span>
-                  <span className="font-semibold text-slate-800">{confirmedAppt.areaName}</span>
-                </div>
-                <div className="border-t border-slate-200" />
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Fecha</span>
-                  <span className="font-semibold text-slate-800">
-                    {new Date(confirmedAppt.date + 'T12:00:00').toLocaleDateString('es-AR', {
-                      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
-                    })}
-                  </span>
-                </div>
-                <div className="border-t border-slate-200" />
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Horario</span>
-                  <span className="font-semibold text-slate-800">{confirmedAppt.time} hs</span>
-                </div>
-                <div className="border-t border-slate-200" />
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Persona</span>
-                  <span className="font-semibold text-slate-800">{confirmedAppt.apellido}, {confirmedAppt.nombre}</span>
-                </div>
-                <div className="border-t border-slate-200" />
-                <div className="flex justify-between">
-                  <span className="text-slate-500">DNI</span>
-                  <span className="font-semibold text-slate-800">{confirmedAppt.dni}</span>
+              <div className="space-y-4 mb-6">
+                {confirmedAppts.map((appt, idx) => (
+                  <div key={appt.id} className="bg-slate-50 rounded-xl p-5 text-left">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <span className="font-semibold text-slate-800">{appt.areaName}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-slate-400 text-xs block">Fecha</span>
+                        <span className="font-medium text-slate-700">
+                          {new Date(appt.date + 'T12:00:00').toLocaleDateString('es-AR', {
+                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 text-xs block">Horario</span>
+                        <span className="font-medium text-slate-700">{appt.time} hs</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="bg-slate-50 rounded-xl p-4 text-left">
+                  <div className="text-xs text-slate-400 uppercase font-medium mb-1">Persona</div>
+                  <div className="font-semibold text-slate-800">{confirmedAppts[0].apellido}, {confirmedAppts[0].nombre}</div>
+                  <div className="text-sm text-slate-500">DNI: {confirmedAppts[0].dni}</div>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => {
-                    setConfirmedAppt(null)
+                    setConfirmedAppts(null)
                     setForm(initialForm)
-                    setSelectedArea(null)
+                    setSelectedAreas([])
                     setSelectedDate(null)
-                    setSelectedTime(null)
+                    setSelectedTimes({})
                     setStep(0)
                   }}
                   className="px-6 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors"
@@ -253,6 +325,7 @@ export default function TurneroPage() {
     )
   }
 
+  // ─── RENDER: Main ────────────────────────────────────
   return (
     <>
       <SectionLayout
@@ -368,44 +441,109 @@ export default function TurneroPage() {
             </div>
           )}
 
-          {/* Step 1: Select Area */}
+          {/* Step 1: Select Areas (multi-select up to 3) */}
           {step === 1 && (
             <div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Seleccioná el Área</h3>
-              <p className="text-slate-500 text-sm mb-6">Elegí el área donde querés realizar tu trámite</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {activeAreas.map((area) => (
-                  <button
-                    key={area.id}
-                    onClick={() => handleAreaSelect(area)}
-                    className="group relative bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-start gap-4 text-left hover:shadow-md hover:-translate-y-1 transition-all duration-300"
-                  >
-                    <div className={`w-12 h-12 ${area.color} rounded-xl flex items-center justify-center shadow-sm shrink-0`}>
-                      <Icon name={area.icon} size={22} className="text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-slate-800 mb-0.5">{area.name}</h4>
-                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{area.description}</p>
-                    </div>
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xl font-bold text-slate-800">Seleccioná las Áreas</h3>
+                <span className={`text-sm font-medium px-3 py-1 rounded-full ${
+                  selectedAreas.length >= 3
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-sky-50 text-sky-600'
+                }`}>
+                  {selectedAreas.length}/3 seleccionadas
+                </span>
               </div>
-              <button onClick={() => goToStep(0)} className="mt-6 text-sm text-slate-500 hover:text-slate-700 transition-colors">
-                ← Volver a datos personales
-              </button>
+              <p className="text-slate-500 text-sm mb-6">
+                Elegí hasta 3 áreas donde querés realizar tus trámites. Cada área tendrá su propio horario.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {activeAreas.map((area) => {
+                  const isSelected = selectedAreas.some((a) => a.id === area.id)
+                  const isDisabled = !isSelected && selectedAreas.length >= 3
+                  const hasTurnoToday = todayAreaIds.has(area.id)
+                  return (
+                    <button
+                      key={area.id}
+                      onClick={() => !hasTurnoToday && handleToggleArea(area)}
+                      disabled={hasTurnoToday}
+                      className={`group relative bg-white p-5 rounded-2xl border flex items-start gap-4 text-left transition-all duration-300 ${
+                        isSelected
+                          ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200 shadow-sm'
+                          : isDisabled
+                            ? 'border-slate-100 opacity-60 cursor-not-allowed'
+                            : hasTurnoToday
+                              ? 'border-slate-100 opacity-50 cursor-not-allowed'
+                              : 'border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1'
+                      }`}
+                    >
+                      {/* Selection indicator */}
+                      {isSelected ? (
+                        <div className="absolute top-3 right-3 w-6 h-6 bg-sky-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                          ✓
+                        </div>
+                      ) : null}
+
+                      <div className={`w-12 h-12 ${area.color} rounded-xl flex items-center justify-center shadow-sm shrink-0 ${
+                        isSelected ? 'ring-2 ring-white ring-offset-2 ring-offset-sky-100' : ''
+                      }`}>
+                        <Icon name={area.icon} size={22} className="text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-slate-800 mb-0.5">{area.name}</h4>
+                        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2">{area.description}</p>
+                        {hasTurnoToday && (
+                          <span className="inline-block mt-1.5 text-xs text-amber-600 font-medium">
+                            Ya tenés turno hoy
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex items-center justify-between mt-6">
+                <button onClick={() => goToStep(0)} className="text-sm text-slate-500 hover:text-slate-700 transition-colors">
+                  ← Volver a datos personales
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedAreas.length === 0) {
+                      setError('Seleccioná al menos un área.')
+                      return
+                    }
+                    goToStep(2)
+                  }}
+                  className="px-6 py-2.5 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors disabled:opacity-50"
+                  disabled={selectedAreas.length === 0}
+                >
+                  Continuar ({selectedAreas.length} área{selectedAreas.length !== 1 ? 's' : ''})
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Step 2: Select Date */}
+          {/* Step 2: Select Date (shared for all selected areas) */}
           {step === 2 && (
             <div>
               <h3 className="text-xl font-bold text-slate-800 mb-2">Elegí una Fecha</h3>
               <p className="text-slate-500 text-sm mb-6">
-                Turnos disponibles para <strong>{selectedArea?.name}</strong>
+                Fecha disponible para <strong>todas las áreas seleccionadas</strong>
               </p>
+
+              {/* Selected areas summary */}
+              <div className="flex flex-wrap gap-2 mb-6">
+                {selectedAreas.map((area) => (
+                  <span key={area.id} className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${area.color} text-white text-xs font-medium rounded-full`}>
+                    <Icon name={area.icon} size={12} />
+                    {area.name}
+                  </span>
+                ))}
+              </div>
+
               {availableDates.length === 0 ? (
                 <div className="p-8 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-center">
-                  No hay fechas disponibles para esta área. Consultá la configuración del administrador.
+                  No hay fechas comunes disponibles para las áreas seleccionadas. Probá seleccionando otras áreas.
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -418,7 +556,7 @@ export default function TurneroPage() {
                     return (
                       <button
                         key={dateStr}
-                        onClick={() => { setSelectedDate(dateStr); setSelectedTime(null); setError(''); goToStep(3) }}
+                        onClick={() => { setSelectedDate(dateStr); setSelectedTimes({}); setError(''); goToStep(3) }}
                         className={`p-4 rounded-xl border text-center transition-all duration-200 ${
                           isSelected
                             ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200'
@@ -434,104 +572,157 @@ export default function TurneroPage() {
                 </div>
               )}
               <button onClick={() => goToStep(1)} className="mt-6 text-sm text-slate-500 hover:text-slate-700 transition-colors">
-                ← Cambiar área
+                ← Cambiar áreas
               </button>
             </div>
           )}
 
-          {/* Step 3: Select Time */}
+          {/* Step 3: Select Time for Each Area */}
           {step === 3 && (
             <div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Elegí un Horario</h3>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Elegí un Horario para Cada Área</h3>
               <p className="text-slate-500 text-sm mb-2">
-                <strong>{selectedArea?.name}</strong> — {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', {
+                {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', {
                   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
                 })}
               </p>
               <p className="text-xs text-slate-400 mb-6">
-                Intervalo de {selectedArea?.interval} minutos entre turnos
+                Seleccioná un horario disponible para cada área
               </p>
-              {timeSlots.filter(s => s.available).length === 0 ? (
-                <div className="p-8 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-center">
-                  No hay horarios disponibles para esta fecha. Seleccioná otra fecha.
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                  {timeSlots.map((slot) => (
-                    <button
-                      key={slot.time}
-                      disabled={!slot.available}
-                      onClick={() => { setSelectedTime(slot.time); setError(''); goToStep(4) }}
-                      className={`p-3 rounded-xl border text-center font-medium transition-all ${
-                        !slot.available
-                          ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed line-through'
-                          : selectedTime === slot.time
-                            ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-200'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:shadow-sm'
-                      }`}
-                    >
-                      {slot.time}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button onClick={() => goToStep(2)} className="mt-6 text-sm text-slate-500 hover:text-slate-700 transition-colors">
-                ← Cambiar fecha
-              </button>
+
+              <div className="space-y-6">
+                {selectedAreas.map((area, idx) => {
+                  const slots = timeSlotsByArea[area.id] || []
+                  const chosen = selectedTimes[area.id]
+                  const available = slots.filter((s) => s.available)
+                  return (
+                    <div key={area.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-3 mb-4">
+                        <span className="w-7 h-7 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className={`w-8 h-8 ${area.color} rounded-lg flex items-center justify-center shrink-0`}>
+                          <Icon name={area.icon} size={16} className="text-white" />
+                        </div>
+                        <h4 className="font-semibold text-slate-800">{area.name}</h4>
+                        {chosen && (
+                          <span className="ml-auto text-xs bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-medium">
+                            {chosen} hs
+                          </span>
+                        )}
+                      </div>
+
+                      {available.length === 0 ? (
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm text-center">
+                          No hay horarios disponibles para esta fecha.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                          {slots.map((slot) => (
+                            <button
+                              key={slot.time}
+                              disabled={!slot.available}
+                              onClick={() => {
+                                setSelectedTimes((prev) => ({ ...prev, [area.id]: slot.time }))
+                                setError('')
+                              }}
+                              className={`p-2.5 rounded-xl border text-center text-sm font-medium transition-all ${
+                                !slot.available
+                                  ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed line-through'
+                                  : chosen === slot.time
+                                    ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-200'
+                                    : 'border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:shadow-sm'
+                              }`}
+                            >
+                              {slot.time}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center justify-between mt-6">
+                <button onClick={() => goToStep(2)} className="text-sm text-slate-500 hover:text-slate-700 transition-colors">
+                  ← Cambiar fecha
+                </button>
+                <button
+                  onClick={() => {
+                    if (!allTimesChosen) {
+                      setError('Seleccioná un horario para cada área.')
+                      return
+                    }
+                    goToStep(4)
+                  }}
+                  className="px-6 py-2.5 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors disabled:opacity-50"
+                  disabled={!allTimesChosen}
+                >
+                  Revisar y confirmar
+                </button>
+              </div>
             </div>
           )}
 
-          {/* Step 4: Confirm */}
+          {/* Step 4: Confirm All */}
           {step === 4 && (
             <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-100 shadow-sm">
-              <h3 className="text-xl font-bold text-slate-800 mb-6">Confirmar Turno</h3>
+              <h3 className="text-xl font-bold text-slate-800 mb-6">Confirmar Turnos</h3>
+
               <div className="space-y-4 mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 uppercase font-medium mb-1">Área</div>
-                    <div className="font-semibold text-slate-800 flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${selectedArea?.color}`} />
-                      {selectedArea?.name}
+                {selectedAreas.map((area, idx) => (
+                  <div key={area.id} className="bg-slate-50 rounded-xl p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="w-6 h-6 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center">
+                        {idx + 1}
+                      </span>
+                      <div className={`w-3 h-3 rounded-full ${area.color}`} />
+                      <span className="font-semibold text-slate-800">{area.name}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-xs text-slate-400 block mb-0.5">Fecha</span>
+                        <span className="font-medium text-slate-700">
+                          {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', {
+                            weekday: 'long', day: 'numeric', month: 'long'
+                          })}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-400 block mb-0.5">Horario</span>
+                        <span className="font-medium text-slate-700">{selectedTimes[area.id]} hs</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 uppercase font-medium mb-1">Fecha</div>
-                    <div className="font-semibold text-slate-800">
-                      {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', {
-                        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-                      })}
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 uppercase font-medium mb-1">Horario</div>
-                    <div className="font-semibold text-slate-800">{selectedTime} hs</div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 uppercase font-medium mb-1">Persona</div>
-                    <div className="font-semibold text-slate-800">{form.apellido}, {form.nombre}</div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 uppercase font-medium mb-1">DNI</div>
-                    <div className="font-semibold text-slate-800">{form.dni}</div>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-4">
-                    <div className="text-xs text-slate-400 uppercase font-medium mb-1">Email</div>
-                    <div className="font-semibold text-slate-800">{form.email}</div>
-                  </div>
+                ))}
+
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="text-xs text-slate-400 uppercase font-medium mb-1">Titular</div>
+                  <div className="font-semibold text-slate-800">{form.apellido}, {form.nombre}</div>
+                  <div className="text-sm text-slate-500">DNI: {form.dni} | Tel: {form.telefono}</div>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={handleConfirm}
-                  className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-semibold hover:bg-emerald-600 transition-colors"
-                >
-                  Confirmar Turno
-                </button>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
                 <button
                   onClick={() => goToStep(3)}
-                  className="px-6 py-3 border border-slate-200 text-slate-700 rounded-xl font-semibold hover:bg-slate-50 transition-colors"
+                  className="text-sm text-slate-500 hover:text-slate-700 transition-colors"
                 >
-                  Volver
+                  ← Cambiar horarios
+                </button>
+                <button
+                  onClick={handleConfirmAll}
+                  disabled={submitting}
+                  className={`px-8 py-3 bg-emerald-500 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 ${
+                    submitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-emerald-600'
+                  }`}
+                >
+                  {submitting ? (
+                    <>Guardando...</>
+                  ) : (
+                    <>Confirmar {selectedAreas.length} turno{selectedAreas.length !== 1 ? 's' : ''}</>
+                  )}
                 </button>
               </div>
             </div>

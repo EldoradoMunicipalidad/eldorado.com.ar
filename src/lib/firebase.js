@@ -1,8 +1,10 @@
 import { initializeApp } from 'firebase/app'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore'
+import { getStorage } from 'firebase/storage'
+import { getAuth } from 'firebase/auth'
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyDlxlSlv1YVuHRSTynwpkO2X9boapy_LTE',
+  apiKey: 'AIzaSy..._LTE',
   authDomain: 'turnero-4fa62.firebaseapp.com',
   projectId: 'turnero-4fa62',
   storageBucket: 'turnero-4fa62.firebasestorage.app',
@@ -13,6 +15,5 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig)
 export const db = getFirestore(app)
-
-// Enable offline persistence (works even with restricted rules)
-db.settings = db.settings || {}
+export const storage = getStorage(app)
+export const auth = getAuth(app)

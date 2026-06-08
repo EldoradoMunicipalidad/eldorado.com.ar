@@ -577,7 +577,12 @@ export const itemsCiudadanoDigital = [
       {
         title: "Solicitud de Reclamo",
         keywords: [{ label: "Presentar reclamos a la municipalidad.", to: "" }],
-        to: "https://kzmisqtjirm90nt0359x.lite.vusercontent.net/"
+        to: "/ciudadano-digital/reclamos"
+      },
+      {
+        title: "Seguimiento de Reclamos",
+        keywords: [{ label: "Hacer seguimiento de reclamos existentes.", to: "" }],
+        to: "/ciudadano-digital/reclamos/seguimiento"
       },
       {
         title: "CTC Atencion Ciudadana y Autogestion",

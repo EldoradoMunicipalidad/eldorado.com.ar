@@ -86,6 +86,8 @@ export { default as DirProduccionAndDesarrolloSosteniblePage } from './Gobierno/
 
 //Ficheros dentro de /pages/CiudadanoDigital/
 export { default as CiudadanoDigitalPage } from './CiudadanoDigital/CiudadanoDigitalPage';
+export { default as PreinscripcionComercialPage } from './CiudadanoDigital/PreinscripcionComercialPage';
+export { default as PreinscripcionComercialAdminPage } from './CiudadanoDigital/PreinscripcionComercialAdminPage';
 
 //Ficheros dentro de /pages/Gobierno Abierto/
 export { default as GobiernoAbiertoPage } from './GobiernoAbierto/GobiernoAbiertoPage';
@@ -100,3 +102,11 @@ export { default as EscalaSalarialPage } from './GobiernoAbierto/EscalaSalarialP
 export { default as EmpleadoMunicipalPage } from './EmpleadoMunicipalPage';
 export { default as BalancetesTrimestralesPage } from './GobiernoAbierto/BalancetesTrimestralesPage';
 export { default as GuiaDeTramitesPage } from './GuiaDeTramitesPage';
+
+// Reclamos Ciudadanos
+export { default as ReportarReclamoPage } from './Reclamos/ReportarReclamoPage';
+export { default as SeguimientoPage } from './Reclamos/SeguimientoPage';
+export { default as AdminReclamosPage } from './Reclamos/AdminReclamosPage';
+export { default as SetupPage } from './Reclamos/SetupPage';
+export { default as AdminUsersPage } from './Reclamos/AdminUsersPage';
+export { default as CategoriasPage } from './Reclamos/CategoriasPage';

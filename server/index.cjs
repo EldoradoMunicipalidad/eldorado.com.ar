@@ -158,13 +158,13 @@ app.post('/api/seed', async (req, res) => {
       return res.json({ seeded: false, message: 'Ya existen datos' })
     }
     const DEFAULT_AREAS = [
-      { id:'mesa-entradas', name:'Mesa de Entradas', description:'Ingreso y egreso de trámites, consultas generales y recepción de documentación.', color:'bg-sky-500', icon:'inboxIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:10, startTime:'07:00', endTime:'13:00' },
-      { id:'catastro', name:'Catastro', description:'Manzaneros catastrales, administración y división territorial.', color:'bg-emerald-500', icon:'gridOnIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:10, startTime:'07:00', endTime:'13:00' },
-      { id:'zonificacion', name:'Zonificación', description:'Zonificación urbana, trazado de calles y secciones catastrales.', color:'bg-violet-500', icon:'mapIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
-      { id:'planos', name:'Planos y Digitalización', description:'Planos generales digitalizados, redes hídricas y planimetría barrial.', color:'bg-amber-500', icon:'architectureIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
-      { id:'expedientes', name:'Expedientes de Construcción', description:'Registro y control de expedientes de obras privadas.', color:'bg-rose-500', icon:'folderSharedIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
-      { id:'mensuras', name:'Mensuras y Archivo Técnico', description:'Visado de planos de mensura y organización del archivo técnico.', color:'bg-cyan-500', icon:'straightenIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
-      { id:'autorizaciones-electricas', name:'Autorizaciones Eléctricas', description:'Autorización precaria del servicio de energía eléctrica.', color:'bg-yellow-500', icon:'boltIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:6, startTime:'07:00', endTime:'13:00' },
+      { id:'mesa-entradas', name:'Mesa de Entrada', description:'Ingreso y egreso de trámites, consultas generales y recepción de documentación.', color:'bg-sky-500', icon:'inboxIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:10, startTime:'07:00', endTime:'13:00' },
+      { id:'topografia', name:'Depto. de Topografía', description:'Levantamientos topográficos, planimetría y relevantamiento territorial.', color:'bg-emerald-500', icon:'landscapeIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:10, startTime:'07:00', endTime:'13:00' },
+      { id:'planeamiento', name:'Depto. de Planeamiento', description:'Planificación urbana, trazado de calles y ordenamiento territorial.', color:'bg-violet-500', icon:'mapIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
+      { id:'control-tecnico-obras', name:'Depto. de Control Técnico de Obras Part.', description:'Control técnico y aprobación de planos de obras privadas.', color:'bg-amber-500', icon:'engineeringIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
+      { id:'inspeccion-seguridad-urbana', name:'Depto. de Insp. Seguridad Urbana y de Edificación', description:'Inspección de seguridad urbana y condiciones de edificación.', color:'bg-rose-500', icon:'securityIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
+      { id:'inspecciones-obras', name:'Depto. de Inspecciones de Obras Part.', description:'Inspección y fiscalización de obras particulares en ejecución.', color:'bg-cyan-500', icon:'construction', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:8, startTime:'07:00', endTime:'13:00' },
+      { id:'legislacion-urbana', name:'Depto. de Legislación Urbana', description:'Asesoramiento en normativa urbana, códigos de edificación y legislación municipal.', color:'bg-yellow-500', icon:'gavelIcon', active:true, days:[1,2,3,4,5], interval:40, slotsPerDay:6, startTime:'07:00', endTime:'13:00' },
     ]
     for (const area of DEFAULT_AREAS) {
       await pool.query(
@@ -181,6 +181,13 @@ app.post('/api/seed', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// ─── HABILITACIONES COMMERCIALES ───────────────────────────────────
+const habilitacionesRouter = require('./routes/habilitaciones.cjs')
+app.use('/api/habilitaciones', habilitacionesRouter)
+
+// ─── Serve uploads as static files ──────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
 // ─── START ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000

@@ -54,11 +54,11 @@ ON CONFLICT (username) DO NOTHING;
 
 -- Seed default areas (7 áreas de Planeamiento)
 INSERT INTO areas (id, name, description, color, icon, active, days, interval, slots_per_day, start_time, end_time) VALUES
-('mesa-entradas', 'Mesa de Entradas', 'Ingreso y egreso de trámites, consultas generales y recepción de documentación.', 'bg-sky-500', 'inboxIcon', true, '{1,2,3,4,5}', 40, 10, '07:00', '13:00'),
-('catastro', 'Catastro', 'Manzaneros catastrales, administración y división territorial.', 'bg-emerald-500', 'gridOnIcon', true, '{1,2,3,4,5}', 40, 10, '07:00', '13:00'),
-('zonificacion', 'Zonificación', 'Zonificación urbana, trazado de calles y secciones catastrales.', 'bg-violet-500', 'mapIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
-('planos', 'Planos y Digitalización', 'Planos generales digitalizados, redes hídricas y planimetría barrial.', 'bg-amber-500', 'architectureIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
-('expedientes', 'Expedientes de Construcción', 'Registro y control de expedientes de obras privadas.', 'bg-rose-500', 'folderSharedIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
-('mensuras', 'Mensuras y Archivo Técnico', 'Visado de planos de mensura y organización del archivo técnico.', 'bg-cyan-500', 'straightenIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
-('autorizaciones-electricas', 'Autorizaciones Eléctricas', 'Autorización precaria del servicio de energía eléctrica.', 'bg-yellow-500', 'boltIcon', true, '{1,2,3,4,5}', 40, 6, '07:00', '13:00')
+('mesa-entradas', 'Mesa de Entrada', 'Ingreso y egreso de trámites, consultas generales y recepción de documentación.', 'bg-sky-500', 'inboxIcon', true, '{1,2,3,4,5}', 40, 10, '07:00', '13:00'),
+('topografia', 'Depto. de Topografía', 'Levantamientos topográficos, planimetría y relevantamiento territorial.', 'bg-emerald-500', 'landscapeIcon', true, '{1,2,3,4,5}', 40, 10, '07:00', '13:00'),
+('planeamiento', 'Depto. de Planeamiento', 'Planificación urbana, trazado de calles y ordenamiento territorial.', 'bg-violet-500', 'mapIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
+('control-tecnico-obras', 'Depto. de Control Técnico de Obras Part.', 'Control técnico y aprobación de planos de obras privadas.', 'bg-amber-500', 'engineeringIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
+('inspeccion-seguridad-urbana', 'Depto. de Insp. Seguridad Urbana y de Edificación', 'Inspección de seguridad urbana y condiciones de edificación.', 'bg-rose-500', 'securityIcon', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
+('inspecciones-obras', 'Depto. de Inspecciones de Obras Part.', 'Inspección y fiscalización de obras particulares en ejecución.', 'bg-cyan-500', 'construction', true, '{1,2,3,4,5}', 40, 8, '07:00', '13:00'),
+('legislacion-urbana', 'Depto. de Legislación Urbana', 'Asesoramiento en normativa urbana, códigos de edificación y legislación municipal.', 'bg-yellow-500', 'gavelIcon', true, '{1,2,3,4,5}', 40, 6, '07:00', '13:00')
 ON CONFLICT (id) DO NOTHING;
