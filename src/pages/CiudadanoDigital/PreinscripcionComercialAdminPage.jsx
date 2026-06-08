@@ -236,8 +236,8 @@ export default function PreinscripcionComercialAdminPage() {
       let aVal, bVal;
       switch (sortField) {
         case 'fecha':
-          aVal = new Date(a.fecha || 0).getTime();
-          bVal = new Date(b.fecha || 0).getTime();
+          aVal = new Date(a.created_at || a.fecha || 0).getTime();
+          bVal = new Date(b.created_at || b.fecha || 0).getTime();
           break;
         case 'tipo':
           aVal = a.tipo_persona || '';
@@ -264,8 +264,8 @@ export default function PreinscripcionComercialAdminPage() {
           bVal = b.sub_categoria || '';
           break;
         default:
-          aVal = a.fecha || '';
-          bVal = b.fecha || '';
+          aVal = a.created_at || a.fecha || '';
+          bVal = b.created_at || b.fecha || '';
       }
       if (typeof aVal === 'string') {
         return sortDirection === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
@@ -827,7 +827,7 @@ export default function PreinscripcionComercialAdminPage() {
                           {getTramiteLabel(item.sub_categoria)}
                         </td>
                         <td className="px-4 py-3 text-slate-400 text-xs">
-                          {formatDate(item.fecha)}
+                          {formatDate(item.created_at || item.fecha)}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
