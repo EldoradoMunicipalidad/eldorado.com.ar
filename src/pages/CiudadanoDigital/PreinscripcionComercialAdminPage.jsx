@@ -18,7 +18,6 @@ import {
   LogOut,
   UserCheck,
   Building2,
-  Eye,
   FileText,
   Mail,
   Phone,
