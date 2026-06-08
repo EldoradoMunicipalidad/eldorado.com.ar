@@ -729,7 +729,7 @@ export default function PreinscripcionComercialAdminPage() {
                   {getStatusBadge(selectedItem.status)}
                 </div>
                 <div className="text-xs text-slate-400">
-                  Recibido: {formatDate(selectedItem.fecha)}
+                  Recibido: {formatDate(selectedItem.created_at || selectedItem.fecha)}
                 </div>
               </div>
 
@@ -758,14 +758,16 @@ export default function PreinscripcionComercialAdminPage() {
                       </div>
                       <div>
                         <span className="text-xs text-slate-400">Apellido y Nombre</span>
-                        <p className="text-sm font-medium text-slate-700">{selectedItem.apellido || '-'}</p>
+                        <p className="text-sm font-medium text-slate-700">
+                          {[selectedItem.apellido, selectedItem.nombre].filter(Boolean).join(', ') || '-'}
+                        </p>
                       </div>
                     </>
                   )}
                   {selectedItem.tipo_persona === 'juridica' && (
                     <div className="md:col-span-2">
                       <span className="text-xs text-slate-400">Razón Social</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.apellido_alt || '-'}</p>
+                      <p className="text-sm font-medium text-slate-700">{selectedItem.apellido || '-'}</p>
                     </div>
                   )}
                   <div>
@@ -816,6 +818,42 @@ export default function PreinscripcionComercialAdminPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Superficie */}
+              {(selectedItem.superficie_cubierta || selectedItem.superficie_semicubierta || selectedItem.superficie_total || selectedItem.georeferenciacion) && (
+              <div>
+                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />
+                  Superficie del Local
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 rounded-xl p-4">
+                  {selectedItem.superficie_cubierta && (
+                    <div>
+                      <span className="text-xs text-slate-400">Superficie Cubierta</span>
+                      <p className="text-sm font-medium text-slate-700">{selectedItem.superficie_cubierta}</p>
+                    </div>
+                  )}
+                  {selectedItem.superficie_semicubierta && (
+                    <div>
+                      <span className="text-xs text-slate-400">Superficie Semicubierta</span>
+                      <p className="text-sm font-medium text-slate-700">{selectedItem.superficie_semicubierta}</p>
+                    </div>
+                  )}
+                  {selectedItem.superficie_total && (
+                    <div>
+                      <span className="text-xs text-slate-400">Superficie Total</span>
+                      <p className="text-sm font-medium text-slate-700">{selectedItem.superficie_total}</p>
+                    </div>
+                  )}
+                  {selectedItem.georeferenciacion && (
+                    <div className="md:col-span-3">
+                      <span className="text-xs text-slate-400">Georeferenciación</span>
+                      <p className="text-sm font-medium text-slate-700">{selectedItem.georeferenciacion}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+              )}
 
               {/* Actividad */}
               <div>
