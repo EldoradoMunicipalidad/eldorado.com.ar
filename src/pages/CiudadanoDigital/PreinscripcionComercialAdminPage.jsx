@@ -65,6 +65,7 @@ export default function PreinscripcionComercialAdminPage() {
   const [toast, setToast] = useState(null);
   const [visibleCount, setVisibleCount] = useState(10);
   const [saving, setSaving] = useState(false);
+  const [confirmSave, setConfirmSave] = useState(false);
 
   // Detail modal state
   const [detailStatus, setDetailStatus] = useState('');
@@ -727,7 +728,12 @@ export default function PreinscripcionComercialAdminPage() {
                     visibleData.map((item) => (
                       <tr
                         key={item.id}
-                        className="border-b border-gray-50 hover:bg-sky-50/30 transition-colors"
+                        className={`border-b border-gray-50 hover:bg-sky-50/30 transition-colors ${
+                          item.status === 'pendiente' ? 'border-l-4 border-l-amber-400' :
+                          item.status === 'en_revision' ? 'border-l-4 border-l-blue-400' :
+                          item.status === 'finalizado' ? 'border-l-4 border-l-emerald-400' :
+                          ''
+                        }`}
                       >
                         <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
                         <td className="px-4 py-3">{getTipoPersonaBadge(item.tipo_persona)}</td>
@@ -1073,28 +1079,42 @@ export default function PreinscripcionComercialAdminPage() {
                 onClick={() => {
                   setShowDetailModal(false);
                   setSelectedItem(null);
+                  setConfirmSave(false);
                 }}
                 className="px-5 py-2.5 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
               >
                 Cancelar
               </button>
-              <button
-                onClick={handleSaveDetail}
-                disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 transition-colors disabled:opacity-50"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    Guardar Cambios
-                  </>
-                )}
-              </button>
+              {confirmSave ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setConfirmSave(false)}
+                    className="px-5 py-2.5 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
+                  >
+                    Volver
+                  </button>
+                  <button
+                    onClick={() => { setConfirmSave(false); handleSaveDetail(); }}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 text-white rounded-xl font-semibold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                    ) : (
+                      <><CheckCircle2 className="w-4 h-4" /> Confirmar Cambio</>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmSave(true)}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  Guardar Cambios
+                </button>
+              )}
             </div>
           </div>
         </div>
