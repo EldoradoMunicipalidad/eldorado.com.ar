@@ -65,7 +65,7 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li><Link to="/gobierno-abierto" className="text-slate-500 hover:text-blue-600 transition-colors">Gobierno abierto</Link></li>
               <li><a href="https://www.municipalidad.com/eldo/home/menu" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors">Portal tributario</a></li>
-              <li><a href="https://reclamos.eldorado.gob.ar/" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors">Reclamos</a></li>
+              <li><a href="/ciudadano-digital/reclamos" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors">Reclamos</a></li>
               <li><Link to="/gobierno-abierto/boletin-oficial" className="text-slate-500 hover:text-blue-600 transition-colors">Boletín oficial</Link></li>
             </ul>
           </div>

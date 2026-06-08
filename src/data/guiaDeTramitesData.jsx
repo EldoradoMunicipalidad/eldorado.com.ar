@@ -58,8 +58,8 @@ export const GUIAS_POR_CATEGORIA = [
             { titulo: "Obtención del Carnet de Manipulador de Alimentos", enlace: "/gobierno/secretaria-de-ambiente/bromatologia-y-zoonosis" },
             { titulo: "Inscripción para el curso de manipulación segura de alimentos", enlace: "/gobierno/secretaria-de-ambiente/bromatologia-y-zoonosis" },
             { titulo: "Renovación del Carnet de Manipulador de Alimentos", enlace: "/gobierno/secretaria-de-ambiente/bromatologia-y-zoonosis" },
-            { titulo: "Informe de habilitación Comercial para Rubros Alimenticios", enlace: "https://sistema-de-gestion-comercial.vercel.app/formulario" },
-            { titulo: "Solicitud de Carnet de Vendedor Ambulante", enlace: "https://sistema-de-gestion-comercial.vercel.app/formulario" }
+            { titulo: "Informe de habilitación Comercial para Rubros Alimenticios", enlace: "/ciudadano-digital/preinscripcion-comercial" },
+            { titulo: "Solicitud de Carnet de Vendedor Ambulante", enlace: "/ciudadano-digital/preinscripcion-comercial" }
         ]
     },
     {

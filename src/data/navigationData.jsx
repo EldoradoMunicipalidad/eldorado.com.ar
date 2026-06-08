@@ -634,7 +634,7 @@ export const itemsCiudadanoDigital = [
       {
         title: "Habilitacion comercial",
         keywords: [{ label: "Tramite de habilitacion para comercios.", to: "" }],
-        to: "https://sistema-de-gestion-comercial.vercel.app/formulario"
+        to: "/ciudadano-digital/preinscripcion-comercial"
       }
     ],
   },

@@ -17,7 +17,7 @@ export const TramitesAndServiciosSection = () => {
       Icon: Icons.ComercialIcon,
       title: "Preinscripción Comercial",
       subtitle: "Iniciá la habilitación comercial de tu emprendimiento",
-      to: "https://sistema-de-gestion-comercial.vercel.app/formulario"
+      to: "/ciudadano-digital/preinscripcion-comercial"
     },
     {
       id: 3,
@@ -66,7 +66,7 @@ export const TramitesAndServiciosSection = () => {
       Icon: Icons.ReclamosIcon,
       title: "Reclamos",
       subtitle: "Registrá incidencias y seguí el estado de tu solicitud",
-      to: "https://reclamos-ciudadanos.vercel.app/"
+      to: "/ciudadano-digital/reclamos"
     },
     {
       id: 10,
