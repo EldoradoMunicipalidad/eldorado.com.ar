@@ -1,17 +1,9 @@
-import { db, storage } from './firebase'
-import {
-  collection,
-  addDoc,
-  Timestamp,
-  query,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-} from 'firebase/firestore'
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
+// PostgreSQL data layer for Reclamos Ciudadanos
+// Replaces Firebase Firestore + Storage with REST API calls
 
-// ─── Generar código único ────────────────────────────
+const API = '/api/reclamos'
+
+// ─── Generate unique code ────────────────────────────
 export function generarCodigo() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
   let code = 'RC-'
@@ -23,62 +15,203 @@ export function generarCodigo() {
 
 // ─── Guardar reclamo ─────────────────────────────────
 export async function guardarReclamo(data) {
-  const docRef = await addDoc(collection(db, 'reclamos'), {
-    ...data,
-    estado: 'pendiente',
-    notas_internas: '',
-    respuesta_ciudadano: '',
-    asignado_a: '',
-    created_at: Timestamp.now(),
+  const res = await fetch(`${API}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   })
-  return docRef.id
+  if (!res.ok) throw new Error('Error al guardar reclamo')
+  return await res.json()
 }
 
 // ─── Subir foto ──────────────────────────────────────
 export function subirFoto(file, onProgress, onComplete, onError) {
-  const storageRef = ref(storage, `reclamos/${Date.now()}_${file.name}`)
-  const task = uploadBytesResumable(storageRef, file)
+  const formData = new FormData()
+  formData.append('file', file)
 
-  task.on(
-    'state_changed',
-    (snapshot) => {
-      const progress = Math.round(
-        (snapshot.bytesTransferred / snapshot.totalBytes) * 100
-      )
+  const xhr = new XMLHttpRequest()
+
+  xhr.upload.onprogress = (e) => {
+    if (e.lengthComputable) {
+      const progress = Math.round((e.loaded / e.total) * 100)
       onProgress(progress)
-    },
-    (error) => {
-      onError(error)
-    },
-    async () => {
-      const url = await getDownloadURL(task.snapshot.ref)
-      onComplete(url)
     }
-  )
+  }
+
+  xhr.onload = () => {
+    if (xhr.status === 200) {
+      try {
+        const data = JSON.parse(xhr.responseText)
+        onComplete(data.url)
+      } catch (e) {
+        onError(new Error('Error al procesar la respuesta'))
+      }
+    } else {
+      onError(new Error('Error al subir la foto'))
+    }
+  }
+
+  xhr.onerror = () => onError(new Error('Error de red'))
+
+  xhr.open('POST', `${API}/upload`)
+  xhr.send(formData)
 }
 
 // ─── Obtener categorías ──────────────────────────────
-export async function getCategorias() {
-  const q = query(
-    collection(db, 'categorias_reclamos'),
-    where('activa', '==', true),
-    orderBy('orden', 'asc')
-  )
-  const snap = await getDocs(q)
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+export async function getCategorias(activas = true) {
+  try {
+    const res = await fetch(`${API}/categorias?activas=${activas}`)
+    const data = await res.json()
+    return Array.isArray(data) ? data : []
+  } catch (e) {
+    console.warn('getCategorias error:', e.message)
+    return []
+  }
 }
 
 // ─── Buscar reclamo por código ────────────────────────
 export async function buscarReclamo(codigo) {
-  const q = query(
-    collection(db, 'reclamos'),
-    where('codigo', '==', codigo),
-    limit(1)
-  )
-  const snap = await getDocs(q)
-  if (snap.empty) return null
-  const doc = snap.docs[0]
-  return { id: doc.id, ...doc.data() }
+  try {
+    const res = await fetch(`${API}/search?codigo=${encodeURIComponent(codigo)}`)
+    const data = await res.json()
+    return data || null
+  } catch (e) {
+    console.warn('buscarReclamo error:', e.message)
+    return null
+  }
+}
+
+// ─── Obtener reclamos (paginado) ─────────────────────
+export async function getReclamos(page = 1, limit = 15, filters = {}) {
+  try {
+    const params = new URLSearchParams()
+    params.set('page', page)
+    params.set('limit', limit)
+    if (filters.estado && filters.estado !== 'todos') params.set('estado', filters.estado)
+    if (filters.categoria) params.set('categoria', filters.categoria)
+    if (filters.search) params.set('search', filters.search)
+    if (filters.sort) params.set('sort', filters.sort)
+    if (filters.order) params.set('order', filters.order)
+
+    const res = await fetch(`${API}?${params}`)
+    const data = await res.json()
+    return {
+      entries: data.entries || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      limit: data.limit || limit,
+    }
+  } catch (e) {
+    console.warn('getReclamos error:', e.message)
+    return { entries: [], total: 0, page: 1, limit }
+  }
+}
+
+// ─── Obtener stats ───────────────────────────────────
+export async function getReclamosStats() {
+  try {
+    const res = await fetch(`${API}/stats`)
+    return await res.json()
+  } catch (e) {
+    console.warn('getReclamosStats error:', e.message)
+    return { total: 0, pendientes: 0, en_revision: 0, asignados: 0, en_proceso: 0, resueltos: 0, rechazados: 0 }
+  }
+}
+
+// ─── Actualizar reclamo ──────────────────────────────
+export async function updateReclamo(id, data) {
+  try {
+    const res = await fetch(`${API}/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error('Error al actualizar')
+    return await res.json()
+  } catch (e) {
+    console.warn('updateReclamo error:', e.message)
+    return null
+  }
+}
+
+// ─── Eliminar reclamo ────────────────────────────────
+export async function deleteReclamo(id) {
+  try {
+    const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+    return res.ok
+  } catch (e) {
+    console.warn('deleteReclamo error:', e.message)
+    return false
+  }
+}
+
+// ─── Categorías CRUD (admin) ─────────────────────────
+export async function crearCategoria(data) {
+  const res = await fetch(`${API}/categorias`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return await res.json()
+}
+
+export async function actualizarCategoria(id, data) {
+  const res = await fetch(`${API}/categorias/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  return await res.json()
+}
+
+export async function eliminarCategoria(id) {
+  const res = await fetch(`${API}/categorias/${id}`, { method: 'DELETE' })
+  return res.ok
+}
+
+// ─── Auth ────────────────────────────────────────────
+export async function authenticateAdmin(username, password) {
+  try {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    const data = await res.json()
+    return data.authenticated === true
+  } catch (e) {
+    console.warn('authenticateAdmin error:', e.message)
+    return false
+  }
+}
+
+// ─── Admins CRUD ─────────────────────────────────────
+export async function getAdmins() {
+  try {
+    const res = await fetch(`${API}/admins`)
+    return await res.json()
+  } catch (e) {
+    console.warn('getAdmins error:', e.message)
+    return []
+  }
+}
+
+export async function createAdmin(username, password, nombre, email) {
+  const res = await fetch(`${API}/admins`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, nombre, email }),
+  })
+  if (!res.ok) {
+    const err = await res.json()
+    throw new Error(err.error || 'Error al crear admin')
+  }
+  return await res.json()
+}
+
+export async function deleteAdmin(username) {
+  const res = await fetch(`${API}/admins/${encodeURIComponent(username)}`, { method: 'DELETE' })
+  return res.ok
 }
 
 // ─── Labels de estado ─────────────────────────────────

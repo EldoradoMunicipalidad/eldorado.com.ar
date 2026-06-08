@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Search, MapPin, Clock, Loader2, AlertCircle, CircleCheck, FileImage, Mail } from 'lucide-react'
+import { Search, MapPin, Clock, Loader2, AlertCircle, CircleCheck, FileImage, Mail, Copy, Check } from 'lucide-react'
 import { buscarReclamo, ESTADO_LABELS, ESTADO_COLORS } from '../../lib/reclamos'
 
 const ELDORADO = [-26.3983, -54.6167]
 
-function formatearFecha(timestamp) {
-  if (!timestamp) return '—'
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp)
+function formatearFecha(dateStr) {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr)
   return date.toLocaleDateString('es-AR', {
     year: 'numeric',
     month: 'long',
@@ -26,7 +26,6 @@ function MapaReclamo({ lat, lng }) {
       import('leaflet'),
       import('react-leaflet'),
     ]).then(([L, ReactLeaflet]) => {
-      // Fix default marker icon
       const DefaultIcon = L.icon({
         iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -60,7 +59,7 @@ function MapaReclamo({ lat, lng }) {
   }
 
   const { MapContainer, TileLayer, Marker, Popup } = MapComponents
-  const center = lat && lng ? [lat, lng] : ELDORADO
+  const center = lat && lng ? [parseFloat(lat), parseFloat(lng)] : ELDORADO
 
   return (
     <div className="rounded-lg overflow-hidden border border-slate-200" style={{ height: '220px' }}>
@@ -77,7 +76,7 @@ function MapaReclamo({ lat, lng }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         {lat && lng && (
-          <Marker position={[lat, lng]}>
+          <Marker position={[parseFloat(lat), parseFloat(lng)]}>
             <Popup>Ubicación del reclamo</Popup>
           </Marker>
         )}
@@ -120,30 +119,24 @@ export default function SeguimientoPage() {
   }, [codigo])
 
   return (
-    <>
-      {/* Hero Section */}
-      <div className="bg-slate-50 text-slate-900 font-sans">
-        <main className="max-w-7xl mx-auto px-6 py-10 md:py-16">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12 md:mb-20">
-            <div>
-              <h1 className="text-3xl md:text-5xl font-light text-sky-500 leading-tight">
-                Seguimiento <br />
-                <span className="text-4xl md:text-6xl text-sky-500 font-semibold">de Reclamos</span>
-              </h1>
-            </div>
-            <div>
-              <p className="text-lg md:text-slate-600 pl-6">
-                Ingresá el código de tu reclamo para conocer su estado, ubicación y toda la
-                información actualizada sobre su gestión.
-              </p>
-            </div>
+    <div className="bg-slate-50 text-slate-900 font-sans">
+      <main className="max-w-7xl mx-auto px-6 py-10 md:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12 md:mb-20">
+          <div>
+            <h1 className="text-3xl md:text-5xl font-light text-sky-500 leading-tight">
+              Seguimiento <br />
+              <span className="text-4xl md:text-6xl text-sky-500 font-semibold">de Reclamos</span>
+            </h1>
           </div>
-        </main>
-      </div>
+          <div>
+            <p className="text-lg md:text-slate-600 pl-6">
+              Ingresá el código de tu reclamo para conocer su estado, ubicación y toda la información actualizada sobre su gestión.
+            </p>
+          </div>
+        </div>
+      </main>
 
-      {/* Content */}
       <div className="max-w-3xl mx-auto px-6 pb-16 -mt-8">
-        {/* Search Card */}
         <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8 mb-8">
           <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
@@ -162,21 +155,14 @@ export default function SeguimientoPage() {
               className="px-6 py-3 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
             >
               {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Buscando...
-                </>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Buscando...</>
               ) : (
-                <>
-                  <Search className="w-4 h-4" />
-                  Buscar
-                </>
+                <><Search className="w-4 h-4" /> Buscar</>
               )}
             </button>
           </form>
         </div>
 
-        {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
@@ -184,7 +170,6 @@ export default function SeguimientoPage() {
           </div>
         )}
 
-        {/* Error */}
         {error && (
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8">
             <div className="flex flex-col items-center text-center py-6">
@@ -193,18 +178,14 @@ export default function SeguimientoPage() {
               <p className="text-sm text-slate-500 max-w-md">{error}</p>
               <p className="text-xs text-slate-400 mt-3">
                 Verificá que el código ingresado sea correcto. El formato es{' '}
-                <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
-                  RC-XXXXXX
-                </span>
+                <span className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">RC-XXXXXX</span>
               </p>
             </div>
           </div>
         )}
 
-        {/* Result */}
         {reclamo && !loading && (
           <div className="space-y-6">
-            {/* Header Card */}
             <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                 <div className="flex-1 min-w-0">
@@ -212,11 +193,7 @@ export default function SeguimientoPage() {
                     <span className="text-xs font-mono font-semibold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
                       {reclamo.codigo}
                     </span>
-                    <span
-                      className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${
-                        ESTADO_COLORS[reclamo.estado] || 'bg-gray-50 text-gray-700 border-gray-200'
-                      }`}
-                    >
+                    <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${ESTADO_COLORS[reclamo.estado] || 'bg-gray-50 text-gray-700 border-gray-200'}`}>
                       {ESTADO_LABELS[reclamo.estado] || reclamo.estado}
                     </span>
                   </div>
@@ -226,7 +203,6 @@ export default function SeguimientoPage() {
                 </div>
               </div>
 
-              {/* Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 {reclamo.categoria && (
                   <div className="flex items-start gap-3">
@@ -242,28 +218,20 @@ export default function SeguimientoPage() {
                     <Clock className="w-4 h-4 text-sky-500 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-xs text-slate-400 mb-0.5">Fecha de presentación</p>
-                      <p className="text-sm font-medium text-slate-700">
-                        {formatearFecha(reclamo.created_at)}
-                      </p>
+                      <p className="text-sm font-medium text-slate-700">{formatearFecha(reclamo.created_at)}</p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Description */}
               {reclamo.descripcion && (
                 <div className="border-t border-slate-100 pt-5">
-                  <p className="text-xs text-slate-400 mb-1.5 uppercase tracking-wider font-medium">
-                    Descripción
-                  </p>
-                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                    {reclamo.descripcion}
-                  </p>
+                  <p className="text-xs text-slate-400 mb-1.5 uppercase tracking-wider font-medium">Descripción</p>
+                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{reclamo.descripcion}</p>
                 </div>
               )}
             </div>
 
-            {/* Map Card */}
             {(reclamo.lat || reclamo.lng) && (
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8">
                 <div className="flex items-center gap-2 mb-4">
@@ -277,14 +245,11 @@ export default function SeguimientoPage() {
               </div>
             )}
 
-            {/* Photos */}
             {reclamo.fotos && reclamo.fotos.length > 0 && (
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8">
                 <div className="flex items-center gap-2 mb-4">
                   <FileImage className="w-5 h-5 text-sky-500" />
-                  <h3 className="text-base font-semibold text-slate-800">
-                    Fotos ({reclamo.fotos.length})
-                  </h3>
+                  <h3 className="text-base font-semibold text-slate-800">Fotos ({reclamo.fotos.length})</h3>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {reclamo.fotos.map((url, i) => (
@@ -307,7 +272,6 @@ export default function SeguimientoPage() {
               </div>
             )}
 
-            {/* Municipal Response */}
             {reclamo.respuesta_ciudadano && (
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8">
                 <div className="flex items-start gap-3">
@@ -315,56 +279,40 @@ export default function SeguimientoPage() {
                     <Mail className="w-4 h-4 text-sky-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-slate-800 mb-1">
-                      Respuesta municipal
-                    </h3>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
-                      {reclamo.respuesta_ciudadano}
-                    </p>
+                    <h3 className="text-base font-semibold text-slate-800 mb-1">Respuesta municipal</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{reclamo.respuesta_ciudadano}</p>
                     {reclamo.respuesta_fecha && (
-                      <p className="text-xs text-slate-400 mt-2">
-                        {formatearFecha(reclamo.respuesta_fecha)}
-                      </p>
+                      <p className="text-xs text-slate-400 mt-2">{formatearFecha(reclamo.respuesta_fecha)}</p>
                     )}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Resolved banner */}
             {reclamo.estado === 'resuelto' && (
               <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-start gap-3">
                 <CircleCheck className="w-6 h-6 text-green-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-sm font-semibold text-green-800 mb-1">
-                    Reclamo resuelto
-                  </h3>
+                  <h3 className="text-sm font-semibold text-green-800 mb-1">Reclamo resuelto</h3>
                   <p className="text-sm text-green-700">
-                    Este reclamo fue marcado como resuelto por el municipio. Si necesitás más
-                    información podés comunicarte con la dependencia correspondiente.
+                    Este reclamo fue marcado como resuelto por el municipio. Si necesitás más información podés comunicarte con la dependencia correspondiente.
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Archived/Rejected banner */}
             {reclamo.estado === 'rechazado' && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-5 flex items-start gap-3">
                 <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-sm font-semibold text-red-800 mb-1">
-                    Reclamo rechazado
-                  </h3>
+                  <h3 className="text-sm font-semibold text-red-800 mb-1">Reclamo rechazado</h3>
                   <p className="text-sm text-red-700">
-                    {reclamo.notas_internas
-                      ? reclamo.notas_internas
-                      : 'El reclamo fue rechazado. Para más información comunicate con el municipio.'}
+                    {reclamo.notas_internas || 'El reclamo fue rechazado. Para más información comunicate con el municipio.'}
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Footer action */}
             <div className="text-center pt-2">
               <Link
                 to="/ciudadano-digital"
@@ -376,22 +324,18 @@ export default function SeguimientoPage() {
           </div>
         )}
 
-        {/* Initial state (no search yet) */}
         {!buscado && !loading && !reclamo && (
           <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 md:p-8">
             <div className="flex flex-col items-center text-center py-8">
               <Search className="w-12 h-12 text-slate-300 mb-4" />
-              <h3 className="text-base font-semibold text-slate-700 mb-2">
-                Buscar un reclamo
-              </h3>
+              <h3 className="text-base font-semibold text-slate-700 mb-2">Buscar un reclamo</h3>
               <p className="text-sm text-slate-400 max-w-md">
-                Ingresá el código alfanumérico que recibiste al presentar tu reclamo para
-                consultar su estado y toda la información asociada.
+                Ingresá el código alfanumérico que recibiste al presentar tu reclamo para consultar su estado y toda la información asociada.
               </p>
             </div>
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }

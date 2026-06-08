@@ -39,8 +39,16 @@ CREATE TABLE IF NOT EXISTS config (
 
 CREATE TABLE IF NOT EXISTS admins (
   username TEXT PRIMARY KEY,
-  password_hash TEXT NOT NULL
+  password_hash TEXT NOT NULL,
+  rol TEXT DEFAULT 'admin',
+  nombre TEXT DEFAULT '',
+  email TEXT DEFAULT ''
 );
+
+-- Add columns if missing (safe migration)
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS rol TEXT DEFAULT 'admin';
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS nombre TEXT DEFAULT '';
+ALTER TABLE admins ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 
 -- Seed default config
 INSERT INTO config (id, max_per_day, turnero_paused)

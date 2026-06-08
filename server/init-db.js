@@ -40,6 +40,16 @@ async function init() {
     process.exit(1)
   }
 
+  // Run reclamos schema
+  const reclamosSql = fs.readFileSync(path.join(__dirname, 'reclamos.sql'), 'utf8')
+  try {
+    await pool.query(reclamosSql)
+    console.log('✅ Reclamos tables initialized successfully!')
+  } catch (err) {
+    console.error('❌ Error initializing reclamos tables:', err.message)
+    process.exit(1)
+  }
+
   await pool.end()
   console.log('🎉 All done!')
 }

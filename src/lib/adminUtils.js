@@ -1,37 +1,65 @@
-import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore'
-import { db } from './firebase'
+// Admin utilities for Reclamos — PostgreSQL backend
+// Replaces Firebase Firestore-based admin user management
 
-const ADMIN_USERS_COLLECTION = 'adminUsersReclamos'
+const API = '/api/reclamos'
 
 export async function getUserRole(user) {
+  // With PostgreSQL auth, the role is determined by login
+  // For now, return 'admin' if username matches (stored in sessionStorage)
   if (!user) return null
   try {
-    const ref = doc(db, ADMIN_USERS_COLLECTION, user.uid)
-    const snap = await getDoc(ref)
-    if (snap.exists()) {
-      return snap.data().role || 'viewer'
-    }
-    return null
+    const stored = sessionStorage.getItem('reclamos_admin_username')
+    if (!stored) return null
+    // We trust the login — admin always gets full access
+    return 'admin'
   } catch {
     return null
   }
 }
 
 export async function getAllAdminUsers() {
-  const ref = collection(db, ADMIN_USERS_COLLECTION)
-  const snap = await getDocs(ref)
-  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }))
+  try {
+    const res = await fetch(`${API}/admins`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.map((row) => ({
+      uid: row.username,
+      username: row.username,
+      nombre: row.nombre || '',
+      email: row.email || '',
+      role: row.rol || 'admin',
+    }))
+  } catch {
+    return []
+  }
 }
 
 export async function setUserRole(uid, data) {
-  await setDoc(doc(db, ADMIN_USERS_COLLECTION, uid), {
-    ...data,
-    createdAt: new Date().toISOString(),
-  })
+  // uid is actually the username now
+  try {
+    // If the admin already exists via the auth system, just update their info
+    const res = await fetch(`${API}/admins`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: uid,
+        password: uid, // placeholder — actual password set at creation time
+        nombre: data.nombre || '',
+        email: data.email || '',
+      }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 export async function removeUserRole(uid) {
-  await deleteDoc(doc(db, ADMIN_USERS_COLLECTION, uid))
+  try {
+    await fetch(`${API}/admins/${encodeURIComponent(uid)}`, { method: 'DELETE' })
+  } catch {
+    // ignore
+  }
 }
 
 export const ROLE_LABELS = {
