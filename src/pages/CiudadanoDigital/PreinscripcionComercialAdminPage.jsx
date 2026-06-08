@@ -855,30 +855,15 @@ export default function PreinscripcionComercialAdminPage() {
                   Documentos Adjuntos
                 </h4>
                 <div className="bg-slate-50 rounded-xl p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {selectedItem.dni_file && (
-                      <DocLink label="DNI" url={selectedItem.dni_file} />
-                    )}
-                    {selectedItem.estatuto_file && (
-                      <DocLink label="Estatuto Social" url={selectedItem.estatuto_file} />
-                    )}
-                    {selectedItem.acta_designacion_file && (
-                      <DocLink label="Acta Designación" url={selectedItem.acta_designacion_file} />
-                    )}
-                    {selectedItem.documento_propiedad_file && (
-                      <DocLink label="Documento Propiedad" url={selectedItem.documento_propiedad_file} />
-                    )}
-                    {selectedItem.constancia_arca_file && (
-                      <DocLink label="Constancia ARCA/ATM" url={selectedItem.constancia_arca_file} />
-                    )}
-                    {!selectedItem.dni_file &&
-                      !selectedItem.estatuto_file &&
-                      !selectedItem.acta_designacion_file &&
-                      !selectedItem.documento_propiedad_file &&
-                      !selectedItem.constancia_arca_file && (
-                        <p className="text-sm text-slate-400 col-span-2">Sin documentos adjuntos</p>
-                      )}
-                  </div>
+                  {selectedItem.archivos && selectedItem.archivos.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {selectedItem.archivos.map((doc, idx) => (
+                        <DocLink key={idx} label={doc.nombre} url={doc.url} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400">Sin documentos adjuntos</p>
+                  )}
                 </div>
               </div>
 
