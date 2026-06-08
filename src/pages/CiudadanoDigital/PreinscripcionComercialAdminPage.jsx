@@ -74,6 +74,14 @@ export default function PreinscripcionComercialAdminPage() {
   // Document preview state
   const [previewDoc, setPreviewDoc] = useState(null);
 
+  // Admin management state
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [admins, setAdmins] = useState([]);
+  const [newAdminUser, setNewAdminUser] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [showDeleteAdminConfirm, setShowDeleteAdminConfirm] = useState(null);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -410,6 +418,63 @@ export default function PreinscripcionComercialAdminPage() {
     );
   };
 
+  // ─── Admin Management ─────────────────────────────────────────
+  const loadAdmins = async () => {
+    setLoadingAdmins(true);
+    try {
+      const res = await fetch('/api/admins');
+      if (res.ok) {
+        const data = await res.json();
+        setAdmins(data);
+      }
+    } catch (e) {
+      console.warn('loadAdmins error:', e.message);
+    } finally {
+      setLoadingAdmins(false);
+    }
+  };
+
+  const handleAddAdmin = async () => {
+    if (!newAdminUser.trim() || !newAdminPass.trim()) {
+      showToast('Completá usuario y contraseña', 'error');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: newAdminUser.trim(), password: newAdminPass }),
+      });
+      if (res.ok) {
+        showToast(`Admin "${newAdminUser}" creado correctamente`);
+        setNewAdminUser('');
+        setNewAdminPass('');
+        loadAdmins();
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Error al crear admin', 'error');
+      }
+    } catch (e) {
+      showToast('Error al crear admin', 'error');
+    }
+  };
+
+  const handleDeleteAdmin = async (username) => {
+    try {
+      const res = await fetch(`/api/admins/${username}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast(`Admin "${username}" eliminado`);
+        setShowDeleteAdminConfirm(null);
+        loadAdmins();
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Error al eliminar', 'error');
+      }
+    } catch {
+      showToast('Error al eliminar admin', 'error');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="bg-slate-50 text-slate-900 font-sans min-h-screen">
@@ -503,6 +568,13 @@ export default function PreinscripcionComercialAdminPage() {
         <div className="flex gap-2 mt-6 flex-wrap">
           <div className="flex-1 min-w-[200px]" />
           <button
+            onClick={() => { setShowAdminModal(true); loadAdmins(); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-sky-600 hover:bg-sky-50 border border-transparent hover:border-sky-200 transition-colors"
+          >
+            <UserCheck className="w-4 h-4" />
+            Usuarios
+          </button>
+          <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
           >
@@ -514,7 +586,9 @@ export default function PreinscripcionComercialAdminPage() {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-pulse flex items-center gap-2">
+        <div className={`fixed top-6 right-6 z-50 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-pulse flex items-center gap-2 ${
+          toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-600'
+        }`}>
           <CheckCircle2 className="w-4 h-4" />
           {toast.message}
         </div>
@@ -1210,6 +1284,117 @@ export default function PreinscripcionComercialAdminPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Management Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-sky-500" />
+                Administradores
+              </h3>
+              <button
+                onClick={() => { setShowAdminModal(false); setShowDeleteAdminConfirm(null); }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-5 space-y-5 overflow-y-auto flex-1">
+              {/* Existing admins */}
+              <div>
+                <h4 className="text-sm font-semibold text-slate-700 mb-3">Usuarios existentes</h4>
+                {loadingAdmins ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-5 h-5 text-sky-500 animate-spin" />
+                  </div>
+                ) : admins.length === 0 ? (
+                  <p className="text-sm text-slate-400">No hay admins cargados</p>
+                ) : (
+                  <div className="space-y-2">
+                    {admins.map((admin) => (
+                      <div
+                        key={admin.username}
+                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
+                            <UserCheck className="w-4 h-4 text-sky-600" />
+                          </div>
+                          <span className="text-sm font-medium text-slate-700">{admin.username}</span>
+                          {admin.username === 'admin' && (
+                            <span className="text-xs bg-sky-100 text-sky-600 px-2 py-0.5 rounded-full font-medium">Principal</span>
+                          )}
+                        </div>
+                        {admin.username !== 'admin' && (
+                          <button
+                            onClick={() => setShowDeleteAdminConfirm(admin.username)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                            title="Eliminar admin"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add new admin */}
+              <div className="border-t border-gray-100 pt-5">
+                <h4 className="text-sm font-semibold text-slate-700 mb-3">Agregar nuevo administrador</h4>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    value={newAdminUser}
+                    onChange={(e) => setNewAdminUser(e.target.value)}
+                    placeholder="Nombre de usuario"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  />
+                  <input
+                    type="password"
+                    value={newAdminPass}
+                    onChange={(e) => setNewAdminPass(e.target.value)}
+                    placeholder="Contraseña"
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  />
+                  <button
+                    onClick={handleAddAdmin}
+                    className="w-full px-4 py-2.5 bg-sky-500 text-white rounded-lg font-semibold text-sm hover:bg-sky-600 transition-colors"
+                  >
+                    Agregar Admin
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Delete admin confirm */}
+            {showDeleteAdminConfirm && (
+              <div className="p-4 border-t border-gray-100 bg-red-50">
+                <p className="text-sm text-red-700 mb-3">
+                  ¿Eliminar al administrador <strong>{showDeleteAdminConfirm}</strong>?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowDeleteAdminConfirm(null)}
+                    className="flex-1 px-4 py-2 border border-gray-200 text-slate-600 rounded-lg font-semibold text-sm hover:bg-white transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => handleDeleteAdmin(showDeleteAdminConfirm)}
+                    className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

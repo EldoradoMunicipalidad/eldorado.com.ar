@@ -182,6 +182,45 @@ app.post('/api/seed', async (req, res) => {
   }
 })
 
+// ─── ADMINS MANAGEMENT ──────────────────────────────────────────
+app.get('/api/admins', async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT username FROM admins ORDER BY username')
+    res.json(rows)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.post('/api/admins', async (req, res) => {
+  try {
+    const { username, password } = req.body
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
+    }
+    const hash = simpleHash(password)
+    await pool.query(
+      'INSERT INTO admins (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash',
+      [username, hash]
+    )
+    res.json({ success: true, username })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+app.delete('/api/admins/:username', async (req, res) => {
+  try {
+    if (req.params.username === 'admin') {
+      return res.status(400).json({ error: 'No se puede eliminar el admin principal' })
+    }
+    await pool.query('DELETE FROM admins WHERE username = $1', [req.params.username])
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ─── HABILITACIONES COMMERCIALES ───────────────────────────────────
 const habilitacionesRouter = require('./routes/habilitaciones.cjs')
 app.use('/api/habilitaciones', habilitacionesRouter)
