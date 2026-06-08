@@ -190,15 +190,38 @@ export async function deleteArea(areaId) {
   }
 }
 
-// ─── APPOINTMENTS ─────────────────────────────────────
-export async function getAppointments() {
+// ─── APPOINTMENTS ────────────────────────────────────────────────────
+export async function getAppointments(page = 1, limit = 200, filters = {}) {
   try {
-    const res = await fetch(`${API}/appointments`)
+    const params = new URLSearchParams()
+    params.set('page', page)
+    params.set('limit', limit)
+    if (filters.status) params.set('status', filters.status)
+    if (filters.areaId) params.set('area_id', filters.areaId)
+    if (filters.date) params.set('date', filters.date)
+
+    const res = await fetch(`${API}/appointments?${params}`)
     const data = await res.json()
-    return data.map(normalizeAppointment)
+
+    // New paginated format: { entries: [...], total, page, limit }
+    if (data && data.entries && Array.isArray(data.entries)) {
+      return {
+        appointments: data.entries.map(normalizeAppointment),
+        total: data.total,
+        page: data.page,
+        limit: data.limit,
+      }
+    }
+
+    // Fallback: raw array (old format, should not happen with new backend)
+    if (Array.isArray(data)) {
+      return { appointments: data.map(normalizeAppointment), total: data.length, page: 1, limit: data.length }
+    }
+
+    return { appointments: [], total: 0, page: 1, limit }
   } catch (e) {
     console.warn('getAppointments error:', e.message)
-    return []
+    return { appointments: [], total: 0, page: 1, limit }
   }
 }
 
@@ -260,10 +283,10 @@ function startPolling() {
     }
     if (subscribers.appointments.size > 0) {
       try {
-        const res = await fetch(`${API}/appointments`)
+        const res = await fetch(`${API}/appointments?limit=500`)
         const data = await res.json()
-        const normalized = data.map(normalizeAppointment)
-        subscribers.appointments.forEach((cb) => cb(normalized))
+        const appts = (data && data.entries) ? data.entries.map(normalizeAppointment) : (Array.isArray(data) ? data.map(normalizeAppointment) : [])
+        subscribers.appointments.forEach((cb) => cb(appts))
       } catch (_) {}
     }
   }, POLL_INTERVAL)
@@ -289,8 +312,14 @@ export function subscribeAreas(callback) {
 
 export function subscribeAppointments(callback) {
   subscribers.appointments.add(callback)
-  // Immediate fetch
-  getAppointments().then((data) => callback(data))
+  // Immediate fetch — pass the array to callbacks (backward compat)
+  getAppointments(1, 500).then((result) => {
+    if (Array.isArray(result)) {
+      callback(result)
+    } else if (result && result.appointments) {
+      callback(result.appointments)
+    }
+  })
   startPolling()
   return () => {
     subscribers.appointments.delete(callback)

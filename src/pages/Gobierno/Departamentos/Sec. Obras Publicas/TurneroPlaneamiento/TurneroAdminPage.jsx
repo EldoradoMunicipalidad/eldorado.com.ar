@@ -5,6 +5,7 @@ import Icon from '../../../../../assets/Icons/Icon'
 import {
   subscribeAreas,
   subscribeAppointments,
+  getAppointments,
   saveArea,
   deleteArea,
   updateAppointmentStatus,
@@ -55,6 +56,14 @@ export default function TurneroAdminPage() {
   const [loading, setLoading] = useState(true)
   const [turneroPaused, setTurneroPaused] = useState(false)
 
+  // Pagination state
+  const PAGE_SIZE = 15
+  const [currentPage, setCurrentPage] = useState(1)
+  const [paginatedAppts, setPaginatedAppts] = useState([])
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalAppts, setTotalAppts] = useState(0)
+  const [apptsLoading, setApptsLoading] = useState(false)
+
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError('')
@@ -97,6 +106,27 @@ export default function TurneroAdminPage() {
     getConfig().then((cfg) => setTurneroPaused(cfg.turneroPaused || false))
     return () => { unsubAreas(); unsubAppts() }
   }, [])
+
+  // Fetch paginated appointments when filters or page change
+  useEffect(() => {
+    if (!isAuthenticated) return
+    setApptsLoading(true)
+    getAppointments(currentPage, PAGE_SIZE, {
+      status: filterStatus !== 'all' ? filterStatus : '',
+      areaId: filterArea !== 'all' ? filterArea : '',
+      date: filterDate,
+    }).then((result) => {
+      setPaginatedAppts(result.appointments || [])
+      setTotalAppts(result.total || 0)
+      setTotalPages(Math.max(1, Math.ceil((result.total || 0) / PAGE_SIZE)))
+      setApptsLoading(false)
+    })
+  }, [currentPage, filterArea, filterDate, filterStatus, isAuthenticated])
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filterArea, filterDate, filterStatus])
 
   const showMsg = (text) => {
     setMessage(text)
@@ -158,17 +188,7 @@ export default function TurneroAdminPage() {
     updateAppointmentStatus(apptId, 'cancelled')
   }
 
-  const filteredAppointments = useMemo(() => {
-    let apps = [...appointments]
-    if (filterArea !== 'all') apps = apps.filter((a) => a.areaId === filterArea)
-    if (filterDate) apps = apps.filter((a) => a.date === filterDate)
-    if (filterStatus !== 'all') apps = apps.filter((a) => a.status === filterStatus)
-    return apps.sort((a, b) => {
-      const aTime = a.createdAt?.toMillis?.() || 0
-      const bTime = b.createdAt?.toMillis?.() || 0
-      return bTime - aTime
-    })
-  }, [appointments, filterArea, filterDate, filterStatus])
+  // note: server-side paginated via getAppointments() in useEffect
 
   if (!isAuthenticated) {
     return (
@@ -582,66 +602,157 @@ export default function TurneroAdminPage() {
                 </div>
               </div>
 
-              {filteredAppointments.length === 0 ? (
+              {apptsLoading ? (
+                <div className="p-10 bg-white rounded-2xl border border-slate-200 text-center">
+                  <div className="animate-spin w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full mx-auto mb-3" />
+                  <p className="text-slate-500 text-sm">Cargando turnos...</p>
+                </div>
+              ) : paginatedAppts.length === 0 ? (
                 <div className="p-10 bg-white rounded-2xl border border-slate-200 text-center">
                   <Icon name="eventBusyIcon" size={48} className="text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-500">No hay turnos con los filtros seleccionados</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
-                        <th className="text-left px-4 py-3">N°</th>
-                        <th className="text-left px-4 py-3">Área</th>
-                        <th className="text-left px-4 py-3">Persona</th>
-                        <th className="text-left px-4 py-3">DNI</th>
-                        <th className="text-left px-4 py-3">Teléfono</th>
-                        <th className="text-left px-4 py-3">Fecha</th>
-                        <th className="text-left px-4 py-3">Hora</th>
-                        <th className="text-left px-4 py-3">Estado</th>
-                        <th className="text-left px-4 py-3">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredAppointments.map((appt) => (
-                        <tr key={appt.id} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-3 font-mono text-xs text-slate-400">
-                            {appt.id?.slice(0, 8) || '—'}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-slate-800">{appt.areaName}</td>
-                          <td className="px-4 py-3 text-slate-700">{appt.apellido}, {appt.nombre}</td>
-                          <td className="px-4 py-3 text-slate-600 font-mono">{appt.dni}</td>
-                          <td className="px-4 py-3 text-slate-600">{appt.telefono}</td>
-                          <td className="px-4 py-3 text-slate-600">
-                            {appt.date ? new Date(appt.date + 'T12:00:00').toLocaleDateString('es-AR', {
-                              day: '2-digit', month: '2-digit', year: '2-digit'
-                            }) : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-slate-600">{appt.time || '—'}</td>
-                          <td className="px-4 py-3">{getStatusBadge(appt.status)}</td>
-                          <td className="px-4 py-3">
-                            {appt.status === 'pending' && (
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() => handleMarkAttended(appt.id)}
-                                  className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-200 transition-colors"
-                                >
-                                  Atendido
-                                </button>
-                                <button
-                                  onClick={() => handleCancelAppointment(appt.id)}
-                                  className="px-2.5 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
-                            )}
-                          </td>
+                <div>
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold">
+                          <th className="text-left px-4 py-3">N°</th>
+                          <th className="text-left px-4 py-3">Área</th>
+                          <th className="text-left px-4 py-3">Persona</th>
+                          <th className="text-left px-4 py-3">DNI</th>
+                          <th className="text-left px-4 py-3">Teléfono</th>
+                          <th className="text-left px-4 py-3">Fecha</th>
+                          <th className="text-left px-4 py-3">Hora</th>
+                          <th className="text-left px-4 py-3">Estado</th>
+                          <th className="text-left px-4 py-3">Acción</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {paginatedAppts.map((appt) => (
+                          <tr key={appt.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-4 py-3 font-mono text-xs text-slate-400">
+                              {appt.id?.slice(0, 8) || '—'}
+                            </td>
+                            <td className="px-4 py-3 font-medium text-slate-800">{appt.areaName}</td>
+                            <td className="px-4 py-3 text-slate-700">{appt.apellido}, {appt.nombre}</td>
+                            <td className="px-4 py-3 text-slate-600 font-mono">{appt.dni}</td>
+                            <td className="px-4 py-3 text-slate-600">{appt.telefono}</td>
+                            <td className="px-4 py-3 text-slate-600">
+                              {appt.date ? new Date(appt.date + 'T12:00:00').toLocaleDateString('es-AR', {
+                                day: '2-digit', month: '2-digit', year: '2-digit'
+                              }) : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600">{appt.time || '—'}</td>
+                            <td className="px-4 py-3">{getStatusBadge(appt.status)}</td>
+                            <td className="px-4 py-3">
+                              {appt.status === 'pending' && (
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleMarkAttended(appt.id)}
+                                    className="px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold hover:bg-emerald-200 transition-colors"
+                                  >
+                                    Atendido
+                                  </button>
+                                  <button
+                                    onClick={() => handleCancelAppointment(appt.id)}
+                                    className="px-2.5 py-1 bg-red-50 text-red-500 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 px-1">
+                      <span className="text-sm text-slate-500">
+                        Página {currentPage} de {totalPages} ({totalAppts} turnos)
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                          disabled={currentPage <= 1}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            currentPage <= 1
+                              ? 'border-slate-100 text-slate-300 cursor-not-allowed'
+                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          ‹
+                        </button>
+
+                        {(() => {
+                          const pages = []
+                          const startPage = Math.max(1, currentPage - 2)
+                          const endPage = Math.min(totalPages, currentPage + 2)
+                          if (startPage > 1) {
+                            pages.push(
+                              <button
+                                key={1}
+                                onClick={() => setCurrentPage(1)}
+                                className="w-8 h-8 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              >
+                                1
+                              </button>
+                            )
+                            if (startPage > 2) {
+                              pages.push(<span key="dots-start" className="text-slate-300 text-xs">···</span>)
+                            }
+                          }
+                          for (let i = startPage; i <= endPage; i++) {
+                            pages.push(
+                              <button
+                                key={i}
+                                onClick={() => setCurrentPage(i)}
+                                className={`w-8 h-8 rounded-lg text-sm font-medium border transition-colors ${
+                                  i === currentPage
+                                    ? 'bg-sky-500 text-white border-sky-500'
+                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                {i}
+                              </button>
+                            )
+                          }
+                          if (endPage < totalPages) {
+                            if (endPage < totalPages - 1) {
+                              pages.push(<span key="dots-end" className="text-slate-300 text-xs">···</span>)
+                            }
+                            pages.push(
+                              <button
+                                key={totalPages}
+                                onClick={() => setCurrentPage(totalPages)}
+                                className="w-8 h-8 rounded-lg text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              >
+                                {totalPages}
+                              </button>
+                            )
+                          }
+                          return pages
+                        })()}
+
+                        <button
+                          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                          disabled={currentPage >= totalPages}
+                          className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                            currentPage >= totalPages
+                              ? 'border-slate-100 text-slate-300 cursor-not-allowed'
+                              : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          ›
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

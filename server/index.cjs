@@ -96,11 +96,47 @@ app.delete('/api/areas/:id', async (req, res) => {
   }
 })
 
-// ─── APPOINTMENTS ──────────────────────────────────────────────────────
+// ─── APPOINTMENTS (paginated) ────────────────────────────────────────
 app.get('/api/appointments', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT * FROM appointments ORDER BY created_at DESC')
-    res.json(rows)
+    const page = Math.max(1, parseInt(req.query.page) || 1)
+    const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 200))
+    const offset = (page - 1) * limit
+    const statusFilter = req.query.status || ''
+    const areaIdFilter = req.query.area_id || ''
+    const dateFilter = req.query.date || ''
+
+    const params = []
+    const conditions = []
+    let idx = 1
+
+    if (statusFilter) {
+      conditions.push(`status = $${idx++}`)
+      params.push(statusFilter)
+    }
+    if (areaIdFilter) {
+      conditions.push(`area_id = $${idx++}`)
+      params.push(areaIdFilter)
+    }
+    if (dateFilter) {
+      conditions.push(`date = $${idx++}`)
+      params.push(dateFilter)
+    }
+
+    const whereClause = conditions.length > 0 ? ' WHERE ' + conditions.join(' AND ') : ''
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM appointments${whereClause}`,
+      params
+    )
+    const total = countResult.rows[0].total
+
+    const dataResult = await pool.query(
+      `SELECT * FROM appointments${whereClause} ORDER BY created_at DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+      [...params, limit, offset]
+    )
+
+    res.json({ entries: dataResult.rows, total, page, limit })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
