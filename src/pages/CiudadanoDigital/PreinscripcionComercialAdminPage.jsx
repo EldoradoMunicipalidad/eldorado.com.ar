@@ -18,6 +18,7 @@ import {
   LogOut,
   UserCheck,
   Building2,
+  Eye,
   FileText,
   Mail,
   Phone,
@@ -66,6 +67,9 @@ export default function PreinscripcionComercialAdminPage() {
   // Detail modal state
   const [detailStatus, setDetailStatus] = useState('');
   const [detailNotas, setDetailNotas] = useState('');
+
+  // Document preview state
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -858,7 +862,30 @@ export default function PreinscripcionComercialAdminPage() {
                   {selectedItem.archivos && selectedItem.archivos.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {selectedItem.archivos.map((doc, idx) => (
-                        <DocLink key={idx} label={doc.nombre} url={doc.url} />
+                        <div key={idx} className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200 hover:border-sky-200 hover:bg-sky-50 transition-all group">
+                          <FileText className="w-4 h-4 text-sky-500 shrink-0" />
+                          <span className="text-sm text-slate-600 group-hover:text-sky-600 flex-1 min-w-0 truncate">
+                            {doc.nombre}
+                          </span>
+                          <div className="flex gap-1 shrink-0">
+                            <button
+                              onClick={() => setPreviewDoc(doc)}
+                              className="p-1.5 text-sky-500 hover:bg-sky-100 rounded-lg transition-colors"
+                              title="Ver documento"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-lg transition-colors"
+                              title="Descargar"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -968,23 +995,69 @@ export default function PreinscripcionComercialAdminPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
 
-function DocLink({ label, url }) {
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200 hover:border-sky-200 hover:bg-sky-50 transition-all group"
-    >
-      <FileText className="w-4 h-4 text-sky-500 shrink-0" />
-      <span className="text-sm text-slate-600 group-hover:text-sky-600 flex-1 min-w-0 truncate">
-        {label}
-      </span>
-      <Download className="w-3 h-3 text-slate-400 group-hover:text-sky-500 shrink-0" />
-    </a>
+      {/* Document Preview Modal */}
+      {previewDoc && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-sky-500" />
+                {previewDoc.nombre}
+              </h3>
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewDoc.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Descargar
+                </a>
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            {/* Preview content */}
+            <div className="flex-1 overflow-auto bg-slate-100 p-4">
+              {previewDoc.url.match(/\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i) ? (
+                <div className="flex items-center justify-center min-h-[300px]">
+                  <img
+                    src={previewDoc.url}
+                    alt={previewDoc.nombre}
+                    className="max-w-full max-h-[70vh] rounded-xl shadow-md object-contain"
+                  />
+                </div>
+              ) : previewDoc.url.match(/\.pdf(\?|$)/i) ? (
+                <iframe
+                  src={`${previewDoc.url}#view=FitH`}
+                  className="w-full h-[75vh] rounded-xl shadow-md"
+                  title={previewDoc.nombre}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center min-h-[200px] text-slate-500 gap-3">
+                  <FileText className="w-16 h-16 text-slate-300" />
+                  <p className="text-sm">Vista previa no disponible para este tipo de archivo</p>
+                  <a
+                    href={previewDoc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-sky-500 text-white rounded-xl text-sm font-semibold hover:bg-sky-600 transition-colors"
+                  >
+                    Abrir en nueva pestaña
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
