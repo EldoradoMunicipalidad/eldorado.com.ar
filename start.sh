@@ -9,6 +9,10 @@ set -e
 
 echo "[start.sh] 🚀 Starting municipalidad eldorado.gob.ar..."
 
+# ─── Initialize database tables (idempotent) ──────────────────────────
+echo "[start.sh] 🗄️  Running database initialization..."
+node /app/server/init-db.js 2>&1 || echo "[start.sh] ⚠️  DB init had issues (tables may already exist)"
+
 # ─── Start Express API with auto-restart ──────────────────────────────
 start_api() {
   while true; do
