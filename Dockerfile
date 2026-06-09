@@ -27,7 +27,11 @@ COPY --from=builder /app/node_modules ./node_modules
 # Copy nginx config
 COPY nginx.conf /etc/nginx/http.d/default.conf
 
+# Copy startup script
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 EXPOSE 80
 
-# Start Express (background) then nginx (foreground)
-CMD sh -c "node /app/server/index.cjs & nginx -g 'daemon off;'"
+# Start Express (with auto-restart) + nginx via startup script
+CMD ["/app/start.sh"]
