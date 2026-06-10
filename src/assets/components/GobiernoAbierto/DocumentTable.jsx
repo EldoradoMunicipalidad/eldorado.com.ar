@@ -26,6 +26,7 @@ const DocumentTable = ({
   searchPlaceholder = 'Buscar...',
   emptyMessage = 'No se encontraron resultados.',
   title,
+  context,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeFilter, setActiveFilter] = useState(filters?.[0]?.value ?? null)
@@ -131,7 +132,7 @@ const DocumentTable = ({
                       key={ci}
                       className={`px-2 lg:px-5 py-4 ${col.cellClassName ?? ''}`}
                     >
-                      {col.render(item)}
+                      {col.render(item, context)}
                     </td>
                   ))}
                 </tr>

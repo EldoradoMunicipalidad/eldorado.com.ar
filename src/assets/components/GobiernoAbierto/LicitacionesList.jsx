@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { LICITACIONES_DATA } from '../../../data/GobiernoAbierto/licitacionesData'
 import Icon from '../../Icons/Icon'
 import DocumentTable from './DocumentTable'
@@ -83,17 +83,28 @@ const COLUMNS = [
     header: 'Acción',
     headerClassName: 'text-center w-px whitespace-nowrap',
     cellClassName: 'text-center w-px whitespace-nowrap',
-    render: (item) =>
+    render: (item, { openPdf }) =>
       item.enlacePliego ? (
-        <a
-          href={item.enlacePliego}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-sky-600 hover:text-sky-700 font-semibold text-sm whitespace-nowrap"
-        >
-          <Icon name="downloadIcon" className="text-base" />
-          <span className="hidden sm:inline">Pliego</span>
-        </a>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => openPdf(item)}
+            className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-semibold text-sm whitespace-nowrap"
+            title="Ver online"
+          >
+            <Icon name="visibility" className="text-base" />
+            <span className="hidden sm:inline">Ver</span>
+          </button>
+          <a
+            href={item.enlacePliego}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 font-semibold text-sm whitespace-nowrap"
+            title="Descargar"
+          >
+            <Icon name="download" className="text-base" />
+            <span className="hidden sm:inline">Descargar</span>
+          </a>
+        </div>
       ) : (
         <span className="text-slate-300 text-xs">—</span>
       ),
@@ -101,21 +112,77 @@ const COLUMNS = [
 ]
 
 const LicitacionesList = () => {
+  const [pdfModal, setPdfModal] = useState(null)
+
+  const openPdf = (item) => {
+    setPdfModal(item)
+  }
+
+  const closePdf = () => {
+    setPdfModal(null)
+  }
+
   return (
-    <DocumentTable
-      data={LICITACIONES_DATA}
-      columns={COLUMNS}
-      filters={TIPO_FILTERS}
-      filterFn={(item, value) => item.tipo === value}
-      searchFn={(item, q) =>
-        item.codigo.toLowerCase().includes(q) ||
-        item.descripcion.toLowerCase().includes(q) ||
-        (item.fechaPublicacion ?? '').toLowerCase().includes(q)
-      }
-      searchPlaceholder="Buscar licitaciones..."
-      emptyMessage="No se encontraron licitaciones para la búsqueda ingresada."
-      title="Listado de Licitaciones"
-    />
+    <>
+      <DocumentTable
+        data={LICITACIONES_DATA}
+        columns={COLUMNS}
+        filters={TIPO_FILTERS}
+        filterFn={(item, value) => item.tipo === value}
+        searchFn={(item, q) =>
+          item.codigo.toLowerCase().includes(q) ||
+          item.descripcion.toLowerCase().includes(q) ||
+          (item.fechaPublicacion ?? '').toLowerCase().includes(q)
+        }
+        context={{ openPdf }}
+        searchPlaceholder="Buscar licitaciones..."
+        emptyMessage="No se encontraron licitaciones para la búsqueda ingresada."
+        title="Listado de Licitaciones"
+      />
+
+      {/* PDF Modal */}
+      {pdfModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200">
+              <div className="flex items-center gap-2 min-w-0">
+                <Icon name="picture_as_pdf" className="text-red-500 text-xl" />
+                <span className="font-bold text-slate-700 truncate text-sm lg:text-base">
+                  {pdfModal.codigo} — {pdfModal.descripcion}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={pdfModal.enlacePliego}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 font-semibold text-sm"
+                >
+                  <Icon name="open_in_new" className="text-base" />
+                  <span className="hidden sm:inline">Abrir en pestaña</span>
+                </a>
+                <button
+                  onClick={closePdf}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                  title="Cerrar"
+                >
+                  <Icon name="close" className="text-xl" />
+                </button>
+              </div>
+            </div>
+            {/* PDF Viewer */}
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={pdfModal.enlacePliego}
+                title={`Pliego ${pdfModal.codigo}`}
+                className="w-full h-full border-0"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
