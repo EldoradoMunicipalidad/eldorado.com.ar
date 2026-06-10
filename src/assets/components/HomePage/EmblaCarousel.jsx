@@ -42,63 +42,40 @@ export function EmblaCarousel() {
   return (
     <section className="w-full bg-white pt-3 pb-12 flex justify-center">
 
-      {/* Contenedor adaptado al aspect ratio de la imagen (1280:293) */}
-      <div className="w-full sm:w-[94%] max-w-325 sm:mx-auto relative overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-none sm:shadow-2xl sm:shadow-blue-900/10" style={{ aspectRatio: '1280/293' }}>
+      {/* Desktop / Tablet (≥640px): Calendario panorámico */}
+      <div className="hidden sm:block w-full sm:w-[94%] max-w-325 sm:mx-auto relative overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-none sm:shadow-2xl sm:shadow-blue-900/10" style={{ aspectRatio: '1280/293' }}>
 
         <div className="overflow-hidden h-full w-full" ref={emblaRef}>
           <div className="flex h-full">
             {slides.map((slide) => (
               <div key={slide.id} className="flex-[0_0_100%] min-w-0 h-full relative bg-white">
-
-                {/* Imagen con object-contain para que no se corte */}
-                <picture>
-                  <source srcSet={slide.imgDesktop} media="(min-width: 1024px)" />
-                  <source srcSet={slide.imgTablet} media="(min-width: 640px)" />
-                  <img
-                    src={slide.imgMobile}
-                    alt={slide.title}
-                    className="absolute inset-0 w-full h-full object-contain object-center"
-                  />
-                </picture>
-
+                <img
+                  src={slide.imgDesktop}
+                  alt={slide.title}
+                  className="absolute inset-0 w-full h-full object-contain object-center"
+                />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Botones de navegación (ocultos si hay solo un slide) */}
-        {slides.length > 1 && (
-          <>
-            <button
-              className="absolute top-1/2 left-6 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-              onClick={scrollPrev}
-            >
-              <ChevronLeftIcon />
-            </button>
-            <button
-              className="absolute top-1/2 right-6 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-              onClick={scrollNext}
-            >
-              <ChevronRightIcon />
-            </button>
-          </>
-        )}
-
-        {/* DOTS (ocultos si hay solo un slide) */}
-        {slides.length > 1 && (
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex justify-center gap-3">
-            {scrollSnaps.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => scrollTo(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${index === selectedIndex ? 'w-10 bg-white' : 'w-2 bg-white/50'
-                  }`}
-              />
-            ))}
-          </div>
-        )}
-
       </div>
+
+      {/* Mobile (<640px): Impuesto automotor vertical */}
+      <div className="sm:hidden w-full relative overflow-hidden rounded-none shadow-none" style={{ aspectRatio: '960/1280' }}>
+        <div className="overflow-hidden h-full w-full">
+          <div className="flex h-full">
+            <div className="flex-[0_0_100%] min-w-0 h-full relative bg-white">
+              <img
+                src="/slider-impuesto-automotor-2026.jpg"
+                alt="Impuesto Provincial del Automotor 2026"
+                className="absolute inset-0 w-full h-full object-contain object-center"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
     </section>
   )
 }
