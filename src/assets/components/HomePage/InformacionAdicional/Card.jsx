@@ -1,7 +1,7 @@
 import React from 'react';
 
-export function Card({ icon, title, subtitle, bgImage }) {
-  return (
+export function Card({ icon, title, subtitle, bgImage, href }) {
+  const content = (
     <div className={`relative rounded-2xl p-8 flex flex-col justify-end min-h-52 overflow-hidden shadow-xl transition-all duration-500 group ${!bgImage ? 'bg-[#0B1120]' : ''}`}>
       
       {/* CAPA DE FONDO */}
@@ -20,7 +20,7 @@ export function Card({ icon, title, subtitle, bgImage }) {
 
       {/* CONTENIDO */}
       <div className="relative z-20">
-        {/* Icono flotante superior (opcional, lo moví arriba para mejor lectura) */}
+        {/* Icono flotante superior */}
         <div className="absolute -top-48 left-0 bg-white/10 backdrop-blur-md w-12 h-12 rounded-xl flex items-center justify-center border border-white/20 mb-6">
           <span className="material-icons-round text-2xl text-[#0EA5E9]">
             {icon}
@@ -39,6 +39,16 @@ export function Card({ icon, title, subtitle, bgImage }) {
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <a href={href} className="block cursor-pointer">
+        {content}
+      </a>
+    );
+  }
+
+  return content;
 }
 
 export default Card;
