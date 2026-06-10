@@ -63,16 +63,45 @@ export const HomePage = () => {
       <EmblaCarousel />
       
       {/* Guía de trámites */}
-      <div className="flex justify-center py-6 bg-white">
-        <a 
-          href="/guia-de-tramites"
-          className="inline-flex items-center gap-2 px-8 py-4 bg-[#009EE3] text-white font-semibold rounded-xl hover:bg-[#007bb5] transition-all shadow-md hover:shadow-lg text-lg"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Guía de Trámites
-        </a>
+      <div className="w-full bg-white">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="relative overflow-hidden rounded-2xl shadow-lg group">
+            {/* Fondo con gradiente */}
+            <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-sky-600 to-emerald-500 transition-all duration-500 group-hover:scale-105" />
+            
+            {/* Patrón de puntos decorativo */}
+            <div className="absolute inset-0 opacity-10" style={{
+              backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+              backgroundSize: '20px 20px'
+            }} />
+            
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 p-6 md:p-8">
+              {/* Icono y texto */}
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
+                  <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="text-center md:text-left">
+                  <h3 className="text-white font-bold text-lg md:text-xl">Guía de Trámites</h3>
+                  <p className="text-white/80 text-sm md:text-base mt-0.5">Consulta todos los pasos para realizar tus trámites municipales</p>
+                </div>
+              </div>
+              
+              {/* Botón */}
+              <a 
+                href="/guia-de-tramites"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-white text-sky-600 font-bold rounded-xl hover:bg-white/90 transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 text-sm md:text-base shrink-0"
+              >
+                <span>Ir a la guía</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
 
       <TramitesAndServiciosSection />
