@@ -75,7 +75,7 @@ export const HomePage = () => {
       <EmblaCarousel />
       
       {/* Guía de trámites — mismo ancho que el carrusel */}
-      <div className="w-full sm:w-[94%] max-w-325 mx-auto px-0 sm:px-0 py-4 bg-white">
+      <div className="w-full sm:w-[94%] max-w-325 sm:mx-auto px-0 sm:px-0 py-4 bg-white">
         <div className="relative overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-lg group">
           {/* Fondo con gradiente */}
           <div className="absolute inset-0 bg-gradient-to-r from-sky-500 via-sky-600 to-emerald-500 transition-all duration-500 group-hover:scale-105" />
