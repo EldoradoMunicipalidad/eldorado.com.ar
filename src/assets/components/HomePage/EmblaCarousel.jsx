@@ -42,73 +42,61 @@ export function EmblaCarousel() {
   return (
     <section className="w-full bg-white pt-3 pb-12 flex justify-center">
 
-      {/* El contenedor principal con rounded-3xl y shadow */}
-      <div className="w-full h-112.5 sm:w-[94%] sm:h-auto max-w-325 sm:mx-auto sm:aspect-4/3 md:aspect-video lg:h-137.5 relative group overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-none sm:shadow-2xl sm:shadow-blue-900/10">
+      {/* Contenedor adaptado al aspect ratio de la imagen (1280:293) */}
+      <div className="w-full sm:w-[94%] max-w-325 sm:mx-auto relative overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-none sm:shadow-2xl sm:shadow-blue-900/10" style={{ aspectRatio: '1280/293' }}>
 
         <div className="overflow-hidden h-full w-full" ref={emblaRef}>
           <div className="flex h-full">
             {slides.map((slide) => (
-              <div key={slide.id} className="flex-[0_0_100%] min-w-0 h-full relative">
+              <div key={slide.id} className="flex-[0_0_100%] min-w-0 h-full relative bg-white">
 
-                {/* Imagen con object-cover */}
+                {/* Imagen con object-contain para que no se corte */}
                 <picture>
                   <source srcSet={slide.imgDesktop} media="(min-width: 1024px)" />
                   <source srcSet={slide.imgTablet} media="(min-width: 640px)" />
                   <img
                     src={slide.imgMobile}
                     alt={slide.title}
-                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    className="absolute inset-0 w-full h-full object-contain object-center"
                   />
                 </picture>
 
-                {/* OVERLAY DE TEXTO ESTILO "HORIZON COURTS" */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/40 via-transparent to-black/10 flex flex-col items-center justify-center text-center px-6">
-
-                  <h1 className="text-white text-4xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-tight max-w-4xl">
-                    {slide.title}
-                  </h1>
-
-                  <p className="text-white/90 text-lg md:text-xl mt-6 max-w-2xl font-light leading-relaxed">
-                    {slide.subtitle}
-                  </p>
-
-                  {/* Botón de Acción (CTA) */}
-                  <button className="hidden mt-8 px-8 py-3 bg-black text-white rounded-full font-medium hover:bg-gray-900 transition-colors items-center gap-2">
-                    Explorar Eldorado
-                    <span className="text-xl">↗</span>
-                  </button>
-
-                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* BOTONES IZQUIERDA / DERECHA (Tus estilos mantenidos) */}
-        <button
-          className="absolute top-1/2 left-6 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-          onClick={scrollPrev}
-        >
-          <ChevronLeftIcon />
-        </button>
-        <button
-          className="absolute top-1/2 right-6 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-          onClick={scrollNext}
-        >
-          <ChevronRightIcon />
-        </button>
-
-        {/* BOTONES INFERIORES (DOTS - Sobrepuestos al slider) */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex justify-center gap-3">
-          {scrollSnaps.map((_, index) => (
+        {/* Botones de navegación (ocultos si hay solo un slide) */}
+        {slides.length > 1 && (
+          <>
             <button
-              key={index}
-              onClick={() => scrollTo(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${index === selectedIndex ? 'w-10 bg-white' : 'w-2 bg-white/50'
-                }`}
-            />
-          ))}
-        </div>
+              className="absolute top-1/2 left-6 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+              onClick={scrollPrev}
+            >
+              <ChevronLeftIcon />
+            </button>
+            <button
+              className="absolute top-1/2 right-6 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+              onClick={scrollNext}
+            >
+              <ChevronRightIcon />
+            </button>
+          </>
+        )}
+
+        {/* DOTS (ocultos si hay solo un slide) */}
+        {slides.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex justify-center gap-3">
+            {scrollSnaps.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => scrollTo(index)}
+                className={`h-2 rounded-full transition-all duration-300 ${index === selectedIndex ? 'w-10 bg-white' : 'w-2 bg-white/50'
+                  }`}
+              />
+            ))}
+          </div>
+        )}
 
       </div>
     </section>
