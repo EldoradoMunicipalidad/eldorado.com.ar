@@ -88,20 +88,20 @@ const COLUMNS = [
         <div className="flex items-center gap-2">
           <button
             onClick={() => openPdf(item)}
-            className="inline-flex items-center gap-1 text-emerald-600 hover:text-emerald-700 font-semibold text-sm whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-semibold text-xs hover:bg-emerald-600 hover:text-white transition-colors shadow-sm"
             title="Ver online"
           >
-            <Icon name="visibility" className="text-base" />
+            <Icon name="visibility" className="text-sm" />
             <span className="hidden sm:inline">Ver</span>
           </button>
           <a
             href={item.enlacePliego}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-700 font-semibold text-sm whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500 text-white font-semibold text-xs hover:bg-sky-600 hover:text-white transition-colors shadow-sm"
             title="Descargar"
           >
-            <Icon name="download" className="text-base" />
+            <Icon name="download" className="text-sm" />
             <span className="hidden sm:inline">Descargar</span>
           </a>
         </div>

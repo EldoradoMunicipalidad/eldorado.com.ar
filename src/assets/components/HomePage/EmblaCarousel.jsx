@@ -33,9 +33,17 @@ export function EmblaCarousel() {
       id: 1,
       title: "",
       subtitle: "",
-      imgDesktop: "/slider-calendario-junio-2026.jpg",
-      imgTablet: "/slider-calendario-junio-2026.jpg",
-      imgMobile: "/slider-calendario-junio-2026.jpg",
+      imgDesktop: "/slider-1.jpg",
+      imgTablet: "/slider-1.jpg",
+      imgMobile: "/slider-1.jpg",
+    },
+    {
+      id: 2,
+      title: "",
+      subtitle: "",
+      imgDesktop: "/slider-2.jpg",
+      imgTablet: "/slider-2.jpg",
+      imgMobile: "/slider-2.jpg",
     }
   ]
 
