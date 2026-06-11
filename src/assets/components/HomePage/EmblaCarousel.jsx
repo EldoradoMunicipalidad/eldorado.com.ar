@@ -50,8 +50,8 @@ export function EmblaCarousel() {
   return (
     <section className="w-full bg-white pt-3 pb-12 flex justify-center">
 
-      {/* Desktop / Tablet (≥640px): Calendario panorámico */}
-      <div className="hidden sm:block w-full sm:w-[94%] max-w-325 sm:mx-auto relative overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-none sm:shadow-2xl sm:shadow-blue-900/10" style={{ aspectRatio: '1280/293' }}>
+      {/* Desktop / Tablet (≥640px): Sliders panorámicos */}
+      <div className="hidden sm:block w-full sm:w-[94%] max-w-325 sm:mx-auto relative overflow-hidden rounded-none sm:rounded-[2.5rem] shadow-none sm:shadow-2xl sm:shadow-blue-900/10" style={{ height: '500px' }}>
 
         <div className="overflow-hidden h-full w-full" ref={emblaRef}>
           <div className="flex h-full">
@@ -69,17 +69,19 @@ export function EmblaCarousel() {
 
       </div>
 
-      {/* Mobile (<640px): Impuesto automotor vertical */}
-      <div className="sm:hidden w-full relative overflow-hidden rounded-none shadow-none" style={{ aspectRatio: '960/1280' }}>
-        <div className="overflow-hidden h-full w-full">
+      {/* Mobile (<640px): Sliders */}
+      <div className="sm:hidden w-full relative overflow-hidden rounded-none shadow-none" style={{ height: '500px' }}>
+        <div className="overflow-hidden h-full w-full" ref={emblaRef}>
           <div className="flex h-full">
-            <div className="flex-[0_0_100%] min-w-0 h-full relative bg-white">
-              <img
-                src="/slider-impuesto-automotor-2026.jpg"
-                alt="Impuesto Provincial del Automotor 2026"
-                className="absolute inset-0 w-full h-full object-contain object-center"
-              />
-            </div>
+            {slides.map((slide) => (
+              <div key={slide.id} className="flex-[0_0_100%] min-w-0 h-full relative bg-white">
+                <img
+                  src={slide.imgMobile}
+                  alt={slide.title}
+                  className="absolute inset-0 w-full h-full object-contain object-center"
+                />
+              </div>
+            ))}
           </div>
         </div>
       </div>
