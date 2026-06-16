@@ -1,10 +1,8 @@
 // Firebase Admin SDK initialization for token verification
-// Reads service account from:
-//   1. FIREBASE_SERVICE_ACCOUNT env var (raw JSON or base64, for Dokploy flexibility)
-//   2. GOOGLE_APPLICATION_CREDENTIALS env var (file path)
-//   3. Hardcoded fallback (embedded directly)
+// Uses modular API (firebase-admin v12+) with getApps() instead of admin.apps
 
-const admin = require('firebase-admin')
+const { initializeApp, getApps, cert } = require('firebase-admin/app')
+const { getAuth } = require('firebase-admin/auth')
 
 // ─── Hardcoded service account (no env vars needed) ───────────────────
 const HARDCODED_SERVICE_ACCOUNT = {
@@ -22,23 +20,23 @@ const HARDCODED_SERVICE_ACCOUNT = {
 }
 
 function initFirebaseAdmin() {
-  if (admin.apps.length > 0) return admin
+  if (getApps().length > 0) return { getAuth }
 
   // 1. Try FIREBASE_SERVICE_ACCOUNT env var (raw JSON or base64)
   const envRaw = process.env.FIREBASE_SERVICE_ACCOUNT
   if (envRaw) {
     try {
       const sa = JSON.parse(envRaw)
-      admin.initializeApp({ credential: admin.credential.cert(sa) })
+      initializeApp({ credential: cert(sa) })
       console.log('✅ Firebase Admin from FIREBASE_SERVICE_ACCOUNT env (raw JSON)')
-      return admin
+      return { getAuth }
     } catch (_) {}
 
     try {
       const sa = JSON.parse(Buffer.from(envRaw, 'base64').toString('utf-8'))
-      admin.initializeApp({ credential: admin.credential.cert(sa) })
+      initializeApp({ credential: cert(sa) })
       console.log('✅ Firebase Admin from FIREBASE_SERVICE_ACCOUNT env (base64)')
-      return admin
+      return { getAuth }
     } catch (_) {
       console.warn('⚠️  FIREBASE_SERVICE_ACCOUNT env var is invalid')
     }
@@ -48,9 +46,9 @@ function initFirebaseAdmin() {
   const saPath = process.env.GOOGLE_APPLICATION_CREDENTIALS
   if (saPath) {
     try {
-      admin.initializeApp({ credential: admin.credential.applicationDefault() })
+      initializeApp({ credential: cert(saPath) })
       console.log('✅ Firebase Admin from GOOGLE_APPLICATION_CREDENTIALS')
-      return admin
+      return { getAuth }
     } catch (err) {
       console.warn('⚠️  GOOGLE_APPLICATION_CREDENTIALS failed:', err.message)
     }
@@ -58,22 +56,22 @@ function initFirebaseAdmin() {
 
   // 3. Use hardcoded service account (no env vars needed)
   try {
-    admin.initializeApp({ credential: admin.credential.cert(HARDCODED_SERVICE_ACCOUNT) })
+    initializeApp({ credential: cert(HARDCODED_SERVICE_ACCOUNT) })
     console.log('✅ Firebase Admin initialized from hardcoded service account')
-    return admin
+    return { getAuth }
   } catch (err) {
     console.warn('⚠️  Hardcoded service account failed:', err.message)
   }
 
   // 4. Ultimate fallback: projectId only
   try {
-    admin.initializeApp({ projectId: 'municipalidad-632de' })
+    initializeApp({ projectId: 'municipalidad-632de' })
     console.log('✅ Firebase Admin initialized with projectId only')
   } catch (err) {
     console.warn('⚠️  Firebase Admin fallback init failed:', err.message)
   }
 
-  return admin
+  return { getAuth }
 }
 
 const firebaseAdmin = initFirebaseAdmin()

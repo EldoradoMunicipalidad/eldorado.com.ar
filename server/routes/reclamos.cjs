@@ -89,7 +89,7 @@ router.post('/auth/google', async (req, res) => {
     // Verify the Firebase ID token
     let decodedToken
     try {
-      decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken)
+      decodedToken = await firebaseAdmin.getAuth().verifyIdToken(idToken)
     } catch (err) {
       console.warn('Google token verification failed:', err.message)
       return res.status(401).json({ authenticated: false, error: 'Token inválido o expirado' })
