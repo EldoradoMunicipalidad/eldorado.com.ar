@@ -23,13 +23,18 @@ export default function ContenidoPage() {
   const { pageId } = useParams()
   const navigate = useNavigate()
 
-  // ─── Auth ──────────────────────────────────────────
+  // ─── Auth (independiente del panel de reclamos) ─────
+  const ADMIN_USER = 'contenido'
+  const ADMIN_PASS = 'contenido2025'
+
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => sessionStorage.getItem('reclamos_admin_auth') === 'true'
+    () => sessionStorage.getItem('contenido_admin_auth') === 'true'
   )
+  const [loginUser, setLoginUser] = useState('')
+  const [loginPass, setLoginPass] = useState('')
   const [loginError, setLoginError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
-  const username = sessionStorage.getItem('reclamos_admin_username') || ''
+  const username = sessionStorage.getItem('contenido_admin_username') || ''
 
   // ─── Content state ─────────────────────────────────
   const [content, setContent] = useState(null)
@@ -172,31 +177,85 @@ export default function ContenidoPage() {
   }
 
   // ─── Logout ────────────────────────────────────────
+  const handleLogin = (e) => {
+    e.preventDefault()
+    setLoginError('')
+    if (!loginUser.trim() || !loginPass.trim()) {
+      setLoginError('Completá usuario y contraseña')
+      return
+    }
+    if (loginUser.trim() !== ADMIN_USER || loginPass !== ADMIN_PASS) {
+      setLoginError('Usuario o contraseña incorrectos')
+      return
+    }
+    sessionStorage.setItem('contenido_admin_auth', 'true')
+    sessionStorage.setItem('contenido_admin_username', loginUser.trim())
+    setIsAuthenticated(true)
+    setLoginUser('')
+    setLoginPass('')
+  }
+
   const handleLogout = () => {
-    sessionStorage.removeItem('reclamos_admin_auth')
-    sessionStorage.removeItem('reclamos_admin_username')
-    sessionStorage.removeItem('reclamos_admin_email')
+    sessionStorage.removeItem('contenido_admin_auth')
+    sessionStorage.removeItem('contenido_admin_username')
     setIsAuthenticated(false)
-    navigate('/')
   }
 
   // ─── Not authenticated ─────────────────────────────
   if (!isAuthenticated) {
     return (
       <SectionLayout
-        title="Acceso"
-        highlight="Denegado"
-        description="Debés iniciar sesión en el panel de reclamos primero."
+        title="Editor de"
+        highlight="Contenido"
+        description={`Ingresá para editar el contenido de: ${pageId}`}
       >
         <Section>
-          <div className="max-w-md mx-auto text-center">
-            <p className="text-slate-500 mb-4">Usá el panel de reclamos para autenticarte con Google.</p>
-            <button
-              onClick={() => navigate('/ciudadano-digital/reclamos/admin')}
-              className="px-6 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600"
-            >
-              Ir al Panel de Reclamos
-            </button>
+          <div className="max-w-md mx-auto">
+            <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Shield className="w-8 h-8 text-sky-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Acceso al Editor</h3>
+                <p className="text-sm text-slate-500 mt-1">Ingresá con tu usuario y contraseña</p>
+              </div>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
+                  <input
+                    type="text"
+                    value={loginUser}
+                    onChange={(e) => setLoginUser(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
+                    placeholder="usuario"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+                  <input
+                    type="password"
+                    value={loginPass}
+                    onChange={(e) => setLoginPass(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
+                    placeholder="••••••"
+                  />
+                </div>
+                {loginError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+                <button
+                  type="submit"
+                  disabled={authLoading}
+                  className="w-full px-6 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors disabled:opacity-60"
+                >
+                  Ingresar
+                </button>
+              </form>
+            </div>
           </div>
         </Section>
       </SectionLayout>
