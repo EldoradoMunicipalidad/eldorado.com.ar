@@ -101,13 +101,15 @@ const DirPlaneamientoPage = () => {
                 <Icon name="calendarIcon" size={20} />
                 Sacar Turno
               </button>
-              <button
-                onClick={() => navigate('/gobierno/secretaria-obras-publicas/planeamiento/turnero/admin')}
-                className="flex items-center gap-2 px-4 py-3 bg-white/15 text-white rounded-xl font-semibold hover:bg-white/25 transition-colors text-sm"
-              >
-                <Icon name="settingsAlertIcon" size={18} />
-                Admin
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={() => navigate('/gobierno/secretaria-obras-publicas/planeamiento/turnero/admin')}
+                  className="flex items-center gap-2 px-4 py-3 bg-white/15 text-white rounded-xl font-semibold hover:bg-white/25 transition-colors text-sm"
+                >
+                  <Icon name="settingsAlertIcon" size={18} />
+                  Admin
+                </button>
+              )}
             </div>
           </div>
         </div>
