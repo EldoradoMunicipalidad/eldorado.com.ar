@@ -42,34 +42,6 @@ export const HomePage = () => {
     }
   ];
 
-
-  const noticias = [
-    {
-      id: 1,
-      categoria: "Obras e Infraestructura Urbana",
-      titulo: "Proyectan mejoras y eventos en el skatepark de Eldorado",
-      fecha: "06 de febrero, 2026",
-      imagen: "/noticias1.avif",
-      link: "/noticias/skatepark-mejoras"
-    },
-    {
-      id: 2,
-      categoria: "Deportes",
-      titulo: "Verano Cerca Tuyo: finalizó la primera semana con éxito",
-      fecha: "06 de febrero, 2026",
-      imagen: "/noticias2.avif",
-      link: "/noticias/verano-cerca"
-    },
-    {
-      id: 3,
-      categoria: "Departamento de Promoción de Salud",
-      titulo: "Recomendaciones para prevenir golpes de calor",
-      fecha: "06 de febrero, 2026",
-      imagen: "/noticias3.avif",
-      link: "/noticias/prevencion-calor"
-    }
-  ];
-  
   return (
     <div>
       <EmblaCarousel />
@@ -123,7 +95,7 @@ export const HomePage = () => {
 
       <AppSection />
 
-      <NoticiasSection noticias={noticias} />
+      <NoticiasSection />
     </div>
 
   )
