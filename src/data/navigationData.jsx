@@ -740,7 +740,7 @@ export const itemsGobiernoAbierto = [
       {
         title: "Registro Unico de Audiencias",
         keywords: [{ label: "Registro de audiencias de gestion de interes.", to: "" }],
-        to: "https://registro-unico-de-audiencias-de-gestion-de-int-dwxbyrbmglf1oppq.builder-preview.com/"
+        to: "/gobierno-abierto/registro-audiencias"
       }
     ],
   },

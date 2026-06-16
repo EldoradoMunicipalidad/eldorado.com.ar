@@ -101,6 +101,7 @@ export { default as EscalaSalarialPage } from './GobiernoAbierto/EscalaSalarialP
 
 export { default as EmpleadoMunicipalPage } from './EmpleadoMunicipalPage';
 export { default as BalancetesTrimestralesPage } from './GobiernoAbierto/BalancetesTrimestralesPage';
+export { default as AudienciasPage } from './GobiernoAbierto/AudienciasPage';
 export { default as GuiaDeTramitesPage } from './GuiaDeTramitesPage';
 
 // Reclamos Ciudadanos

@@ -21,6 +21,7 @@ import {
   AutoridadDetallePage,
   CiudadanoDigitalPage,
   GobiernoAbiertoPage,
+  AudienciasPage,
   GabineteMunicipalPage,
   DirAsuntosJuridicosPage,
   DirComunicacionAndImagenInstitucionalPage,
@@ -225,6 +226,7 @@ function App() {
           <Route path='/gobierno-abierto/planta-personal' element={<PlantaPersonalPage />} />
           <Route path='/gobierno-abierto/escala-salarial' element={<EscalaSalarialPage />} />
           <Route path='/gobierno-abierto/balancetes-trimestrales' element={<BalancetesTrimestralesPage />} />
+          <Route path='/gobierno-abierto/registro-audiencias' element={<AudienciasPage />} />
           <Route path='/guia-de-tramites' element={<GuiaDeTramitesPage />} />
           
           <Route path='/empleado-municipal' element={<EmpleadoMunicipalPage />} />
