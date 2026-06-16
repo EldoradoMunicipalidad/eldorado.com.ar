@@ -185,6 +185,42 @@ export async function authenticateAdmin(username, password) {
   }
 }
 
+// ─── Google Auth ────────────────────────────────────
+export async function authenticateWithGoogle() {
+  try {
+    const { signInWithPopup } = await import('firebase/auth')
+    const { auth, googleProvider } = await import('./firebase')
+    const result = await signInWithPopup(auth, googleProvider)
+    const idToken = await result.user.getIdToken()
+
+    const res = await fetch(`${API}/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    })
+    const data = await res.json()
+
+    if (data.authenticated === true) {
+      return {
+        success: true,
+        username: data.username,
+        email: data.email,
+        displayName: data.displayName,
+      }
+    }
+    return { success: false, error: data.error || 'Acceso denegado' }
+  } catch (e) {
+    if (e.code === 'auth/popup-closed-by-user') {
+      return { success: false, error: 'Inicio de sesión cancelado' }
+    }
+    if (e.code === 'auth/cancelled-popup-request') {
+      return { success: false, error: 'Inicio de sesión cancelado' }
+    }
+    console.warn('authenticateWithGoogle error:', e.message)
+    return { success: false, error: 'Error al iniciar sesión con Google' }
+  }
+}
+
 // ─── Admins CRUD ─────────────────────────────────────
 export async function getAdmins() {
   try {

@@ -55,6 +55,9 @@ const upload = multer({
 })
 
 // ─── AUTH ─────────────────────────────────────────────────────────────
+const firebaseAdmin = require('../firebase-admin.cjs')
+
+// Password-based login (legacy)
 router.post('/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body
@@ -69,6 +72,75 @@ router.post('/auth/login', async (req, res) => {
       res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
     }
   } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Google Sign-In (replaces password auth in admin panel)
+const ALLOWED_DOMAINS = ['eldorado.gob.ar']
+
+router.post('/auth/google', async (req, res) => {
+  try {
+    const { idToken } = req.body
+    if (!idToken) {
+      return res.status(400).json({ authenticated: false, error: 'Token requerido' })
+    }
+
+    // Verify the Firebase ID token
+    let decodedToken
+    try {
+      decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken)
+    } catch (err) {
+      console.warn('Google token verification failed:', err.message)
+      return res.status(401).json({ authenticated: false, error: 'Token inválido o expirado' })
+    }
+
+    const { email, email_verified, hd } = decodedToken
+
+    if (!email) {
+      return res.status(401).json({ authenticated: false, error: 'Email no disponible en la cuenta' })
+    }
+
+    if (!email_verified) {
+      return res.status(401).json({ authenticated: false, error: 'Email no verificado en Google' })
+    }
+
+    // Check allowed domains
+    const emailDomain = email.split('@')[1]?.toLowerCase()
+    const domainAllowed = ALLOWED_DOMAINS.some((d) => emailDomain === d.toLowerCase())
+
+    // Also check if the email is directly registered in the admins table
+    const { rows: adminRows } = await pool.query(
+      'SELECT username, email FROM admins WHERE LOWER(email) = LOWER($1)',
+      [email]
+    )
+    const isRegisteredAdmin = adminRows.length > 0
+
+    if (!domainAllowed && !isRegisteredAdmin) {
+      console.warn(`Access denied for ${email} (domain: ${emailDomain})`)
+      return res.status(403).json({
+        authenticated: false,
+        error: `Acceso denegado. Solo cuentas @${ALLOWED_DOMAINS[0]} permitidas.`,
+      })
+    }
+
+    // Upsert admin record with this email (auto-register on first login)
+    await pool.query(
+      `INSERT INTO admins (username, password_hash, email, nombre)
+       VALUES ($1, '', $2, $3)
+       ON CONFLICT (username) DO UPDATE SET email = EXCLUDED.email, last_login = NOW()`,
+      [email.split('@')[0], email, email.split('@')[0]]
+    )
+
+    console.log(`✅ Google login: ${email}`)
+    res.json({
+      authenticated: true,
+      username: email.split('@')[0],
+      email,
+      displayName: decodedToken.name || email.split('@')[0],
+    })
+  } catch (err) {
+    console.error('POST /api/reclamos/auth/google error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
