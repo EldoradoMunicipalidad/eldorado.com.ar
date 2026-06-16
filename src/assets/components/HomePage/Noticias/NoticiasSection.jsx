@@ -3,7 +3,7 @@ import { NoticiaCard } from './NoticiaCard';
 import { SectionTitle } from '../SectionTitle'
 
 const API_URL = 'https://prensa.eldorado.gob.ar/directus'
-const IMG_URL = `${API_URL}/files`
+const IMG_URL = `${API_URL}/assets`
 
 async function fetchNoticias() {
   try {
