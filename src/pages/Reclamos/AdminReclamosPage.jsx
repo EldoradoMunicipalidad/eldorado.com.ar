@@ -83,6 +83,9 @@ export default function AdminReclamosPage() {
   const [authLoading, setAuthLoading] = useState(false)
   const [username, setUsername] = useState(() => sessionStorage.getItem('reclamos_admin_username') || '')
   const [userEmail, setUserEmail] = useState(() => sessionStorage.getItem('reclamos_admin_email') || '')
+  const [loginUser, setLoginUser] = useState('')
+  const [loginPass, setLoginPass] = useState('')
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false)
 
   // ─── Data state ────────────────────────────────────
   const [reclamos, setReclamos] = useState([])
@@ -116,7 +119,7 @@ export default function AdminReclamosPage() {
   }, [])
 
   // ─── Auth ─────────────────────────────────────────
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     setLoginError('')
     setAuthLoading(true)
     const result = await authenticateWithGoogle()
@@ -133,6 +136,26 @@ export default function AdminReclamosPage() {
     }
   }
 
+  const handlePasswordLogin = async (e) => {
+    e.preventDefault()
+    setLoginError('')
+    if (!loginUser.trim() || !loginPass.trim()) {
+      setLoginError('Completá usuario y contraseña')
+      return
+    }
+    setAuthLoading(true)
+    const ok = await authenticateAdmin(loginUser.trim(), loginPass)
+    setAuthLoading(false)
+    if (ok) {
+      sessionStorage.setItem('reclamos_admin_auth', 'true')
+      sessionStorage.setItem('reclamos_admin_username', loginUser.trim())
+      setIsAuthenticated(true)
+      setUsername(loginUser.trim())
+    } else {
+      setLoginError('Usuario o contraseña incorrectos')
+    }
+  }
+
   const handleLogout = () => {
     sessionStorage.removeItem('reclamos_admin_auth')
     sessionStorage.removeItem('reclamos_admin_username')
@@ -140,6 +163,8 @@ export default function AdminReclamosPage() {
     setIsAuthenticated(false)
     setUsername('')
     setUserEmail('')
+    setLoginUser('')
+    setLoginPass('')
   }
 
   // ─── Data fetching ─────────────────────────────────
@@ -312,7 +337,7 @@ export default function AdminReclamosPage() {
         <SectionLayout
           title="Panel de"
           highlight="Administración"
-          description="Gestión de reclamos ciudadanos — Ingresá con tu cuenta de Google."
+          description="Gestión de reclamos ciudadanos — Ingresá con Google o con usuario y contraseña."
         />
         <Section>
           <div className="max-w-md mx-auto">
@@ -323,7 +348,7 @@ export default function AdminReclamosPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">Acceso al Panel</h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  Ingresá con tu cuenta <strong>@eldorado.gob.ar</strong>
+                  Ingresá con tu cuenta municipal
                 </p>
               </div>
               <div className="space-y-4">
@@ -333,8 +358,10 @@ export default function AdminReclamosPage() {
                     <span>{loginError}</span>
                   </div>
                 )}
+
+                {/* Google Sign-In */}
                 <button
-                  onClick={handleLogin}
+                  onClick={handleGoogleLogin}
                   disabled={authLoading}
                   className="w-full px-6 py-3 bg-white text-slate-700 border-2 border-slate-200 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all disabled:opacity-60 flex items-center justify-center gap-3"
                 >
@@ -350,10 +377,62 @@ export default function AdminReclamosPage() {
                   )}
                   {authLoading ? 'Verificando...' : 'Iniciar sesión con Google'}
                 </button>
+
+                {/* Divider */}
+                <div className="relative my-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-slate-400">o</span>
+                  </div>
+                </div>
+
+                {/* Password login toggle */}
+                <button
+                  onClick={() => setShowPasswordLogin(!showPasswordLogin)}
+                  className="w-full text-sm text-slate-500 hover:text-slate-700 transition-colors flex items-center justify-center gap-1"
+                >
+                  <svg className={`w-4 h-4 transition-transform ${showPasswordLogin ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                  Ingresar con usuario y contraseña
+                </button>
+
+                {showPasswordLogin && (
+                  <form onSubmit={handlePasswordLogin} className="space-y-3 pt-1">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
+                      <input
+                        type="text"
+                        value={loginUser}
+                        onChange={(e) => setLoginUser(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
+                        placeholder="admin"
+                        autoFocus={showPasswordLogin}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+                      <input
+                        type="password"
+                        value={loginPass}
+                        onChange={(e) => setLoginPass(e.target.value)}
+                        className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
+                        placeholder="••••••"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={authLoading}
+                      className="w-full px-6 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                      {authLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Iniciar Sesión
+                    </button>
+                  </form>
+                )}
               </div>
-              <p className="text-xs text-slate-400 text-center mt-6">
-                Solo cuentas @eldorado.gob.ar pueden acceder a este panel.
-              </p>
             </div>
           </div>
         </Section>
