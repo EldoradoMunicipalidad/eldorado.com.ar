@@ -260,8 +260,10 @@ app.delete('/api/admins/:username', async (req, res) => {
 // ─── HABILITACIONES COMMERCIALES ───────────────────────────────────
 const habilitacionesRoutes = require('./routes/habilitaciones.cjs')
 const reclamosRoutes = require('./routes/reclamos.cjs')
+const pagesRoutes = require('./routes/pages.cjs')
 app.use('/api/habilitaciones', habilitacionesRoutes)
 app.use('/api/reclamos', reclamosRoutes)
+app.use('/api/pages', pagesRoutes)
 
 // ─── Serve uploads as static files ──────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))

@@ -51,6 +51,13 @@ ALTER TABLE admins ADD COLUMN IF NOT EXISTS nombre TEXT DEFAULT '';
 ALTER TABLE admins ADD COLUMN IF NOT EXISTS email TEXT DEFAULT '';
 ALTER TABLE admins ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ DEFAULT NULL;
 
+-- Page content table (CMS for editable pages)
+CREATE TABLE IF NOT EXISTS page_content (
+  page_id TEXT PRIMARY KEY,
+  content JSONB NOT NULL DEFAULT '{}',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Seed default config
 INSERT INTO config (id, max_per_day, turnero_paused)
 VALUES ('default', 3, true)

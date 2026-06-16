@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import SectionLayout from '../../../../assets/components/SectionLayout'
 import {
   SECRETARIA_OBRAS_PUBLICAS,
@@ -10,34 +10,74 @@ import SectionCardGrid from '../../../../assets/components/SectionCardGrid'
 import { Mision } from '../../../../assets/components/Gobierno/Mision'
 import { FuncionesPrincipales } from '../../../../assets/components/Gobierno/FuncionesPrincipales'
 import Icon from '../../../../assets/Icons/Icon'
+import { getPageContent } from '../../../../lib/pages'
+import { Pencil } from 'lucide-react'
+
+const PAGE_ID = 'planeamiento'
 
 const DirPlaneamientoPage = () => {
   const navigate = useNavigate()
+
+  // Static fallback data
   const planeamientoSection = SECRETARIA_OBRAS_PUBLICAS[0]
   const planeamientoCard = planeamientoSection?.cards.find(
     (card) => card.to === '/gobierno/secretaria-obras-publicas/planeamiento'
   )
-  const accordionItems = planeamientoSection?.accordionItems ?? []
+  const staticAccordionItems = planeamientoSection?.accordionItems ?? []
+
+  // Dynamic content from API
+  const [content, setContent] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    // Check if logged in as admin
+    setIsAdmin(sessionStorage.getItem('reclamos_admin_auth') === 'true')
+
+    // Load dynamic content
+    getPageContent(PAGE_ID).then((data) => {
+      if (data.content) {
+        setContent(data.content)
+      }
+    }).catch(() => {})
+  }, [])
+
+  // Use dynamic content if available, otherwise fall back to static
+  const header = content?.header
+  const mision = content?.mision || planeamientoCard?.mision || ''
+  const funciones = content?.funciones?.length > 0 ? content.funciones : (planeamientoCard?.funciones || [])
+  const accordionItems = content?.accordionItems?.length > 0 ? content.accordionItems : staticAccordionItems
 
   return (
     <>
       <SectionLayout
-        title="Dirección de"
-        highlight="Planeamiento"
-        description="Nos encargamos de la planificación estratégica y el desarrollo urbano, trabajando para diseñar un futuro ordenado y sostenible. A través de proyectos visionarios y una gestión integral, buscamos mejorar la infraestructura y los servicios de la comunidad, promoviendo el crecimiento organizado y armónico."
-      />
+        title={header?.title || "Dirección de"}
+        highlight={header?.highlight || "Planeamiento"}
+        description={header?.description || "Nos encargamos de la planificación estratégica y el desarrollo urbano, trabajando para diseñar un futuro ordenado y sostenible. A través de proyectos visionarios y una gestión integral, buscamos mejorar la infraestructura y los servicios de la comunidad, promoviendo el crecimiento organizado y armónico."}
+      >
+        {isAdmin && (
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => navigate(`/admin/contenido/${PAGE_ID}`)}
+              className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 transition-colors shadow-sm"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar contenido
+            </button>
+          </div>
+        )}
+      </SectionLayout>
 
       <Section>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {planeamientoCard?.mision && (
+          {mision && (
             <div className="lg:col-span-12">
-              <Mision texto={planeamientoCard.mision} />
+              <Mision texto={mision} />
             </div>
           )}
 
-          {planeamientoCard?.funciones?.length > 0 && (
+          {funciones?.length > 0 && (
             <div className="lg:col-span-12">
-              <FuncionesPrincipales items={planeamientoCard.funciones} />
+              <FuncionesPrincipales items={funciones} />
             </div>
           )}
         </div>
@@ -73,7 +113,7 @@ const DirPlaneamientoPage = () => {
         </div>
       </Section>
 
-      {accordionItems.length > 0 && (
+      {accordionItems?.length > 0 && (
         <Section>
           <div className="space-y-4">
             {accordionItems.map((accordionItem, index) => (

@@ -82,6 +82,7 @@ import {
   ReportarReclamoPage,
   SeguimientoPage,
   AdminReclamosPage,
+  ContenidoPage,
   SetupPage,
   AdminUsersPage,
   CategoriasPage,
@@ -203,17 +204,17 @@ function App() {
 
           {/* SECCIÓN CIUDADANO DIGITAL */}
           <Route path="/ciudadano-digital" element={<CiudadanoDigitalPage />} />
+          <Route path='/ciudadano-digital/reclamos' element={<ReportarReclamoPage />} />
+          <Route path='/ciudadano-digital/reclamos/admin' element={<AdminReclamosPage />} />
+          <Route path='/ciudadano-digital/reclamos/admin/users' element={<AdminUsersPage />} />
+          <Route path='/ciudadano-digital/reclamos/admin/categorias' element={<CategoriasPage />} />
+          <Route path='/ciudadano-digital/reclamos/seguimiento' element={<SeguimientoPage />} />
+          <Route path='/ciudadano-digital/reclamos/setup' element={<SetupPage />} />
           <Route path="/ciudadano-digital/preinscripcion-comercial" element={<PreinscripcionComercialPage />} />
           <Route path="/ciudadano-digital/preinscripcion-comercial/admin" element={<PreinscripcionComercialAdminPage />} />
 
-          {/* RECLAMOS CIUDADANOS (integrado en el sitio) */}
-          <Route path="/ciudadano-digital/reclamos" element={<ReportarReclamoPage />} />
-          <Route path="/ciudadano-digital/reclamos/seguimiento" element={<SeguimientoPage />} />
-          <Route path="/ciudadano-digital/reclamos/admin" element={<AdminReclamosPage />} />
-          <Route path="/ciudadano-digital/reclamos/admin/setup" element={<SetupPage />} />
-          <Route path="/ciudadano-digital/reclamos/admin/users" element={<AdminUsersPage />} />
-          <Route path="/ciudadano-digital/reclamos/admin/categorias" element={<CategoriasPage />} />
-
+          {/* Admin Content - editable pages CMS */}
+          <Route path='/admin/contenido/:pageId' element={<ContenidoPage />} />
           {/* SECCIÓN GOBIERNO ABIERTO */}
           <Route path="/gobierno-abierto" element={<GobiernoAbiertoPage />} />
           <Route path="/gobierno-abierto/boletin-oficial" element={<BoletinOficialPage />} />
