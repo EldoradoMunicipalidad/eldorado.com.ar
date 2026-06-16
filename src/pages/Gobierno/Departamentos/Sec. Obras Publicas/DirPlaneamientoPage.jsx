@@ -31,7 +31,10 @@ const DirPlaneamientoPage = () => {
 
   useEffect(() => {
     // Check if logged in as admin
-    setIsAdmin(sessionStorage.getItem('reclamos_admin_auth') === 'true')
+    setIsAdmin(
+      sessionStorage.getItem('reclamos_admin_auth') === 'true' ||
+      sessionStorage.getItem('turnero_admin_auth') === 'true'
+    )
 
     // Load dynamic content
     getPageContent(PAGE_ID).then((data) => {
