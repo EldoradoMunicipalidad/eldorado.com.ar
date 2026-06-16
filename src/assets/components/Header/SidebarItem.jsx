@@ -13,9 +13,9 @@ export const SidebarItem = ({ item, isActive, onHover, onLinkClick }) => {
         }
     };
 
-    const baseClasses = `flex items-center w-full px-6 py-4 text-left text-[14px] font-medium transition-all border-b border-gray-200 last:border-none ${isActive
-            ? 'text-gray-800 hover:scale-105 hover:text-blue-800'
-            : 'text-[#009EE3] hover:bg-gray-100'
+    const baseClasses = `flex items-center w-full px-6 py-4 text-left text-sm font-medium transition-all border-b border-gray-100 last:border-none ${isActive
+            ? 'text-slate-800 bg-white shadow-sm'
+            : 'text-slate-600 hover:bg-white hover:text-sky-600'
         }`;
 
     const external = isExternal(item.to);

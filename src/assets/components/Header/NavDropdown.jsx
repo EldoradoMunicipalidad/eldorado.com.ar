@@ -2,15 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { SubItemCard } from './SubItemCard';
 import ContactCard from './ContactCard';
-import { Phone, Sidebar } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import MegaMenuContent from './MegaMenuContent';
 
-// NavDropdown.jsx
 const NavDropdown = ({ title, items, isOpen, onToggle, closeMenu, onMouseEnter, isMobile }) => {
   const [activeItem, setActiveItem] = useState(items[0]);
 
-  // Reseteamos el item activo si cambian los items
   useEffect(() => {
     setActiveItem(items[0]);
   }, [items]);
@@ -20,25 +18,33 @@ const NavDropdown = ({ title, items, isOpen, onToggle, closeMenu, onMouseEnter, 
     if (closeMenu) closeMenu();
   };
 
-  // --- RENDER MÓVIL (ACORDEÓN) ---
+  // --- MÓVIL ---
   if (isMobile) {
     return (
-      <li className="list-none border-b border-gray-100">
+      <li className="list-none">
         <button
           onClick={onToggle}
-          className="flex items-center justify-between w-full py-4 text-[#009EE3] font-semibold text-lg"
+          className={`flex items-center justify-between w-full py-3.5 px-1 rounded-xl transition-all ${
+            isOpen ? 'text-sky-600 bg-sky-50' : 'text-slate-700 hover:text-sky-600 hover:bg-slate-50'
+          }`}
         >
-          <span>{title}</span>
-          <span className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+          <span className="font-semibold text-sm">{title}</span>
+          <ChevronDown
+            className={`w-4 h-4 transition-transform duration-300 ${
+              isOpen ? 'rotate-180 text-sky-500' : 'text-slate-400'
+            }`}
+          />
         </button>
 
-        <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-250 pb-4' : 'max-h-0'}`}>
+        <div className={`overflow-hidden transition-all duration-300 ${
+          isOpen ? 'max-h-250 pb-3' : 'max-h-0'
+        }`}>
           {items.map((item, idx) => (
-            <div key={idx} className="pl-4 mb-2">
+            <div key={idx} className="ml-2 mb-1">
               <Link
                 to={item.to}
                 onClick={handleLinkClick}
-                className="block py-2 text-gray-700 font-medium border-l-2 border-blue-200 pl-3 hover:text-blue-600"
+                className="block py-2 px-4 text-sm text-slate-600 font-medium rounded-lg hover:bg-sky-50 hover:text-sky-600 transition-colors border-l-2 border-transparent hover:border-sky-400"
               >
                 {item.label}
               </Link>
@@ -49,26 +55,28 @@ const NavDropdown = ({ title, items, isOpen, onToggle, closeMenu, onMouseEnter, 
     );
   }
 
-  // --- RENDER DESKTOP (MEGA MENU) ---
+  // --- DESKTOP ---
   return (
     <li className="static list-none" onMouseEnter={onMouseEnter}>
       <button
         onClick={(e) => { e.stopPropagation(); onToggle(); }}
-        className={`relative flex items-center gap-2 font-medium outline-none py-2 transition-all duration-300 group
-          ${isOpen ? 'text-blue-800 scale-110' : 'text-[#009EE3] hover:text-blue-700 hover:scale-105'}`}
+        className={`relative flex items-center gap-1.5 font-medium outline-none px-3 py-2 rounded-xl transition-all duration-200 ${
+          isOpen
+            ? 'text-sky-600 bg-sky-50'
+            : 'text-slate-600 hover:text-sky-600 hover:bg-slate-50'
+        }`}
       >
-        <span className="relative">
-          {title}
-          <span className={`absolute -bottom-1 left-0 h-0.5 bg-blue-700 transition-all duration-300 
-            ${isOpen ? 'w-full opacity-100' : 'w-0 opacity-0'}`}
-          />
-        </span>
-        <span className={`text-[10px] transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+        <span className="text-sm">{title}</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-[70vw] min-h-100 bg-white shadow-2xl rounded-b-xl overflow-hidden z-50 flex border-t border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-          <div className='w-1/3 bg-[#F8F9FA] border-r border-gray-100 flex flex-col'>
+        <div className="absolute top-full left-1/2 -translate-x-1/2 w-[70vw] bg-white shadow-xl rounded-b-xl overflow-hidden z-50 flex border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+          <div className="w-1/3 bg-slate-50 border-r border-slate-100 flex flex-col">
             {items.map((item, index) => (
               <SidebarItem
                 key={index}
