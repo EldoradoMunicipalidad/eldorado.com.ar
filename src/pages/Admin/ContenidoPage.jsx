@@ -1,22 +1,66 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import {
   Shield, Save, Loader2, AlertCircle, CheckCircle2, LogOut,
-  Plus, Trash2, Pencil, X, ArrowUp, ArrowDown, GripVertical,
+  Plus, Trash2, Pencil, X, ArrowUp, ArrowDown,
 } from 'lucide-react'
 import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 import { getPageContent, updatePageContent } from '../../lib/pages'
+import Icon from '../../assets/Icons/Icon'
 
-const ICON_OPTIONS = [
-  'mapIcon', 'shareLocationIcon', 'cityIcon', 'gridOnIcon', 'architectureIcon',
-  'folderSharedIcon', 'engineeringIcon', 'construction', 'gavelIcon', 'descriptionIcon',
-  'menuBookIcon', 'boltIcon', 'aprovationIcon', 'ruleIcon', 'certificationAssignatureIcon',
-  'editDocumentIcon', 'deleteSweepIcon', 'cleaningServicesIcon', 'waterDropIcon',
-  'homeRepairIcon', 'landscapeIcon', 'inventoryIcon', 'assignmentIcon',
-  'analitycsIcon', 'factCheckIcon', 'requestQuoteIcon', 'addRoadIcon',
-  'waterPumpIcon', 'parkIcon', 'toyIcon', 'carRepairIcon', 'editRoadIcon',
-  'localShippingIcon', 'precisionManufacturingIcon',
+// ─── Complete icon list from the app's ICONS_MAP ─────────────────────
+const ALL_ICONS = [
+  'mapIcon','shareLocationIcon','cityIcon','gridOnIcon','architectureIcon',
+  'folderSharedIcon','engineeringIcon','construction','gavelIcon','descriptionIcon',
+  'menuBookIcon','boltIcon','aprovationIcon','ruleIcon','certificationAssignatureIcon',
+  'editDocumentIcon','deleteSweepIcon','cleaningServicesIcon','waterDropIcon',
+  'homeRepairIcon','landscapeIcon','inventoryIcon','assignmentIcon',
+  'analitycsIcon','factCheckIcon','requestQuoteIcon','addRoadIcon',
+  'waterPumpIcon','parkIcon','toyIcon','carRepairIcon','editRoadIcon',
+  'localShippingIcon','precisionManufacturingIcon','departamentos',
+  'dirAsuntosJuridicos','dirComunicacion','dirCultura','dirDeportes',
+  'dirDesarrolloAndIntegracion','dirDiseñoTextil','dirJuventud',
+  'dirProteccionCivil','dirRecursosHumanos','dirTransito','dirTurismo',
+  'parqueIndustrial','poloAcademico','dirControlAndGestion','dirRentasGenerales',
+  'dirContabilidadGeneral','dirAccionSocial','dirNiñezAndAdoles',
+  'dirDominialDeTierras','dirAdultosMayores','relacionesComunidad',
+  'dirObrasPublicas','dirMantenimientoAndServicios','plantaAsfaltica',
+  'plantaHormigon','dirPlaneamiento','dirIntegracionProductiva',
+  'dirProduccionAndDesarrolloSostenible','dirAmbiente','dirBromatologiaAndZoonosis',
+  'normativas','licenciaAmbiental','guiaElaboracionInformesAmbientales',
+  'denuncias','observatorioAmbiental','flag','target','eco',
+  'accountBalanceWallet','familyGroup','factoryIcon','accionSocialIcon',
+  'pinDropIcon','databaseIcon','contentPasteIcon','locationOnIcon',
+  'searchIcon','transitIcon','badgeIcon','checkBoxIcon','directionsBusIcon',
+  'domainIcon','verifiedUserIcon','fingerPrintIcon','groupsIcon','micIcon',
+  'newsPaperIcon','pieChartIcon','shareIcon','festivalIcon','schoolIcon',
+  'museumIcon','localLibraryIcon','handshakeIcon','storeFrontIcon','publicIcon',
+  'balanceIcon','ligthbulbIcon','manageSearchIcon','stadiumIcon','sportsIcon',
+  'trophyIcon','fitnessCenterIcon','policyIcon','ambulanceIcon','securityIcon',
+  'trendingUpIcon','forumIcon','modelTrainingIcon','paymentIcon',
+  'workSpacePremiumIcon','recyclingIcon','hubIcon','homeWorkIcon',
+  'diversity3Icon','healthAndSafetyIcon','accountTreeIcon','lowPriorityIcon',
+  'schemaIcon','settingsAlertIcon','emergencyIcon','settingsAccessibilityIcon',
+  'medicalServicesIcon','assignmentTurnedInIcon','downloadIcon','biotechIcon',
+  'pottedPlantIcon','campaignIcon','forestIcon','assignmentAddIcon',
+  'visibilityIcon','scheduleIcon','expandMoreIcon','settingsBackupRestoreIcon',
+  'lockOpenCircleIcon','verifiedIcon','chatIcon','mailIcon','arrowOutwardIcon',
+  'linkIcon','financeChipIcon','automotorIcon','accountBalanceIcon',
+  'turnosZoonosisIcon','ctcIcon','bolsaEmpleoIcon','busIcon',
+  'portalTributarioIcon','candadoCerradoIcon','candadoAbiertoIcon',
+  'habilitacionComercialIcon','warningIcon','creditCardIcon','semLoginIcon',
+  'testVocacionalIcon','tarjetaUniversitariaIcon','consejoDeliberanteIcon',
+  'personAddIcon','personRemoveIcon','supportAgentIcon','familyIcon','babyIcon',
+  'helpClinicIcon','sunnyIcon','nutritionIcon','accessibleIcon','elderlyIcon',
+  'devicesIcon','sportsMartialArtsIcon','theaterIcon','phoneIcon',
+  'psychologyIcon','frontLoaderIcon','naturePeopleIcon','contentCutIcon',
+  'attractionsIcon','quickReferenceIcon','scienceIcon','pestControlIcon',
+  'articleShortcutIcon','monitoringIcon','groupWorkIcon','localMallIcon',
+  'agricultureIcon','fileCopyIcon','calendarIcon','financeModeIcon',
+  'trendingDownIcon','lockIcon','appsIcon','chevronRightIcon','chevronLeftIcon',
+  'closeIcon','inboxIcon','addIcon','editIcon','straightenIcon',
+  'checkCircleIcon','eventBusyIcon',
 ]
 
 export default function ContenidoPage() {
@@ -52,7 +96,6 @@ export default function ContenidoPage() {
         if (data.content) {
           setContent(data.content)
         } else {
-          // Default structure for first time
           setContent({
             header: { title: '', highlight: '', description: '' },
             mision: '',
@@ -345,7 +388,7 @@ export default function ContenidoPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Ícono" value={fn.icono || ''} onChange={(v) => updateFuncion(i, 'icono', v)} placeholder="engineeringIcon" />
+                    <IconPicker value={fn.icono || ''} onChange={(v) => updateFuncion(i, 'icono', v)} label="Ícono" />
                     <Field label="Título" value={fn.titulo || ''} onChange={(v) => updateFuncion(i, 'titulo', v)} placeholder="Planos Digitalizados" />
                   </div>
                   <div className="mt-3">
@@ -375,7 +418,7 @@ export default function ContenidoPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <Field label="Título" value={section.title || ''} onChange={(v) => updateAccordion(accIdx, 'title', v)} placeholder="Códigos y Ordenanzas" />
-                    <Field label="Ícono" value={section.icon || ''} onChange={(v) => updateAccordion(accIdx, 'icon', v)} placeholder="gavelIcon" />
+                    <IconPicker value={section.icon || ''} onChange={(v) => updateAccordion(accIdx, 'icon', v)} label="Ícono" />
                   </div>
 
                   {/* Cards dentro del acordeón */}
@@ -393,7 +436,7 @@ export default function ContenidoPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <input className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" value={card.title || ''} onChange={(e) => updateCard(accIdx, cIdx, 'title', e.target.value)} placeholder="Título" />
-                          <input className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" value={card.icon || ''} onChange={(e) => updateCard(accIdx, cIdx, 'icon', e.target.value)} placeholder="Icono" />
+                          <IconPicker value={card.icon || ''} onChange={(v) => updateCard(accIdx, cIdx, 'icon', v)} compact />
                         </div>
                         <input className="w-full mt-2 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" value={card.description || ''} onChange={(e) => updateCard(accIdx, cIdx, 'description', e.target.value)} placeholder="Descripción" />
                         <input className="w-full mt-2 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none font-mono text-xs" value={card.to || ''} onChange={(e) => updateCard(accIdx, cIdx, 'to', e.target.value)} placeholder="https:// o /ruta-interna" />
@@ -429,7 +472,9 @@ export default function ContenidoPage() {
   )
 }
 
-// ─── Sub-components ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════
+// SUB-COMPONENTS
+// ═══════════════════════════════════════════════════════════════════════
 
 function CardSection({ title, children }) {
   return (
@@ -463,6 +508,84 @@ function Field({ label, value, onChange, placeholder, textarea, rows = 3 }) {
           className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all text-sm"
           placeholder={placeholder}
         />
+      )}
+    </div>
+  )
+}
+
+// ─── Icon Picker ─────────────────────────────────────────────────────
+function IconPicker({ value, onChange, label, compact }) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const ref = useRef(null)
+
+  const filteredIcons = search
+    ? ALL_ICONS.filter((name) => name.toLowerCase().includes(search.toLowerCase()))
+    : ALL_ICONS
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const displayName = value || 'Seleccionar icono'
+
+  return (
+    <div ref={ref} className="relative">
+      {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full flex items-center gap-2 px-3 py-2 border border-slate-300 rounded-xl hover:border-sky-400 focus:ring-2 focus:ring-sky-500 outline-none transition-all text-sm bg-white ${compact ? 'py-1.5' : ''}`}
+      >
+        <span className="w-6 h-6 flex items-center justify-center text-sky-600 shrink-0">
+          <Icon name={value} size={compact ? 16 : 20} />
+        </span>
+        <span className="text-slate-600 truncate">{displayName}</span>
+        <svg className={`w-4 h-4 ml-auto text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-80 bg-white border border-slate-200 rounded-xl shadow-xl p-3 max-h-80 overflow-hidden flex flex-col">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar icono..."
+            className="w-full mb-2 px-3 py-1.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none"
+            autoFocus
+          />
+          <div className="overflow-y-auto flex-1 grid grid-cols-5 gap-1">
+            {filteredIcons.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => { onChange(name); setOpen(false); setSearch('') }}
+                title={name}
+                className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg hover:bg-sky-50 transition-colors ${
+                  value === name ? 'bg-sky-100 ring-2 ring-sky-400' : ''
+                }`}
+              >
+                <span className="w-6 h-6 flex items-center justify-center text-slate-600">
+                  <Icon name={name} size={16} />
+                </span>
+                <span className="text-[8px] text-slate-500 leading-tight text-center truncate w-full">
+                  {name.replace(/Icon$/,'').slice(0, 10)}
+                </span>
+              </button>
+            ))}
+            {filteredIcons.length === 0 && (
+              <p className="col-span-5 text-xs text-slate-400 text-center py-4">Sin resultados</p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   )
