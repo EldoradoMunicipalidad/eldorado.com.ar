@@ -10,7 +10,7 @@ export const IntendenciaPage = () => {
       <SectionLayout
         title="Intendencia"
         highlight=""
-        description="Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quia perspiciatis quam, molestias repellendus aut dolor!"
+        description="El Departamento Ejecutivo Municipal está encabezado por el Intendente, quien coordina las distintas secretarías y direcciones para garantizar el funcionamiento y desarrollo de la ciudad de Eldorado."
       />
 
     <SectionCardGrid

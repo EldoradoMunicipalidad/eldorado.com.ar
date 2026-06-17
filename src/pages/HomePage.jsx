@@ -89,8 +89,8 @@ export const HomePage = () => {
       <TramitesAndServiciosSection />
       
       <InformacionAdicionalSection
-        tag="Lorem ipsum dolor"
-        title="Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero, totam?"
+        tag="Información de Interés"
+        title="Servicios, trámites y recursos útiles para los ciudadanos de Eldorado"
         cardsData={misCards} />
 
       <AppSection />

@@ -10,7 +10,7 @@ export const BarriosPage = () => {
       <SectionLayout
         title="Barrios"
         highlight=""
-        description="Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quia perspiciatis quam, molestias repellendus aut dolor!"
+        description="Conocé los barrios que conforman nuestra ciudad, sus ubicaciones, servicios y espacios verdes. Eldorado está dividida en diversos barrios y chacras, cada uno con su identidad y características particulares."
       />
       
       {barriosSectionData.map((section, index) => (
