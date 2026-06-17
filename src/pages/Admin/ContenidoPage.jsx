@@ -8,8 +8,30 @@ import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 import { getPageContent, updatePageContent } from '../../lib/pages'
 import Icon from '../../assets/Icons/Icon'
+import { SECRETARIA_OBRAS_PUBLICAS } from '../../data/Gobierno/secretariasCards'
 
-// ─── Complete icon list from the app's ICONS_MAP ─────────────────────
+// ─── Default content from static data (pre-populates editor) ─────────
+function getDefaultContent(pageId) {
+  if (pageId === 'planeamiento') {
+    const section = SECRETARIA_OBRAS_PUBLICAS[0]
+    const card = section?.cards?.find(
+      (c) => c.to === '/gobierno/secretaria-obras-publicas/planeamiento'
+    )
+    return {
+      header: { title: 'Dirección de', highlight: 'Planeamiento', description: '' },
+      mision: card?.mision || '',
+      funciones: card?.funciones || [],
+      accordionItems: section?.accordionItems || [],
+    }
+  }
+  // Para otras páginas, defaults vacíos
+  return {
+    header: { title: '', highlight: '', description: '' },
+    mision: '',
+    funciones: [],
+    accordionItems: [],
+  }
+}
 const ALL_ICONS = [
   'mapIcon','shareLocationIcon','cityIcon','gridOnIcon','architectureIcon',
   'folderSharedIcon','engineeringIcon','construction','gavelIcon','descriptionIcon',
@@ -96,12 +118,7 @@ export default function ContenidoPage() {
         if (data.content) {
           setContent(data.content)
         } else {
-          setContent({
-            header: { title: '', highlight: '', description: '' },
-            mision: '',
-            funciones: [],
-            accordionItems: [],
-          })
+          setContent(getDefaultContent(pageId))
         }
       })
       .catch(() => setError('Error al cargar contenido'))
