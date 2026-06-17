@@ -1,4 +1,5 @@
-import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
 import SectionLayout from '../../assets/components/SectionLayout';
 import { SECRETARIA_AMBIENTE } from '../../data/Gobierno/secretariasCards';
 import { AMBIENTE_DATA } from '../../data/Gobierno/secretariasData';
@@ -7,8 +8,31 @@ import { Section } from '../../assets/components/Section';
 import { Mision } from '../../assets/components/Gobierno/Mision';
 import { FuncionesPrincipales } from '../../assets/components/Gobierno/FuncionesPrincipales';
 import { DocumentSection } from '../../assets/components/Gobierno/DocumentSection';
+import { Pencil } from 'lucide-react'
+import { getPageContent } from '../../lib/pages'
+
+const PAGE_ID = 'secretaria-ambiente'
 
 export const SecretariaDeAmbientePage = () => {
+  const navigate = useNavigate()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [content, setContent] = useState(null)
+
+  useEffect(() => {
+    setIsAdmin(
+      sessionStorage.getItem('reclamos_admin_auth') === 'true' ||
+      sessionStorage.getItem('ambiente_admin_auth') === 'true'
+    )
+
+    getPageContent(PAGE_ID).then((data) => {
+      if (data.content) {
+        setContent(data.content)
+      }
+    }).catch(() => {})
+  }, [])
+
+  const header = content?.header
+
   // Documentos reales - Normativas de Ambiente
   const documentosFicticios = [
     { titulo: "Ley Yolanda", to: "https://drive.google.com/file/d/1hLIKlI1Rlq2EqZRAjg90bJ2nHpw2WoRj/preview" },
@@ -37,10 +61,22 @@ export const SecretariaDeAmbientePage = () => {
   return (
     <>
       <SectionLayout
-        title="Secretaría de"
-        highlight="Ambiente"
-        description="Promovemos el desarrollo sostenible, el cuidado del entorno y el compromiso con el medio ambiente en nuestra ciudad. A través de normativas, programas y participación ciudadana, trabajamos para preservar nuestros recursos naturales y garantizar una mejor calidad de vida para las generaciones presentes y futuras."
-      />
+        title={header?.title || "Secretaría de"}
+        highlight={header?.highlight || "Ambiente"}
+        description={header?.description || "Promovemos el desarrollo sostenible, el cuidado del entorno y el compromiso con el medio ambiente en nuestra ciudad. A través de normativas, programas y participación ciudadana, trabajamos para preservar nuestros recursos naturales y garantizar una mejor calidad de vida para las generaciones presentes y futuras."}
+      >
+        {isAdmin && (
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={() => navigate(`/admin/contenido/${PAGE_ID}`)}
+              className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 transition-colors shadow-sm"
+            >
+              <Pencil className="w-4 h-4" />
+              Editar contenido
+            </button>
+          </div>
+        )}
+      </SectionLayout>
 
       {SECRETARIA_AMBIENTE.map((section, index) => (
         <SectionCardGrid

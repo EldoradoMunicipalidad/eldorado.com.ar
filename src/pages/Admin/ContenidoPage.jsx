@@ -8,7 +8,8 @@ import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 import { getPageContent, updatePageContent } from '../../lib/pages'
 import Icon from '../../assets/Icons/Icon'
-import { SECRETARIA_OBRAS_PUBLICAS } from '../../data/Gobierno/secretariasCards'
+import { SECRETARIA_OBRAS_PUBLICAS, SECRETARIA_AMBIENTE } from '../../data/Gobierno/secretariasCards'
+import { AMBIENTE_DATA } from '../../data/Gobierno/secretariasData'
 
 // ─── Default content from static data (pre-populates editor) ─────────
 function getDefaultContent(pageId) {
@@ -22,6 +23,26 @@ function getDefaultContent(pageId) {
       mision: card?.mision || '',
       funciones: card?.funciones || [],
       accordionItems: section?.accordionItems || [],
+    }
+  }
+  if (pageId === 'direccion-ambiente') {
+    const section = SECRETARIA_AMBIENTE[0]
+    const card = section?.cards?.find(
+      (c) => c.to === '/gobierno/secretaria-de-ambiente/ambiente'
+    )
+    return {
+      header: { title: 'Dirección de', highlight: 'Ambiente', description: '' },
+      mision: card?.mision || '',
+      funciones: card?.funciones || [],
+      accordionItems: section?.accordionItems || [],
+    }
+  }
+  if (pageId === 'secretaria-ambiente') {
+    return {
+      header: { title: 'Secretaría de', highlight: 'Ambiente', description: '' },
+      mision: AMBIENTE_DATA?.mision || '',
+      funciones: AMBIENTE_DATA?.funciones || [],
+      accordionItems: [],
     }
   }
   // Para otras páginas, defaults vacíos
