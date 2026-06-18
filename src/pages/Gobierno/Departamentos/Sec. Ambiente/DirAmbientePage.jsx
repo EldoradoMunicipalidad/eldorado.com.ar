@@ -24,7 +24,8 @@ const DirAmbientePage = () => {
   useEffect(() => {
     setIsAdmin(
       sessionStorage.getItem('reclamos_admin_auth') === 'true' ||
-      sessionStorage.getItem('ambiente_admin_auth') === 'true'
+      sessionStorage.getItem('ambiente_admin_auth') === 'true' ||
+      sessionStorage.getItem('contenido_admin_auth') === 'true'
     )
 
     getPageContent(PAGE_ID).then((data) => {

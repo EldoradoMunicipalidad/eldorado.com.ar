@@ -21,7 +21,8 @@ export const SecretariaDeAmbientePage = () => {
   useEffect(() => {
     setIsAdmin(
       sessionStorage.getItem('reclamos_admin_auth') === 'true' ||
-      sessionStorage.getItem('ambiente_admin_auth') === 'true'
+      sessionStorage.getItem('ambiente_admin_auth') === 'true' ||
+      sessionStorage.getItem('contenido_admin_auth') === 'true'
     )
 
     getPageContent(PAGE_ID).then((data) => {
@@ -32,6 +33,8 @@ export const SecretariaDeAmbientePage = () => {
   }, [])
 
   const header = content?.header
+  const mision = content?.mision || AMBIENTE_DATA?.mision || ''
+  const funciones = content?.funciones?.length > 0 ? content.funciones : (AMBIENTE_DATA?.funciones || [])
 
   // Documentos reales - Normativas de Ambiente
   const documentosFicticios = [
@@ -92,13 +95,13 @@ export const SecretariaDeAmbientePage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-12">
             <Mision
-              texto={AMBIENTE_DATA.mision}
+              texto={mision}
             />
           </div>
 
-          {AMBIENTE_DATA.funciones?.length > 0 && (
+          {funciones?.length > 0 && (
             <div className="lg:col-span-12">
-              <FuncionesPrincipales items={AMBIENTE_DATA.funciones} />
+              <FuncionesPrincipales items={funciones} />
             </div>
           )}
         </div>
