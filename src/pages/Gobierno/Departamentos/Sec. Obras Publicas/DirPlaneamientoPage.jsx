@@ -33,7 +33,8 @@ const DirPlaneamientoPage = () => {
     // Check if logged in as admin
     setIsAdmin(
       sessionStorage.getItem('reclamos_admin_auth') === 'true' ||
-      sessionStorage.getItem('turnero_admin_auth') === 'true'
+      sessionStorage.getItem('turnero_admin_auth') === 'true' ||
+      sessionStorage.getItem('contenido_admin_auth') === 'true'
     )
 
     // Load dynamic content
