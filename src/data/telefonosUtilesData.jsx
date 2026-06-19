@@ -5,11 +5,11 @@ const telefonosUtilesData = [
     icon: "accountBalanceIcon",
     contacts: [
       { name: "Secretaria de Gobierno", phone: "03751 - 426470" },
-      { name: "Mesa de Entrada", phone: "3751 - 421787 / 421153" },
-      { name: "Fax", phone: "3751 - 422378" },
-      { name: "Dirección de Cultura", phone: "3751 - 451152" },
+      { name: "Mesa de Entrada", phone: "03751 - 421787 / 421153" },
+      { name: "Fax", phone: "03751 - 422378" },
+      { name: "Dirección de Cultura", phone: "03751 - 451152" },
       { name: "Museo Casa del Fundador y Prehistoria", phone: "03751 - 434034" },
-      { name: "Dirección de Turismo", phone: "3751 - 426473" },
+      { name: "Dirección de Turismo", phone: "03751 - 426473" },
       { name: "Dirección de Transito Km 11", phone: "03751 - 424276" },
       { name: "Deposito Vehicular Km 6", phone: "03751 - 422235" },
       { name: "Prensa Institucional", phone: "03751 - 420607" },
@@ -52,7 +52,7 @@ const telefonosUtilesData = [
     contacts: [
       { name: "Samic", phone: "03751 - 422334" },
       { name: "Hospital Ramon Garden", phone: "03751 - 430435" },
-      { name: "Salud Mental", phone: "03751 - 425045 / 3751- 334164" },
+      { name: "Salud Mental", phone: "03751 - 425045 / 03751- 334164" },
       { name: "Sedronar", phone: "03751 - 620720" },
       { name: "Ceel", phone: "08008882355" }
     ]
@@ -67,7 +67,7 @@ const telefonosUtilesData = [
       { name: "CIC Km 18", phone: "03751 - 15575629" },
       { name: "CIC Pinares", phone: "03751 - 430707" },
       { name: "Centro de Día", phone: "037451 - 431900" },
-      { name: "Polideportivo Km 9", phone: "3751 - 421151" },
+      { name: "Polideportivo Km 9", phone: "03751 - 421151" },
       { name: "Polideportivo Km 3", phone: "03751 - 427461" },
       { name: "Punto Express", phone: "03751 - 424552" }
     ]
