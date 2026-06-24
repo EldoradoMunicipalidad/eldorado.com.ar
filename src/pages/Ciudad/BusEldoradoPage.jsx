@@ -306,28 +306,6 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
           )}
         </div>
       )}
-
-      {/* Sugerencias cuando no hay búsqueda */}
-      {!query && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden max-h-64 overflow-y-auto">
-          <p className="px-4 py-2 text-xs text-slate-400 font-medium border-b border-slate-100 bg-slate-50">
-            DESTINOS POPULARES
-          </p>
-          {rutas.slice(0, 4).map((ruta) => (
-            <button
-              key={ruta.id}
-              onClick={() => handleSelect(ruta.id)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-sky-50 transition-colors border-b border-slate-100 last:border-b-0"
-            >
-              <MapPin className="size-4 text-sky-400 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-slate-700">{ruta.destino}</p>
-                <p className="text-xs text-slate-400">{ruta.duracionPromedio}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 };
