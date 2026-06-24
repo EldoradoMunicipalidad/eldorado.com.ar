@@ -1,8 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import SectionLayout from '../../assets/components/SectionLayout';
 import { EMPRESAS, RUTAS, TODOS_LOS_HORARIOS, TERMINAL_INFO } from '../../data/busEldoradoData';
-import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Search, X } from 'lucide-react';
-import Icon from '../../assets/Icons/Icon';
+import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Search, X, ArrowRight, Calendar } from 'lucide-react';
 
 // Componente:Selector de ruta
 const RutaSelector = ({ rutas, rutaActiva, onSelect }) => {
@@ -61,38 +60,73 @@ const EmpresaCard = ({ empresa }) => {
   );
 };
 
-// Componente:Fila de horario
-const HorarioRow = ({ horario }) => {
+// Componente: Card de horario horizontal
+const HorarioCard = ({ horario }) => {
   const empresa = EMPRESAS.find((e) => e.id === horario.empresaId);
+  const empresaColor = empresa?.color || '#6B7280';
+
   return (
-    <tr className="border-b border-slate-100 hover:bg-sky-50/30 transition-colors">
-      <td className="py-3 px-3">
-        <span className="text-sm font-medium text-slate-700">{horario.destino}</span>
-      </td>
-      <td className="py-3 px-3">
-        <span className="text-sm text-slate-600">{horario.empresa}</span>
-      </td>
-      <td className="py-3 px-3 text-center">
-        <span className="text-sm font-semibold text-sky-600">{horario.partida}</span>
-      </td>
-      <td className="py-3 px-3 text-center hidden md:table-cell">
-        <span className="text-sm text-slate-500">{horario.llegada}</span>
-      </td>
-      <td className="py-3 px-3 text-center hidden lg:table-cell">
-        <span className="text-xs text-slate-500">{horario.duracion}</span>
-      </td>
-      <td className="py-3 px-3 text-center hidden lg:table-cell">
-        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{horario.servicio}</span>
-      </td>
-      <td className="py-3 px-3 hidden xl:table-cell">
-        <span className="text-xs text-slate-500">{horario.observaciones}</span>
-      </td>
-    </tr>
+    <div className="bg-white rounded-xl border border-slate-200 p-4 hover:shadow-md hover:border-sky-200 transition-all shadow-sm">
+      <div className="flex items-center gap-4">
+        {/* Hora de partida - destacada */}
+        <div className="flex-shrink-0 text-center">
+          <div className="text-2xl font-bold text-sky-600">{horario.partida}</div>
+          <div className="text-xs text-slate-400">Partida</div>
+        </div>
+
+        {/* Línea de conexión */}
+        <div className="flex flex-col items-center flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center">
+            <Bus className="size-4 text-sky-500" />
+          </div>
+          <div className="w-0.5 h-8 bg-slate-200" />
+          <div className="w-3 h-3 rounded-full bg-slate-300" />
+        </div>
+
+        {/* Info principal */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="font-semibold text-slate-800">{horario.origen}</span>
+            <ArrowRight className="size-4 text-slate-400 flex-shrink-0" />
+            <span className="font-semibold text-slate-800">{horario.destino}</span>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-slate-500">
+            <span className="flex items-center gap-1">
+              <Clock className="size-3.5" />
+              {horario.duracion}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar className="size-3.5" />
+              {horario.servicio}
+            </span>
+          </div>
+        </div>
+
+        {/* Empresa */}
+        <div className="flex-shrink-0 text-right">
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-white"
+            style={{ backgroundColor: empresaColor }}
+          >
+            <span>{empresa?.nombre || horario.empresa}</span>
+          </div>
+          {horario.observaciones && (
+            <p className="text-xs text-slate-400 mt-1">{horario.observaciones}</p>
+          )}
+        </div>
+
+        {/* Hora de llegada */}
+        <div className="flex-shrink-0 text-center bg-slate-50 px-3 py-2 rounded-lg">
+          <div className="text-lg font-semibold text-slate-600">{horario.llegada}</div>
+          <div className="text-xs text-slate-400">Llegada</div>
+        </div>
+      </div>
+    </div>
   );
 };
 
-// Componente:Tabla de horarios
-const HorariosTable = ({ horarios }) => {
+// Componente:lista de horarios con cards
+const HorariosList = ({ horarios }) => {
   if (!horarios || horarios.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
@@ -103,28 +137,12 @@ const HorariosTable = ({ horarios }) => {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px]">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200">
-              <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Destino</th>
-              <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Empresa</th>
-              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Partida</th>
-              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Llegada</th>
-              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Duración</th>
-              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Servicio</th>
-              <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden xl:table-cell">Observaciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {horarios.map((horario, index) => (
-              <HorarioRow key={index} horario={horario} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
+    <div className="space-y-3">
+      {horarios.map((horario, index) => (
+        <HorarioCard key={index} horario={horario} />
+      ))}
+      {/* Disclaimer en el footer */}
+      <div className="bg-slate-50 px-4 py-3 rounded-xl border border-slate-200">
         <p className="text-xs text-slate-500 text-center">
           ⚠️ Los horarios son referenciales y pueden variar. Verificá directamente con la empresa o en Plataforma10.com.ar
         </p>
@@ -308,7 +326,7 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
 
 // ============ PAGINA PRINCIPAL ============
 export const BusEldoradoPage = () => {
-  const [rutaActiva, setRutaActiva] = useState('eldorado-bsas');
+  const [rutaActiva, setRutaActiva] = useState('eldorado-retiro');
   const [mostrarEmpresas, setMostrarEmpresas] = useState(false);
   const [ordenarPor, setOrdenarPor] = useState('partida');
 
@@ -328,10 +346,7 @@ export const BusEldoradoPage = () => {
     });
   }, [rutaActiva, ordenarPor]);
 
-  const rutaActual = RUTAS.find((r) => {
-    const rutaKey = r.id.replace('eldorado-', 'eldorado-');
-    return rutaKey === rutaActiva;
-  });
+  const rutaActual = RUTAS.find((r) => r.id === rutaActiva);
 
   return (
     <>
@@ -343,7 +358,7 @@ export const BusEldoradoPage = () => {
 
       {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-6 pb-16">
-        {/* Buscador de destinos - SIN card wrapper para que el dropdown funcione */}
+        {/* Buscador de destinos */}
         <div className="mb-8 -mt-4">
           <h2 className="text-base font-bold text-slate-700 mb-3 text-center flex items-center justify-center gap-2">
             <Search className="size-4 text-sky-500" />
@@ -401,8 +416,8 @@ export const BusEldoradoPage = () => {
           </div>
         </div>
 
-        {/* Tabla de horarios */}
-        <HorariosTable horarios={horariosActivos} />
+        {/* Lista de horarios con cards */}
+        <HorariosList horarios={horariosActivos} />
 
         {/* Todas las rutas */}
         <section className="mt-12">
