@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import SectionLayout from '../../assets/components/SectionLayout';
 import { EMPRESAS, RUTAS, TODOS_LOS_HORARIOS, TERMINAL_INFO } from '../../data/busEldoradoData';
-import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Info, Search, X } from 'lucide-react';
+import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Search, X } from 'lucide-react';
 import Icon from '../../assets/Icons/Icon';
 
 // Componente:Selector de ruta
@@ -198,23 +198,6 @@ const TerminalInfo = () => {
   );
 };
 
-// Componente:Alerta informativa
-const AlertaInformativa = () => (
-  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 mb-6">
-    <Info className="size-5 text-amber-500 flex-shrink-0 mt-0.5" />
-    <div className="text-sm text-amber-800">
-      <p className="font-semibold mb-1">Información importante</p>
-      <p>
-        Los horarios mostrados son referenciales y corresponden a la información disponible en{' '}
-        <a href="https://www.plataforma10.com.ar" target="_blank" rel="noopener noreferrer" className="font-medium underline hover:text-amber-900">
-          Plataforma10.com.ar
-        </a>
-        . Se recomienda confirmar disponibilidad y horarios directamente con cada empresa o en la plataforma mencionada antes de planificar tu viaje.
-      </p>
-    </div>
-  </div>
-);
-
 // Componente:Tarjeta de ruta
 const RutaCard = ({ ruta }) => (
   <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-md transition-shadow shadow-sm">
@@ -265,7 +248,7 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full max-w-md mx-auto mb-6">
+    <div ref={wrapperRef} className="relative w-full max-w-md mx-auto">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
         <input
@@ -276,8 +259,8 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder="Buscar destino (ej: Buenos Aires, Posadas, Iguazú...)"
-          className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm bg-slate-50 focus:bg-white transition-all"
+          placeholder="Ej: Buenos Aires, Posadas, Iguazú..."
+          className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm bg-white focus:bg-white transition-all"
         />
         {query && (
           <button
@@ -294,7 +277,7 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
 
       {/* Dropdown de resultados */}
       {isOpen && query.trim() && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden max-h-64 overflow-y-auto">
           {resultados.length > 0 ? (
             <>
               {resultados.map((ruta) => (
@@ -326,7 +309,7 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
 
       {/* Sugerencias cuando no hay búsqueda */}
       {!query && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden max-h-64 overflow-y-auto">
           <p className="px-4 py-2 text-xs text-slate-400 font-medium border-b border-slate-100 bg-slate-50">
             DESTINOS POPULARES
           </p>
@@ -386,10 +369,8 @@ export const BusEldoradoPage = () => {
 
       {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-6 pb-16">
-        <AlertaInformativa />
-
-        {/* Buscador de destinos */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-8 -mt-4">
+        {/* Buscador de destinos - SIN card wrapper para que el dropdown funcione */}
+        <div className="mb-8 -mt-4">
           <h2 className="text-base font-bold text-slate-700 mb-3 text-center flex items-center justify-center gap-2">
             <Search className="size-4 text-sky-500" />
             Buscá tu destino
