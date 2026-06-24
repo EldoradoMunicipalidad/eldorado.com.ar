@@ -360,11 +360,13 @@ export const BusEldoradoPage = () => {
       <div className="max-w-7xl mx-auto px-6 pb-16">
         {/* Buscador de destinos */}
         <div className="mb-8 -mt-4">
-          <h2 className="text-base font-bold text-slate-700 mb-3 text-center flex items-center justify-center gap-2">
-            <Search className="size-4 text-sky-500" />
-            Buscá tu destino
-          </h2>
-          <BuscadorDestinos rutas={RUTAS} onSelect={setRutaActiva} />
+          <div className="flex items-center justify-center gap-3">
+            <label className="text-sm font-bold text-slate-600 flex items-center gap-1 whitespace-nowrap">
+              <Search className="size-4 text-sky-500" />
+              Buscá tu destino
+            </label>
+            <BuscadorDestinos rutas={RUTAS} onSelect={setRutaActiva} />
+          </div>
         </div>
 
         {/* Selector de ruta */}
