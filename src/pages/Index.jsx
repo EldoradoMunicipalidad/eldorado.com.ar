@@ -8,6 +8,7 @@ export { default as BusEldoradoPage } from './Ciudad/BusEldoradoPage';
 export { default as CartaOrganicaPage } from './Ciudad/CartaOrganicaPage';
 export { default as ContactoPage } from './Ciudad/ContactoPage';
 export { default as EldoradoPage } from './Ciudad/EldoradoPage';
+export { default as ExpoEldoradoPage } from './Ciudad/ExpoEldoradoPage';
 export { default as SimbolosPage } from './Ciudad/SimbolosPage';
 export { default as TelefonosUtilesPage } from './Ciudad/TelefonosUtilesPage';
 

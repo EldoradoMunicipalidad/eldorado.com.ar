@@ -6,6 +6,7 @@ import {
   NotFound,
   EldoradoPage,
   SimbolosPage,
+  ExpoEldoradoPage,
   BarriosPage,
   CartaOrganicaPage,
   ContactoPage,
@@ -107,6 +108,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
 
           {/* SECCIÓN CIUDAD */}
+          <Route path="/ciudad/expo-eldorado" element={<ExpoEldoradoPage />} />
           <Route path="/ciudad/eldorado" element={<EldoradoPage />} />
       <Route path="/ciudad/escudo-e-insignias" element={<SimbolosPage />} />
           <Route path="/ciudad/simbolos" element={<SimbolosPage />} />

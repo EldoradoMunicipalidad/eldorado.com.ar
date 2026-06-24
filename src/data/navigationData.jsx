@@ -52,11 +52,11 @@ export const itemsCiudad = [
       {
         title: "Expo Eldorado",
         keywords: [
-          { label: "Stands Comerciales", to: "/ciudad/eldorado#expo-eldorado" },
-          { label: "Artesanias", to: "/ciudad/eldorado#expo-eldorado" },
-          { label: "Emprendimientos", to: "/ciudad/eldorado#expo-eldorado" }
+          { label: "Stands Comerciales", to: "/ciudad/expo-eldorado" },
+          { label: "Artesanias", to: "/ciudad/expo-eldorado" },
+          { label: "Emprendimientos", to: "/ciudad/expo-eldorado" }
         ],
-        to: "/ciudad/eldorado#expo-eldorado"
+        to: "/ciudad/expo-eldorado"
       }
     ]
   },
