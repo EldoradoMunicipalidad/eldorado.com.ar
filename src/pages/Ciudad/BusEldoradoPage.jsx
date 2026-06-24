@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import SectionLayout from '../../assets/components/SectionLayout';
 import { EMPRESAS, RUTAS, TODOS_LOS_HORARIOS, TERMINAL_INFO } from '../../data/busEldoradoData';
 import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Info, Search, X } from 'lucide-react';
+import Icon from '../../assets/Icons/Icon';
 
 // Componente:Selector de ruta
 const RutaSelector = ({ rutas, rutaActiva, onSelect }) => {
@@ -13,8 +14,8 @@ const RutaSelector = ({ rutas, rutaActiva, onSelect }) => {
           onClick={() => onSelect(ruta.id)}
           className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
             rutaActiva === ruta.id
-              ? 'bg-sky-500 text-white shadow-md'
-              : 'bg-white text-slate-600 border border-slate-200 hover:border-sky-300 hover:text-sky-600'
+              ? 'bg-sky-500 text-white shadow-sm'
+              : 'bg-white text-slate-600 border border-slate-200 hover:border-sky-300 hover:text-sky-600 shadow-sm'
           }`}
         >
           {ruta.origen} → {ruta.destino}
@@ -27,10 +28,10 @@ const RutaSelector = ({ rutas, rutaActiva, onSelect }) => {
 // Componente:Tarjeta de empresa
 const EmpresaCard = ({ empresa }) => {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-xl border border-slate-200 p-4 flex flex-col gap-3 hover:shadow-md transition-shadow shadow-sm">
       <div className="flex items-center gap-3">
         <div
-          className="size-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+          className="size-10 rounded-lg flex items-center justify-center text-white font-bold text-sm"
           style={{ backgroundColor: empresa.color }}
         >
           {empresa.nombre.charAt(0)}
@@ -68,7 +69,7 @@ const HorarioRow = ({ horario }) => {
       <td className="py-3 px-3">
         <div className="flex items-center gap-2">
           <div
-            className="size-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            className="size-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
             style={{ backgroundColor: empresa?.color || '#666' }}
           >
             {empresa?.nombre.charAt(0) || '?'}
@@ -139,7 +140,7 @@ const HorariosTable = ({ horarios }) => {
 // Componente:Info de la Terminal
 const TerminalInfo = () => {
   return (
-    <section id="terminal" className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-2xl p-6 md:p-8 border border-sky-100">
+    <section id="terminal" className="bg-gradient-to-br from-sky-50 to-blue-50 rounded-xl p-6 md:p-8 border border-sky-100 shadow-sm">
       <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
         <Bus className="text-sky-500" />
         Terminal de Ómnibus de Eldorado
@@ -216,9 +217,9 @@ const AlertaInformativa = () => (
 
 // Componente:Tarjeta de ruta
 const RutaCard = ({ ruta }) => (
-  <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-    <div className="size-12 rounded-full bg-sky-100 flex items-center justify-center flex-shrink-0">
-      <Bus className="size-6 text-sky-500" />
+  <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-md transition-shadow shadow-sm">
+    <div className="size-10 rounded-lg bg-sky-100 flex items-center justify-center flex-shrink-0">
+      <Bus className="size-5 text-sky-500" />
     </div>
     <div className="flex-1 min-w-0">
       <h3 className="font-semibold text-slate-800 text-sm">{ruta.origen} → {ruta.destino}</h3>
@@ -276,7 +277,7 @@ const BuscadorDestinos = ({ rutas, onSelect }) => {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Buscar destino (ej: Buenos Aires, Posadas, Iguazú...)"
-          className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent shadow-sm"
+          className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent shadow-sm bg-slate-50 focus:bg-white transition-all"
         />
         {query && (
           <button
@@ -388,7 +389,7 @@ export const BusEldoradoPage = () => {
         <AlertaInformativa />
 
         {/* Buscador de destinos */}
-        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-5 mb-8 -mt-4">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-8 -mt-4">
           <h2 className="text-base font-bold text-slate-700 mb-3 text-center flex items-center justify-center gap-2">
             <Search className="size-4 text-sky-500" />
             Buscá tu destino
@@ -397,7 +398,7 @@ export const BusEldoradoPage = () => {
         </div>
 
         {/* Selector de ruta */}
-        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
           <h2 className="text-base font-semibold text-slate-600 mb-4 text-center">
             O elegí una ruta directamente
           </h2>
