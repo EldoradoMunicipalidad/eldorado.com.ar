@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import SectionLayout from '../../assets/components/SectionLayout';
 import { EMPRESAS, RUTAS, TODOS_LOS_HORARIOS, TERMINAL_INFO } from '../../data/busEldoradoData';
-import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Info } from 'lucide-react';
+import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Info, Search, X } from 'lucide-react';
 
 // Componente:Selector de ruta
 const RutaSelector = ({ rutas, rutaActiva, onSelect }) => {
@@ -109,7 +109,7 @@ const HorariosTable = ({ horarios }) => {
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[700px]">
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
               <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Empresa</th>
@@ -191,7 +191,6 @@ const TerminalInfo = () => {
         >
           <MapPin className="size-4" />
           Ver en Google Maps
-          <ExternalLink className="size-3" />
         </a>
       </div>
     </section>
@@ -205,11 +204,11 @@ const AlertaInformativa = () => (
     <div className="text-sm text-amber-800">
       <p className="font-semibold mb-1">Información importante</p>
       <p>
-        Los horarios y precios mostrados son referenciales y corresponden a la información disponible en{' '}
+        Los horarios mostrados son referenciales y corresponden a la información disponible en{' '}
         <a href="https://www.plataforma10.com.ar" target="_blank" rel="noopener noreferrer" className="font-medium underline hover:text-amber-900">
           Plataforma10.com.ar
         </a>
-        . Se recomienda confirmar disponibilidad y tarifas directamente con cada empresa o en la plataforma mencionada antes de planificar tu viaje.
+        . Se recomienda confirmar disponibilidad y horarios directamente con cada empresa o en la plataforma mencionada antes de planificar tu viaje.
       </p>
     </div>
   </div>
@@ -230,6 +229,124 @@ const RutaCard = ({ ruta }) => (
     </div>
   </div>
 );
+
+// Componente:Buscador de destinos con autocompletado
+const BuscadorDestinos = ({ rutas, onSelect }) => {
+  const [query, setQuery] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef(null);
+
+  // Cerrar dropdown al clickear afuera
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const resultados = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.toLowerCase().trim();
+    return rutas.filter(
+      (r) =>
+        r.destino.toLowerCase().includes(q) ||
+        r.origen.toLowerCase().includes(q)
+    );
+  }, [query, rutas]);
+
+  const handleSelect = (rutaId) => {
+    onSelect(rutaId);
+    setQuery('');
+    setIsOpen(false);
+  };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full max-w-md mx-auto mb-6">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400 pointer-events-none" />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder="Buscar destino (ej: Buenos Aires, Posadas, Iguazú...)"
+          className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent shadow-sm"
+        />
+        {query && (
+          <button
+            onClick={() => {
+              setQuery('');
+              setIsOpen(false);
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+          >
+            <X className="size-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Dropdown de resultados */}
+      {isOpen && query.trim() && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden">
+          {resultados.length > 0 ? (
+            <>
+              {resultados.map((ruta) => (
+                <button
+                  key={ruta.id}
+                  onClick={() => handleSelect(ruta.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-sky-50 transition-colors border-b border-slate-100 last:border-b-0"
+                >
+                  <MapPin className="size-4 text-sky-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-slate-700">
+                      {ruta.origen} → {ruta.destino}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {ruta.duracionPromedio} • ~{ruta.distanciaAprox}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : (
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm text-slate-500">No se encontraron destinos para "{query}"</p>
+              <p className="text-xs text-slate-400 mt-1">Probá con: Buenos Aires, Posadas, Oberá, Iguazú</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Sugerencias cuando no hay búsqueda */}
+      {!query && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-slate-200 shadow-lg z-50 overflow-hidden">
+          <p className="px-4 py-2 text-xs text-slate-400 font-medium border-b border-slate-100 bg-slate-50">
+            DESTINOS POPULARES
+          </p>
+          {rutas.slice(0, 4).map((ruta) => (
+            <button
+              key={ruta.id}
+              onClick={() => handleSelect(ruta.id)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-sky-50 transition-colors border-b border-slate-100 last:border-b-0"
+            >
+              <MapPin className="size-4 text-sky-400 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-slate-700">{ruta.destino}</p>
+                <p className="text-xs text-slate-400">{ruta.duracionPromedio}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ============ PAGINA PRINCIPAL ============
 export const BusEldoradoPage = () => {
@@ -266,19 +383,26 @@ export const BusEldoradoPage = () => {
         description="Consultá los horarios y empresas de colectivos que operan desde la Terminal de Ómnibus de Eldorado hacia los principales destinos del país. Información actualizada para facilitar tu viaje."
       />
 
-      {/* Selector de ruta */}
-      <div className="max-w-7xl mx-auto px-6 -mt-8 mb-8">
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
-          <h2 className="text-lg font-bold text-slate-800 mb-4 text-center">
-            Seleccioná tu ruta
-          </h2>
-          <RutaSelector rutas={RUTAS} rutaActiva={rutaActiva} onSelect={setRutaActiva} />
-        </div>
-      </div>
-
       {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-6 pb-16">
         <AlertaInformativa />
+
+        {/* Buscador de destinos */}
+        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-5 mb-8 -mt-4">
+          <h2 className="text-base font-bold text-slate-700 mb-3 text-center flex items-center justify-center gap-2">
+            <Search className="size-4 text-sky-500" />
+            Buscá tu destino
+          </h2>
+          <BuscadorDestinos rutas={RUTAS} onSelect={setRutaActiva} />
+        </div>
+
+        {/* Selector de ruta */}
+        <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 mb-8">
+          <h2 className="text-base font-semibold text-slate-600 mb-4 text-center">
+            O elegí una ruta directamente
+          </h2>
+          <RutaSelector rutas={RUTAS} rutaActiva={rutaActiva} onSelect={setRutaActiva} />
+        </div>
 
         {/* Resumen de la ruta */}
         {rutaActual && (
@@ -368,7 +492,6 @@ export const BusEldoradoPage = () => {
         {/* Nota final */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-400">
-            Los precios shown are in ARS (Pesos Argentinos) y están sujetos a cambios sin previo aviso.
             Última actualización: junio 2025.
           </p>
         </div>
