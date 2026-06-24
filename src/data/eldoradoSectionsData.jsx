@@ -43,15 +43,11 @@ export const eldoradoSections = [
   {
     id: "expo-eldorado",
     title: "EXPO Eldorado",
-    subtitle: "La exposición a cielo abierto más grande de la provincia", // Se usa en el modo grid
+    subtitle: "La exposición a cielo abierto más grande de la provincia",
     text: "La exposición a cielo abierto más grande de la provincia se destaca por su excelente organización y su ubicación privilegiada a orillas del río Paraná. Reúne comercios de todo el país, ofreciendo una experiencia única y diversa para visitantes y expositores.",
-    images: [
-      "/Ciudad/Eldorado/expo1.avif",
-      "/Ciudad/Eldorado/expo2.avif",
-      "/Ciudad/Eldorado/expo3.avif"
-    ], // El componente mapeará estas 3 imágenes en 3 columnas
-    type: "grid", // Activa el renderizado especial centrado
-    buttonText: "Conoce Mas",
-    buttonTo: "https://expo.eldorado.gob.ar/"
+    images: [],
+    type: "gallery",
+    buttonText: "",
+    buttonTo: ""
   }
 ];

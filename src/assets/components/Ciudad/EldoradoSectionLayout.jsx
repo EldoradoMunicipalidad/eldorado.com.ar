@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import ExpoEldoradoGallery from './ExpoEldoradoGallery';
 
 const EldoradoSectionLayout = ({ section }) => {
   const { id, title, subtitle, text, images, reverse, buttonText, buttonTo, type, bg = "bg-white" } = section;
@@ -156,7 +157,25 @@ const EldoradoSectionLayout = ({ section }) => {
   }
 
   // ==========================================
-  //  DISEÑO TIPO 3: ESTÁNDAR (Dos Columnas - Intro)
+  //  DISEÑO TIPO 3: GALERÍA (Expo Eldorado)
+  // ==========================================
+  if (type === "gallery") {
+    return (
+      <section id={id} className={`w-full flex flex-col items-center justify-center py-16 px-6 ${bg}`}>
+        <div className="text-center mb-8 max-w-3xl">
+          <h2 className="text-4xl font-extrabold text-[#009EE3] mb-3 uppercase">{title}</h2>
+          <p className="text-xl text-slate-500 font-medium">{subtitle}</p>
+        </div>
+        <div className="text-center text-lg text-slate-600 leading-relaxed font-light max-w-3xl mb-12">
+          <p className="whitespace-pre-line">{text}</p>
+        </div>
+        <ExpoEldoradoGallery />
+      </section>
+    );
+  }
+
+  // ==========================================
+  //  DISEÑO TIPO 4: ESTÁNDAR (Dos Columnas - Intro)
   // ==========================================
   return (
     <section
