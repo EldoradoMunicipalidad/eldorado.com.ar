@@ -67,15 +67,10 @@ const HorarioRow = ({ horario }) => {
   return (
     <tr className="border-b border-slate-100 hover:bg-sky-50/30 transition-colors">
       <td className="py-3 px-3">
-        <div className="flex items-center gap-2">
-          <div
-            className="size-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-            style={{ backgroundColor: empresa?.color || '#666' }}
-          >
-            {empresa?.nombre.charAt(0) || '?'}
-          </div>
-          <span className="text-sm font-medium text-slate-700">{horario.empresa}</span>
-        </div>
+        <span className="text-sm font-medium text-slate-700">{horario.destino}</span>
+      </td>
+      <td className="py-3 px-3">
+        <span className="text-sm text-slate-600">{horario.empresa}</span>
       </td>
       <td className="py-3 px-3 text-center">
         <span className="text-sm font-semibold text-sky-600">{horario.partida}</span>
@@ -84,10 +79,10 @@ const HorarioRow = ({ horario }) => {
         <span className="text-sm text-slate-500">{horario.llegada}</span>
       </td>
       <td className="py-3 px-3 text-center hidden lg:table-cell">
-        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{horario.servicio}</span>
+        <span className="text-xs text-slate-500">{horario.duracion}</span>
       </td>
       <td className="py-3 px-3 text-center hidden lg:table-cell">
-        <span className="text-xs text-slate-500">{horario.duracion}</span>
+        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{horario.servicio}</span>
       </td>
       <td className="py-3 px-3 hidden xl:table-cell">
         <span className="text-xs text-slate-500">{horario.observaciones}</span>
@@ -113,11 +108,12 @@ const HorariosTable = ({ horarios }) => {
         <table className="w-full min-w-[600px]">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Destino</th>
               <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Empresa</th>
               <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Partida</th>
               <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Llegada</th>
-              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Servicio</th>
               <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Duración</th>
+              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Servicio</th>
               <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden xl:table-cell">Observaciones</th>
             </tr>
           </thead>
