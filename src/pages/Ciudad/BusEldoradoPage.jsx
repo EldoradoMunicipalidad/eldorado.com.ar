@@ -141,12 +141,7 @@ const HorariosList = ({ horarios }) => {
       {horarios.map((horario, index) => (
         <HorarioCard key={index} horario={horario} />
       ))}
-      {/* Disclaimer en el footer */}
-      <div className="bg-slate-50 px-4 py-3 rounded-xl border border-slate-200">
-        <p className="text-xs text-slate-500 text-center">
-          ⚠️ Los horarios son referenciales y pueden variar. Verificá directamente con la empresa o en Plataforma10.com.ar
-        </p>
-      </div>
+
     </div>
   );
 };
