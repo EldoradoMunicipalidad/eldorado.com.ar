@@ -172,7 +172,7 @@ export const ExpoEldoradoPage = () => {
   return (
     <div className="bg-white min-h-screen">
       {/* Hero con logo */}
-      <div className="w-full bg-gradient-to-br from-[#009EE3] to-[#007bb5] pt-12 pb-16 px-6">
+      <div className="w-full bg-[#009EE3] pt-10 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <img
             src="/expo-logo.png"
@@ -186,6 +186,11 @@ export const ExpoEldoradoPage = () => {
             La exposición a cielo abierto más grande de la provincia
           </p>
         </div>
+      </div>
+
+      {/* White band de transición */}
+      <div className="w-full bg-[#009EE3]">
+        <div className="max-w-5xl mx-auto h-8 bg-white rounded-b-[2rem]" />
       </div>
 
       {/* Descripción general */}
