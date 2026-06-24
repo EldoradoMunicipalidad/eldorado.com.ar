@@ -135,7 +135,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '08:50 (+1 día)',
     duracion: '19h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 85.500',
     observaciones: 'Salida diaria. Equipaje de bodega incluido.',
   },
   {
@@ -147,7 +146,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '05:45 (+1 día)',
     duracion: '16h 13m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 131.400',
     observaciones: 'Salida diaria. Asientos semi-cama con reclinación completa.',
   },
   {
@@ -159,7 +157,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '07:10 (+1 día)',
     duracion: '17h 15m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 130.000',
     observaciones: 'Salida diaria. WiFi a bordo.',
   },
   {
@@ -171,7 +168,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '07:00 (+1 día)',
     duracion: '16h 15m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 102.492',
     observaciones: 'Salida diaria. Snack incluido.',
   },
   {
@@ -183,7 +179,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '07:15 (+1 día)',
     duracion: '15h 45m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 95.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -195,7 +190,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '11:30 (+1 día)',
     duracion: '19h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 85.500',
     observaciones: 'Salida diaria.',
   },
   {
@@ -207,7 +201,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '09:30 (+1 día)',
     duracion: '16h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 90.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -219,7 +212,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '11:13 (+1 día)',
     duracion: '16h 13m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 131.400',
     observaciones: 'Salida diaria.',
   },
   {
@@ -231,7 +223,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '13:15 (+1 día)',
     duracion: '17h 15m',
     servicio: 'Cama Ejecutivo',
-    precioDesde: 'ARS 155.000',
     observaciones: 'Salida diaria. Asientos fully reclinables.',
   },
   {
@@ -243,7 +234,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '13:15 (+1 día)',
     duracion: '16h 15m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 102.492',
     observaciones: 'Salida nocturna.',
   },
   {
@@ -255,7 +245,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '17:30 (+1 día)',
     duracion: '19h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 85.500',
     observaciones: 'Salida nocturna.',
   },
   {
@@ -267,7 +256,6 @@ export const HORARIOS_ELDORADO_BSAS = [
     llegada: '14:45 (+1 día)',
     duracion: '15h 45m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 95.000',
     observaciones: 'Salida nocturna.',
   },
 ];
@@ -283,7 +271,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '09:30',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 25.000',
     observaciones: 'Salidas cada 2 horas aproximadamente.',
   },
   {
@@ -295,7 +282,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '10:45',
     duracion: '3h 15m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 22.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -307,7 +293,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '12:30',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 20.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -319,7 +304,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '14:00',
     duracion: '3h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 22.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -331,7 +315,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '17:00',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 25.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -343,7 +326,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '18:45',
     duracion: '3h 15m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 22.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -355,7 +337,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '21:00',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 20.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -367,7 +348,6 @@ export const HORARIOS_ELDORADO_POSADAS = [
     llegada: '22:00',
     duracion: '3h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 22.000',
     observaciones: 'Salida nocturna.',
   },
 ];
@@ -383,7 +363,6 @@ export const HORARIOS_ELDORADO_IGUAZU = [
     llegada: '11:00',
     duracion: '4h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 30.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -395,7 +374,6 @@ export const HORARIOS_ELDORADO_IGUAZU = [
     llegada: '12:30',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 28.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -407,7 +385,6 @@ export const HORARIOS_ELDORADO_IGUAZU = [
     llegada: '14:30',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 30.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -419,7 +396,6 @@ export const HORARIOS_ELDORADO_IGUAZU = [
     llegada: '17:30',
     duracion: '4h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 30.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -431,7 +407,6 @@ export const HORARIOS_ELDORADO_IGUAZU = [
     llegada: '18:30',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 28.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -443,7 +418,6 @@ export const HORARIOS_ELDORADO_IGUAZU = [
     llegada: '20:30',
     duracion: '3h 30m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 30.000',
     observaciones: 'Salida diaria.',
   },
 ];
@@ -459,7 +433,6 @@ export const HORARIOS_ELDORADO_OBERA = [
     llegada: '09:30',
     duracion: '2h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 12.000',
     observaciones: 'Salidas frecuentes.',
   },
   {
@@ -471,7 +444,6 @@ export const HORARIOS_ELDORADO_OBERA = [
     llegada: '11:00',
     duracion: '2h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 12.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -483,7 +455,6 @@ export const HORARIOS_ELDORADO_OBERA = [
     llegada: '13:00',
     duracion: '2h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 12.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -495,7 +466,6 @@ export const HORARIOS_ELDORADO_OBERA = [
     llegada: '15:00',
     duracion: '2h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 12.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -507,7 +477,6 @@ export const HORARIOS_ELDORADO_OBERA = [
     llegada: '17:00',
     duracion: '2h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 12.000',
     observaciones: 'Salida diaria.',
   },
   {
@@ -519,7 +488,6 @@ export const HORARIOS_ELDORADO_OBERA = [
     llegada: '19:30',
     duracion: '2h 00m',
     servicio: 'Semicama',
-    precioDesde: 'ARS 12.000',
     observaciones: 'Salida diaria.',
   },
 ];

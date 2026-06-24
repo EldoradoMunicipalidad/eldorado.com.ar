@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import SectionLayout from '../../assets/components/SectionLayout';
 import { EMPRESAS, RUTAS, TODOS_LOS_HORARIOS, TERMINAL_INFO } from '../../data/busEldoradoData';
-import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, ExternalLink, Info, Ticket, Star } from 'lucide-react';
+import { Bus, Phone, MapPin, Clock, Globe, ChevronDown, Info } from 'lucide-react';
 
 // Componente:Selector de ruta
 const RutaSelector = ({ rutas, rutaActiva, onSelect }) => {
@@ -88,9 +88,6 @@ const HorarioRow = ({ horario }) => {
       <td className="py-3 px-3 text-center hidden lg:table-cell">
         <span className="text-xs text-slate-500">{horario.duracion}</span>
       </td>
-      <td className="py-3 px-3 text-center">
-        <span className="text-sm font-bold text-green-600">{horario.precioDesde}</span>
-      </td>
       <td className="py-3 px-3 hidden xl:table-cell">
         <span className="text-xs text-slate-500">{horario.observaciones}</span>
       </td>
@@ -120,7 +117,6 @@ const HorariosTable = ({ horarios }) => {
               <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden md:table-cell">Llegada</th>
               <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Servicio</th>
               <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden lg:table-cell">Duración</th>
-              <th className="text-center py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Precio</th>
               <th className="text-left py-3 px-3 text-xs font-semibold text-slate-500 uppercase tracking-wide hidden xl:table-cell">Observaciones</th>
             </tr>
           </thead>
@@ -133,7 +129,7 @@ const HorariosTable = ({ horarios }) => {
       </div>
       <div className="bg-slate-50 px-4 py-3 border-t border-slate-200">
         <p className="text-xs text-slate-500 text-center">
-          ⚠️ Los horarios y precios son referenciales y pueden variar. Verificá directamente con la empresa o en Plataforma10.com.ar
+          ⚠️ Los horarios son referenciales y pueden variar. Verificá directamente con la empresa o en Plataforma10.com.ar
         </p>
       </div>
     </div>
@@ -248,11 +244,6 @@ export const BusEldoradoPage = () => {
       if (ordenarPor === 'partida') {
         return a.partida.localeCompare(b.partida);
       }
-      if (ordenarPor === 'precio') {
-        const aPrice = parseInt(a.precioDesde.replace(/[^\d]/g, ''));
-        const bPrice = parseInt(b.precioDesde.replace(/[^\d]/g, ''));
-        return aPrice - bPrice;
-      }
       if (ordenarPor === 'duracion') {
         const aDur = parseInt(a.duracion.match(/\d+/)?.[0] || '0');
         const bDur = parseInt(b.duracion.match(/\d+/)?.[0] || '0');
@@ -313,7 +304,6 @@ export const BusEldoradoPage = () => {
           <div className="flex gap-2">
             {[
               { value: 'partida', label: 'Horario de partida' },
-              { value: 'precio', label: 'Menor precio' },
               { value: 'duracion', label: 'Menor duración' },
             ].map((opt) => (
               <button
@@ -329,15 +319,6 @@ export const BusEldoradoPage = () => {
               </button>
             ))}
           </div>
-          <a
-            href="https://www.plataforma10.com.ar"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto flex items-center gap-1 text-xs font-medium text-sky-600 hover:underline"
-          >
-            <ExternalLink className="size-3" />
-            Comprar en Plataforma10
-          </a>
         </div>
 
         {/* Tabla de horarios */}
