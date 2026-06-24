@@ -10,6 +10,7 @@ import {
   CartaOrganicaPage,
   ContactoPage,
   TelefonosUtilesPage,
+  BusEldoradoPage,
   IntendenciaPage,
   SecretariaDeAccionSocialPage,
   SecretariaDeAmbientePage,
@@ -113,6 +114,7 @@ function App() {
           <Route path="/ciudad/carta-organica" element={<CartaOrganicaPage />} />
           <Route path="/ciudad/contacto" element={<ContactoPage />} />
           <Route path="/ciudad/telefonos-utiles" element={<TelefonosUtilesPage />} />
+          <Route path="/ciudad/bus-eldorado" element={<BusEldoradoPage />} />
 
           {/* SECCIÓN GOBIERNO */}
           <Route path="/gobierno/intendencia" element={<IntendenciaPage />} />

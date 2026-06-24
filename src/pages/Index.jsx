@@ -4,6 +4,7 @@ export { default as NotFound } from './NotFound';
 
 // Ficheros dentro de /pages/Ciudad/
 export { default as BarriosPage } from './Ciudad/BarriosPage';
+export { default as BusEldoradoPage } from './Ciudad/BusEldoradoPage';
 export { default as CartaOrganicaPage } from './Ciudad/CartaOrganicaPage';
 export { default as ContactoPage } from './Ciudad/ContactoPage';
 export { default as EldoradoPage } from './Ciudad/EldoradoPage';

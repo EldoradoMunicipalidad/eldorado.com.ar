@@ -238,7 +238,7 @@ export const itemsCiudad = [
         keywords: [
           { label: "Secretaria de Accion Social", to: "/ciudad/telefonos-utiles" },
           { label: "Secretaria de Obras Publicas", to: "/ciudad/telefonos-utiles" },
-          { label: "Terminal de Colectivos", to: "/ciudad/telefonos-utiles" }
+          { label: "Terminal de Colectivos", to: "/ciudad/bus-eldorado" }
         ],
         to: "/ciudad/telefonos-utiles#otros"
       }
@@ -597,7 +597,7 @@ export const itemsCiudadanoDigital = [
       {
         title: "Terminal de Colectivos",
         keywords: [{ label: "Informacion sobre horarios y servicios de transporte.", to: "" }],
-        to: "https://bus.eldorado.gob.ar/"
+        to: "/ciudad/bus-eldorado"
       },
       {
         title: "Bolsa de Empleo",
