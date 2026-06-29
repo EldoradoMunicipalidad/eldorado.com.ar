@@ -24,6 +24,7 @@ import {
   Briefcase,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   SortAsc,
   SortDesc,
   Edit3,
