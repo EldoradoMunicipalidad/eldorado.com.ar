@@ -68,6 +68,10 @@ function buildEmailHtml(body, id) {
             ['Dirección completa', body.direccion],
             ['Propietario del local', body.local_oficina],
             ['Barrio', body.barrio],
+            ['Superficie Cubierta (m²)', body.superficie_cubierta],
+            ['Superficie Semicubierta (m²)', body.superficie_semicubierta],
+            ['Superficie Total (m²)', body.superficie_total],
+            ['Georreferenciación', body.georeferenciacion],
           ].filter(([_, v]) => v).map(([k, v]) =>
             `<tr><td style="padding: 6px 12px; border-bottom: 1px solid #f1f5f9; color: #475569; font-weight: 600; width: 40%;">${k}</td><td style="padding: 6px 12px; border-bottom: 1px solid #f1f5f9; color: #1e293b;">${v}</td></tr>`
           ).join('')}

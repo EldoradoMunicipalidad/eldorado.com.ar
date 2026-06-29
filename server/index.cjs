@@ -2,6 +2,7 @@ const express = require('express')
 const path = require('path')
 const cors = require('cors')
 const pool = require('./db.cjs')
+const { askUru } = require('./uruService.cjs')
 
 const app = express()
 app.use(cors())
@@ -256,6 +257,21 @@ app.delete('/api/admins/:username', async (req, res) => {
     res.status(500).json({ error: err.message })
   }
 })
+
+// ─── URU CHATBOT ─────────────────────────────────────────────────────
+app.post('/api/chat', async (req, res) => {
+  const { question, context } = req.body;
+  if (!question) {
+    return res.status(400).json({ error: 'Falta pregunta' });
+  }
+  try {
+    const answer = await askUru(question, context || '');
+    res.json({ answer });
+  } catch (err) {
+    console.error('[URU] Error:', err.message);
+    res.status(500).json({ error: 'Error al procesar la pregunta' });
+  }
+});
 
 // ─── HABILITACIONES COMMERCIALES ───────────────────────────────────
 const habilitacionesRoutes = require('./routes/habilitaciones.cjs')

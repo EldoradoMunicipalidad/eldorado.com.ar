@@ -24,3 +24,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+server/uruService.cjs
+src/components/UruChatbot.css
+src/components/UruChatbot.jsx
+src/data/uruKnowledge.js

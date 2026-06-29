@@ -40,6 +40,25 @@ async function init() {
     process.exit(1)
   }
 
+  // Safe migration: add new columns to existing habilitaciones table (if already existed)
+  const migrationColumns = [
+    'superficie_cubierta',
+    'superficie_semicubierta',
+    'superficie_total',
+    'georeferenciacion',
+  ]
+  for (const col of migrationColumns) {
+    try {
+      await pool.query(`ALTER TABLE habilitaciones ADD COLUMN IF NOT EXISTS ${col} VARCHAR(50) DEFAULT ''`)
+      console.log(`✅ Added column ${col} to habilitaciones`)
+    } catch (err) {
+      // Column might already exist — that's fine
+      if (err.code !== '42701') { // duplicate_column
+        console.warn(`⚠  Could not add column ${col}:`, err.message)
+      }
+    }
+  }
+
   // Run reclamos schema
   const reclamosSql = fs.readFileSync(path.join(__dirname, 'reclamos.sql'), 'utf8')
   try {
