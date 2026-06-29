@@ -35,7 +35,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Plus,
-  Trash3,
+  Trash,
   GripVertical,
 } from 'lucide-react';
 import { DEFAULT_FIELDS_CONFIG, loadFieldsConfig, saveFieldsConfig } from '../../data/preinscripcionFieldsConfig';
@@ -1669,7 +1669,7 @@ export default function PreinscripcionComercialAdminPage() {
                                           className="p-1 text-slate-300 hover:text-red-500 transition-colors shrink-0"
                                           disabled={field.options.length <= 1}
                                         >
-                                          <Trash3 className="w-4 h-4" />
+                                          <Trash className="w-4 h-4" />
                                         </button>
                                       </div>
                                     ))}
