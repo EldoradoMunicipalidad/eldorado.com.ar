@@ -34,4 +34,5 @@ RUN chmod +x /app/start.sh
 EXPOSE 80
 
 # Start Express (with auto-restart) + nginx via startup script
+# v2025.06.29 - force rebuild for preinscripcion-comercial changes
 CMD ["/app/start.sh"]
