@@ -20,22 +20,7 @@ import {
   Check,
   Info,
 } from 'lucide-react';
-
-const TIPO_TRAMITE_OPTIONS = [
-  { value: '', label: 'Seleccionar...' },
-  { value: 'habilitacion', label: 'Habilitación' },
-  { value: 'anexo', label: 'Anexo' },
-  { value: 'traslado', label: 'Traslado' },
-  { value: 'cambio_titular', label: 'Cambio de Titular' },
-  { value: 'cambio_rubro', label: 'Cambio de Rubro' },
-];
-
-const CATEGORIA_OPTIONS = [
-  { value: '', label: 'Seleccionar...' },
-  { value: 'servicio', label: 'Servicio' },
-  { value: 'comercial', label: 'Comercial' },
-  { value: 'industrial', label: 'Industrial' },
-];
+import { loadFieldsConfig, getVisibleFieldsForStep } from '../../data/preinscripcionFieldsConfig';
 
 const INITIAL_FORM_DATA = {
   // Paso 1
@@ -68,8 +53,6 @@ const INITIAL_FORM_DATA = {
   constancia_arca_file: null,
 };
 
-const SUCCESS_ANIMATION_DURATION = 2000;
-
 export default function PreinscripcionComercialPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
@@ -79,6 +62,93 @@ export default function PreinscripcionComercialPage() {
   const [uploadProgress, setUploadProgress] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState({});
   const [submitError, setSubmitError] = useState('');
+  const [fieldsConfig, setFieldsConfig] = useState(null);
+
+  // Load config on mount
+  useEffect(() => {
+    const config = loadFieldsConfig();
+    setFieldsConfig(config);
+  }, []);
+
+  const getFieldConfig = (fieldKey) => {
+    return fieldsConfig ? fieldsConfig[fieldKey] : null;
+  };
+
+  const renderTextField = (fieldKey, className = '') => {
+    const config = getFieldConfig(fieldKey);
+    if (!config || config.type === 'file') return null;
+    const label = config.label || fieldKey;
+    const placeholder = config.placeholder || '';
+    const required = config.required;
+    return (
+      <div className={className}>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <input
+          type={config.type || 'text'}
+          value={formData[fieldKey]}
+          onChange={(e) => updateField(fieldKey, e.target.value)}
+          className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
+            errors[fieldKey] ? 'border-red-300 bg-red-50' : 'border-gray-200'
+          }`}
+          placeholder={placeholder}
+        />
+        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
+      </div>
+    );
+  };
+
+  const renderSelectField = (fieldKey, className = '') => {
+    const config = getFieldConfig(fieldKey);
+    if (!config || !config.options) return null;
+    const label = config.label || fieldKey;
+    const required = config.required;
+    return (
+      <div className={className}>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <select
+          value={formData[fieldKey]}
+          onChange={(e) => updateField(fieldKey, e.target.value)}
+          className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all bg-white ${
+            errors[fieldKey] ? 'border-red-300 bg-red-50' : 'border-gray-200'
+          }`}
+        >
+          {config.options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
+      </div>
+    );
+  };
+
+  const renderTextareaField = (fieldKey, rows = 2, className = '') => {
+    const config = getFieldConfig(fieldKey);
+    if (!config) return null;
+    const label = config.label || fieldKey;
+    const placeholder = config.placeholder || '';
+    const required = config.required;
+    return (
+      <div className={className}>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        <textarea
+          value={formData[fieldKey]}
+          onChange={(e) => updateField(fieldKey, e.target.value)}
+          rows={rows}
+          className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all resize-none ${
+            errors[fieldKey] ? 'border-red-300 bg-red-50' : 'border-gray-200'
+          }`}
+          placeholder={placeholder}
+        />
+        {errors[fieldKey] && <p className="text-red-500 text-xs mt-1">{errors[fieldKey]}</p>}
+      </div>
+    );
+  };
 
   const updateField = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -111,41 +181,36 @@ export default function PreinscripcionComercialPage() {
     });
   };
 
-  const validateStep1 = () => {
+  const validateStep = (step) => {
+    if (!fieldsConfig) return {};
     const errs = {};
-    if (!formData.tipo_persona) errs.tipo_persona = 'Seleccioná el tipo de persona';
-    if (!formData.cuit_cuil) errs.cuit_cuil = 'CUIT/CUIL es obligatorio';
-    if (formData.tipo_persona === 'fisica') {
-      if (!formData.dni) errs.dni = 'DNI es obligatorio';
-      if (!formData.apellido_nombre) errs.apellido_nombre = 'Apellido y Nombre es obligatorio';
-    }
-    if (formData.tipo_persona === 'juridica') {
-      if (!formData.razon_social) errs.razon_social = 'Razón Social es obligatoria';
-    }
-    if (!formData.domicilio_real) errs.domicilio_real = 'Domicilio real es obligatorio';
-    if (!formData.email) errs.email = 'Email es obligatorio';
-    if (!formData.telefono) errs.telefono = 'Teléfono es obligatorio';
-    return errs;
-  };
+    const visibleFields = getVisibleFieldsForStep(step, fieldsConfig, formData);
 
-  const validateStep2 = () => {
-    const errs = {};
-    if (!formData.direccion_completa) errs.direccion_completa = 'Dirección completa es obligatoria';
-    return errs;
-  };
+    visibleFields.forEach((field) => {
+      // Skip file fields and tipo_persona radio for now (handled specially)
+      if (field.type === 'file') return;
+      if (field.key === 'tipo_persona') return;
 
-  const validateStep3 = () => {
-    const errs = {};
-    if (!formData.tipo_tramite) errs.tipo_tramite = 'Seleccioná el tipo de trámite';
-    if (!formData.categoria) errs.categoria = 'Seleccioná la categoría';
-    if (!formData.actividad_principal) errs.actividad_principal = 'Actividad principal es obligatoria';
+      if (field.required) {
+        const value = formData[field.key];
+        if (!value || (typeof value === 'string' && !value.trim())) {
+          errs[field.key] = `${field.label} es obligatorio`;
+        }
+      }
+    });
+
+    // Handle tipo_persona selection
+    if (step === 1) {
+      if (!formData.tipo_persona) {
+        errs.tipo_persona = 'Seleccioná el tipo de persona';
+      }
+    }
+
     return errs;
   };
 
   const handleNext = () => {
-    let errs = {};
-    if (currentStep === 1) errs = validateStep1();
-    else if (currentStep === 2) errs = validateStep2();
+    const errs = validateStep(currentStep);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
@@ -203,7 +268,7 @@ export default function PreinscripcionComercialPage() {
   };
 
   const handleSubmit = async () => {
-    const errs = validateStep3();
+    const errs = validateStep(3);
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       return;
@@ -474,119 +539,20 @@ export default function PreinscripcionComercialPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {formData.tipo_persona === 'fisica' && (
                       <>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                            DNI <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.dni}
-                            onChange={(e) => updateField('dni', e.target.value)}
-                            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                              errors.dni ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                            }`}
-                            placeholder="Ej: 12345678"
-                          />
-                          {errors.dni && <p className="text-red-500 text-xs mt-1">{errors.dni}</p>}
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Apellido y Nombre <span className="text-red-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.apellido_nombre}
-                            onChange={(e) => updateField('apellido_nombre', e.target.value)}
-                            className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                              errors.apellido_nombre ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                            }`}
-                            placeholder="Ej: García, Juan"
-                          />
-                          {errors.apellido_nombre && <p className="text-red-500 text-xs mt-1">{errors.apellido_nombre}</p>}
-                        </div>
+                        {renderTextField('dni', '')}
+                        {renderTextField('apellido_nombre', '')}
                       </>
                     )}
                     {formData.tipo_persona === 'juridica' && (
                       <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                          Razón Social <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.razon_social}
-                          onChange={(e) => updateField('razon_social', e.target.value)}
-                          className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                            errors.razon_social ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                          }`}
-                          placeholder="Ej: Comercial S.A."
-                        />
-                        {errors.razon_social && <p className="text-red-500 text-xs mt-1">{errors.razon_social}</p>}
+                        {renderTextField('razon_social', '')}
                       </div>
                     )}
 
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        CUIT/CUIL <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.cuit_cuil}
-                        onChange={(e) => updateField('cuit_cuil', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.cuit_cuil ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Ej: 20-12345678-9"
-                      />
-                      {errors.cuit_cuil && <p className="text-red-500 text-xs mt-1">{errors.cuit_cuil}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Domicilio Real <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.domicilio_real}
-                        onChange={(e) => updateField('domicilio_real', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.domicilio_real ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Calle y número"
-                      />
-                      {errors.domicilio_real && <p className="text-red-500 text-xs mt-1">{errors.domicilio_real}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => updateField('email', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="ejemplo@correo.com"
-                      />
-                      {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Teléfono <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.telefono}
-                        onChange={(e) => updateField('telefono', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.telefono ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Ej: 3755-123456"
-                      />
-                      {errors.telefono && <p className="text-red-500 text-xs mt-1">{errors.telefono}</p>}
-                    </div>
+                    {renderTextField('cuit_cuil', '')}
+                    {renderTextField('domicilio_real', '')}
+                    {renderTextField('email', '')}
+                    {renderTextField('telefono', '')}
                   </div>
 
                   {/* File uploads - Step 1 */}
@@ -637,100 +603,16 @@ export default function PreinscripcionComercialPage() {
               {currentStep === 2 && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Sección <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.seccion}
-                        onChange={(e) => updateField('seccion', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.seccion ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Ej: 1"
-                      />
-                      {errors.seccion && <p className="text-red-500 text-xs mt-1">{errors.seccion}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Manzana <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.manzana}
-                        onChange={(e) => updateField('manzana', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.manzana ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Ej: 5"
-                      />
-                      {errors.manzana && <p className="text-red-500 text-xs mt-1">{errors.manzana}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Parcela <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.parcela}
-                        onChange={(e) => updateField('parcela', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.parcela ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Ej: 12"
-                      />
-                      {errors.parcela && <p className="text-red-500 text-xs mt-1">{errors.parcela}</p>}
-                    </div>
+                    {renderTextField('seccion', '')}
+                    {renderTextField('manzana', '')}
+                    {renderTextField('parcela', '')}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Dirección Completa <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.direccion_completa}
-                      onChange={(e) => updateField('direccion_completa', e.target.value)}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                        errors.direccion_completa ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                      }`}
-                      placeholder="Calle, número, piso, depto"
-                    />
-                    {errors.direccion_completa && <p className="text-red-500 text-xs mt-1">{errors.direccion_completa}</p>}
-                  </div>
+                  {renderTextField('direccion_completa', '')}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Propietario del Local <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.propietario_local}
-                        onChange={(e) => updateField('propietario_local', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.propietario_local ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Nombre del propietario"
-                      />
-                      {errors.propietario_local && <p className="text-red-500 text-xs mt-1">{errors.propietario_local}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Barrio <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.barrio}
-                        onChange={(e) => updateField('barrio', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all ${
-                          errors.barrio ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                        placeholder="Nombre del barrio"
-                      />
-                      {errors.barrio && <p className="text-red-500 text-xs mt-1">{errors.barrio}</p>}
-                    </div>
+                    {renderTextField('propietario_local', '')}
+                    {renderTextField('barrio', '')}
                   </div>
 
                   <FileUploadField
@@ -751,85 +633,15 @@ export default function PreinscripcionComercialPage() {
               {currentStep === 3 && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Tipo de Trámite <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={formData.tipo_tramite}
-                        onChange={(e) => updateField('tipo_tramite', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all bg-white ${
-                          errors.tipo_tramite ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                      >
-                        {TIPO_TRAMITE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                      {errors.tipo_tramite && <p className="text-red-500 text-xs mt-1">{errors.tipo_tramite}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Categoría <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={formData.categoria}
-                        onChange={(e) => updateField('categoria', e.target.value)}
-                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all bg-white ${
-                          errors.categoria ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                        }`}
-                      >
-                        {CATEGORIA_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                      {errors.categoria && <p className="text-red-500 text-xs mt-1">{errors.categoria}</p>}
-                    </div>
+                    {renderSelectField('tipo_tramite', '')}
+                    {renderSelectField('categoria', '')}
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Actividad Principal <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      value={formData.actividad_principal}
-                      onChange={(e) => updateField('actividad_principal', e.target.value)}
-                      rows={2}
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all resize-none ${
-                        errors.actividad_principal ? 'border-red-300 bg-red-50' : 'border-gray-200'
-                      }`}
-                      placeholder="Describí la actividad principal del comercio"
-                    />
-                    {errors.actividad_principal && <p className="text-red-500 text-xs mt-1">{errors.actividad_principal}</p>}
-                  </div>
+                  {renderTextareaField('actividad_principal', 2, '')}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Actividad Secundaria
-                        <span className="text-gray-400 font-normal ml-1">(opcional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.actividad_secundaria}
-                        onChange={(e) => updateField('actividad_secundaria', e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
-                        placeholder="Actividad secundaria"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                        Otra Actividad
-                        <span className="text-gray-400 font-normal ml-1">(opcional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.otra_actividad}
-                        onChange={(e) => updateField('otra_actividad', e.target.value)}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
-                        placeholder="Otra actividad"
-                      />
-                    </div>
+                    {renderTextField('actividad_secundaria', '')}
+                    {renderTextField('otra_actividad', '')}
                   </div>
 
                   <FileUploadField

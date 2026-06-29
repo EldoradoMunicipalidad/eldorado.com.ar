@@ -31,7 +31,14 @@ import {
   Phone,
   Mail,
   File,
+  Settings2,
+  ToggleLeft,
+  ToggleRight,
+  Plus,
+  Trash3,
+  GripVertical,
 } from 'lucide-react';
+import { DEFAULT_FIELDS_CONFIG, loadFieldsConfig, saveFieldsConfig } from '../../data/preinscripcionFieldsConfig';
 
 const STATUS_OPTIONS = [
   { value: 'pendiente', label: 'Pendiente', color: 'bg-amber-100 text-amber-700' },
@@ -133,6 +140,12 @@ export default function PreinscripcionComercialAdminPage() {
   const [newAdminPass, setNewAdminPass] = useState('');
   const [showDeleteAdminConfirm, setShowDeleteAdminConfirm] = useState(null);
   const [loadingAdmins, setLoadingAdmins] = useState(false);
+
+  // Field config panel state
+  const [showFieldConfigModal, setShowFieldConfigModal] = useState(false);
+  const [fieldsConfig, setFieldsConfig] = useState(null);
+  const [editingOptionField, setEditingOptionField] = useState(null); // key of field being edited
+  const [fieldConfigErrors, setFieldConfigErrors] = useState({});
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -550,6 +563,117 @@ export default function PreinscripcionComercialAdminPage() {
     }
   };
 
+  // ─── Field Config Panel ────────────────────────────────────────
+  const openFieldConfig = () => {
+    const config = loadFieldsConfig();
+    setFieldsConfig(config);
+    setFieldConfigErrors({});
+    setShowFieldConfigModal(true);
+  };
+
+  const toggleFieldVisible = (key) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], visible: !prev[key].visible },
+    }));
+  };
+
+  const toggleFieldRequired = (key) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], required: !prev[key].required },
+    }));
+  };
+
+  const updateFieldLabel = (key, label) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], label },
+    }));
+  };
+
+  const updateFieldPlaceholder = (key, placeholder) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], placeholder: placeholder || null },
+    }));
+  };
+
+  const updateFieldShowIf = (key, condField, condValue) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        showIf: condField && condValue ? { field: condField, value: condValue } : null,
+      },
+    }));
+  };
+
+  const addOption = (key) => {
+    const field = fieldsConfig[key];
+    if (!field.options) return;
+    const newOption = { value: `opt_${Date.now()}`, label: 'Nueva opción' };
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: { ...prev[key], options: [...prev[key].options, newOption] },
+    }));
+  };
+
+  const updateOption = (key, index, changes) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        options: prev[key].options.map((opt, i) => (i === index ? { ...opt, ...changes } : opt)),
+      },
+    }));
+  };
+
+  const removeOption = (key, index) => {
+    setFieldsConfig((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        options: prev[key].options.filter((_, i) => i !== index),
+      },
+    }));
+  };
+
+  const handleSaveFieldConfig = () => {
+    const errors = {};
+    // Validate no empty labels
+    Object.entries(fieldsConfig).forEach(([key, field]) => {
+      if (field.visible && !field.label.trim()) {
+        errors[key] = 'El nombre del campo no puede estar vacío';
+      }
+      if (field.type === 'select' && field.options) {
+        field.options.forEach((opt, i) => {
+          if (!opt.label.trim()) errors[`${key}_opt_${i}`] = 'La etiqueta no puede estar vacía';
+        });
+      }
+    });
+    if (Object.keys(errors).length > 0) {
+      setFieldConfigErrors(errors);
+      showToast('Corrigí los errores antes de guardar', 'error');
+      return;
+    }
+    const ok = saveFieldsConfig(fieldsConfig);
+    if (ok) {
+      showToast('Configuración guardada correctamente');
+      setShowFieldConfigModal(false);
+    } else {
+      showToast('Error al guardar la configuración', 'error');
+    }
+  };
+
+  const handleResetFieldConfig = () => {
+    if (window.confirm('¿Restablecer todos los campos a la configuración por defecto?')) {
+      const defaultConfig = { ...DEFAULT_FIELDS_CONFIG };
+      setFieldsConfig(defaultConfig);
+      setFieldConfigErrors({});
+    }
+  };
+
   // ─── Editable field component ─────────────────────────────────
   const FieldDisplay = ({ label, value, empty = '-' }) => (
     <div>
@@ -680,6 +804,12 @@ export default function PreinscripcionComercialAdminPage() {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-sky-600 hover:bg-sky-50 border border-transparent hover:border-sky-200 transition-colors"
           >
             <UserCheck className="w-4 h-4" />Usuarios
+          </button>
+          <button
+            onClick={openFieldConfig}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-violet-600 hover:bg-violet-50 border border-transparent hover:border-violet-200 transition-colors"
+          >
+            <Settings2 className="w-4 h-4" />Configurar Campos
           </button>
           <button
             onClick={handleLogout}
@@ -1322,6 +1452,263 @@ export default function PreinscripcionComercialAdminPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Field Config Modal */}
+      {showFieldConfigModal && fieldsConfig && (
+        <div className="fixed inset-0 z-[80] bg-black/50 flex items-start justify-center pt-6 px-4 pb-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden">
+
+            {/* Header */}
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Settings2 className="w-5 h-5 text-violet-500" />
+                Configurar Campos del Formulario
+              </h3>
+              <button
+                onClick={() => setShowFieldConfigModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-700">
+                  <strong>Editá cada campo:</strong> activá o desactivá la visibilidad, marcá si es obligatorio,
+                  cambiá el nombre que ve el ciudadano y editá las opciones de los selects.
+                  Los cambios se guardan en el navegador y se aplican inmediatamente al formulario público.
+                </div>
+              </div>
+
+              {/* Steps */}
+              {[1, 2, 3].map((step) => {
+                const stepFields = Object.entries(fieldsConfig).filter(
+                  ([, f]) => f.step === step
+                );
+                const stepTitles = { 1: 'Paso 1 — Datos Personales', 2: 'Paso 2 — Ubicación del Local', 3: 'Paso 3 — Actividad Comercial' };
+                return (
+                  <div key={step} className="mb-6">
+                    <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold">
+                        {step}
+                      </span>
+                      {stepTitles[step]}
+                    </h4>
+                    <div className="space-y-3">
+                      {stepFields.map(([key, field]) => (
+                        <div
+                          key={key}
+                          className={`border rounded-xl p-4 transition-colors ${
+                            field.visible
+                              ? 'border-gray-200 bg-white'
+                              : 'border-gray-100 bg-slate-50 opacity-60'
+                          }`}
+                        >
+                          {/* Field header row */}
+                          <div className="flex items-start gap-3 flex-wrap">
+                            {/* Toggle visible */}
+                            <button
+                              onClick={() => toggleFieldVisible(key)}
+                              className="mt-1 shrink-0"
+                              title={field.visible ? 'Ocultar campo' : 'Mostrar campo'}
+                            >
+                              {field.visible ? (
+                                <ToggleRight className="w-7 h-7 text-emerald-500" />
+                              ) : (
+                                <ToggleLeft className="w-7 h-7 text-gray-300" />
+                              )}
+                            </button>
+
+                            {/* Field info */}
+                            <div className="flex-1 min-w-[200px]">
+                              <div className="flex items-center gap-2 flex-wrap mb-2">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase ${
+                                  field.type === 'select' ? 'bg-violet-100 text-violet-600' :
+                                  field.type === 'file' ? 'bg-orange-100 text-orange-600' :
+                                  'bg-sky-100 text-sky-600'
+                                }`}>
+                                  {field.type}
+                                </span>
+                                <span className="text-xs text-slate-400">Key: <code className="bg-slate-100 px-1 rounded">{key}</code></span>
+                                {field.showIf && (
+                                  <span className="text-xs bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">
+                                    Mostrar si: {field.showIf.field} = {field.showIf.value}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Label input */}
+                              <div className="mb-2">
+                                <label className="block text-xs font-semibold text-slate-500 mb-1">
+                                  Nombre del campo
+                                </label>
+                                <input
+                                  type="text"
+                                  value={field.label}
+                                  onChange={(e) => updateFieldLabel(key, e.target.value)}
+                                  className={`w-full px-3 py-1.5 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 ${
+                                    fieldConfigErrors[key] ? 'border-red-400 bg-red-50' : 'border-gray-200'
+                                  }`}
+                                  placeholder="Nombre visible del campo"
+                                />
+                                {fieldConfigErrors[key] && (
+                                  <p className="text-xs text-red-500 mt-1">{fieldConfigErrors[key]}</p>
+                                )}
+                              </div>
+
+                              {/* Placeholder input */}
+                              <div className="mb-2">
+                                <label className="block text-xs font-semibold text-slate-500 mb-1">
+                                  Placeholder
+                                </label>
+                                <input
+                                  type="text"
+                                  value={field.placeholder || ''}
+                                  onChange={(e) => updateFieldPlaceholder(key, e.target.value)}
+                                  className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500"
+                                  placeholder="Texto de ayuda (opcional)"
+                                />
+                              </div>
+
+                              {/* Required toggle */}
+                              <div className="flex items-center gap-4 mb-3">
+                                <button
+                                  onClick={() => toggleFieldRequired(key)}
+                                  className="flex items-center gap-2"
+                                >
+                                  {field.required ? (
+                                    <ToggleRight className="w-6 h-6 text-red-500" />
+                                  ) : (
+                                    <ToggleLeft className="w-6 h-6 text-gray-300" />
+                                  )}
+                                  <span className={`text-sm font-medium ${field.required ? 'text-red-600' : 'text-slate-400'}`}>
+                                    Obligatorio
+                                  </span>
+                                </button>
+
+                                {/* showIf selector */}
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-slate-400">Mostrar si:</span>
+                                  <select
+                                    value={field.showIf?.field || ''}
+                                    onChange={(e) => {
+                                      const condField = e.target.value;
+                                      const condValue = condField
+                                        ? (fieldsConfig[condField]?.options?.[1]?.value || '')
+                                        : '';
+                                      updateFieldShowIf(key, condField, condValue);
+                                    }}
+                                    className="px-2 py-1 border border-gray-200 rounded-lg text-xs bg-white"
+                                  >
+                                    <option value="">Siempre</option>
+                                    {Object.entries(fieldsConfig)
+                                      .filter(([k, f]) => k !== key && f.type === 'select')
+                                      .map(([k, f]) => (
+                                        <option key={k} value={k}>{f.label}</option>
+                                      ))}
+                                  </select>
+                                  {field.showIf?.field && (
+                                    <select
+                                      value={field.showIf.value || ''}
+                                      onChange={(e) => updateFieldShowIf(key, field.showIf.field, e.target.value)}
+                                      className="px-2 py-1 border border-gray-200 rounded-lg text-xs bg-white max-w-[140px]"
+                                    >
+                                      {(fieldsConfig[field.showIf.field]?.options || [])
+                                        .filter((o) => o.value)
+                                        .map((opt) => (
+                                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                        ))}
+                                    </select>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Options editor for selects */}
+                              {field.type === 'select' && field.options && (
+                                <div className="border-t border-gray-100 pt-3 mt-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <label className="text-xs font-semibold text-slate-500">
+                                      Opciones del dropdown
+                                    </label>
+                                    <button
+                                      onClick={() => addOption(key)}
+                                      className="flex items-center gap-1 text-xs text-violet-600 hover:text-violet-700 font-medium"
+                                    >
+                                      <Plus className="w-3 h-3" />Agregar opción
+                                    </button>
+                                  </div>
+                                  <div className="space-y-2">
+                                    {(field.options || []).map((opt, idx) => (
+                                      <div key={idx} className="flex items-center gap-2">
+                                        <GripVertical className="w-3 h-3 text-slate-300 shrink-0" />
+                                        <input
+                                          type="text"
+                                          value={opt.label}
+                                          onChange={(e) => updateOption(key, idx, { label: e.target.value })}
+                                          className={`flex-1 px-2 py-1 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-violet-500 ${
+                                            fieldConfigErrors[`${key}_opt_${idx}`]
+                                              ? 'border-red-400 bg-red-50'
+                                              : 'border-gray-200'
+                                          }`}
+                                          placeholder="Etiqueta"
+                                        />
+                                        <input
+                                          type="text"
+                                          value={opt.value}
+                                          onChange={(e) => updateOption(key, idx, { value: e.target.value })}
+                                          className="w-[120px] px-2 py-1 border border-gray-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-violet-500"
+                                          placeholder="value"
+                                        />
+                                        <button
+                                          onClick={() => removeOption(key, idx)}
+                                          className="p-1 text-slate-300 hover:text-red-500 transition-colors shrink-0"
+                                          disabled={field.options.length <= 1}
+                                        >
+                                          <Trash3 className="w-4 h-4" />
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-gray-100 flex items-center justify-between shrink-0 bg-slate-50">
+              <button
+                onClick={handleResetFieldConfig}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-slate-700 font-medium transition-colors"
+              >
+                <Loader2 className="w-4 h-4" />Restablecer valores por defecto
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowFieldConfigModal(false)}
+                  className="px-5 py-2 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveFieldConfig}
+                  className="flex items-center gap-2 px-6 py-2 bg-violet-500 text-white rounded-xl font-semibold text-sm hover:bg-violet-600 transition-colors"
+                >
+                  <Save className="w-4 h-4" />Guardar Configuración
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
