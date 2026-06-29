@@ -6,7 +6,9 @@
   font-family: inherit;
 }
 
+/* FAB button */
 .uru-fab {
+  position: relative;
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -16,46 +18,75 @@
   font-size: 24px;
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(14, 165, 233, 0.4);
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .uru-fab:hover {
   transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(14, 165, 233, 0.5);
 }
 
+/* Badge for new messages when panel is closed */
+.uru-fab-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid white;
+  animation: uru-pulse 2s infinite;
+}
+
+@keyframes uru-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+/* Panel */
 .uru-panel {
   width: 370px;
-  height: 520px;
+  height: 560px;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: uru-slide-in 0.25s ease-out;
 }
 
+@keyframes uru-slide-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Header */
 .uru-header {
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
   color: white;
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .uru-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 13px;
   flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.4);
 }
 
 .uru-header-text {
@@ -73,44 +104,60 @@
 }
 
 .uru-close {
-  background: none;
+  background: rgba(255,255,255,0.15);
   border: none;
   color: white;
-  font-size: 24px;
+  font-size: 22px;
   cursor: pointer;
   line-height: 1;
-  padding: 0;
+  padding: 4px 8px;
+  border-radius: 8px;
   flex-shrink: 0;
+  transition: background 0.15s;
+}
+.uru-close:hover {
+  background: rgba(255,255,255,0.25);
 }
 
+/* Messages area */
 .uru-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   background: #f8fafc;
+  scroll-behavior: smooth;
 }
 
+/* Individual message */
 .uru-msg {
   display: flex;
+  flex-direction: column;
+  animation: uru-msg-in 0.2s ease-out;
+}
+
+@keyframes uru-msg-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .uru-msg--user {
-  justify-content: flex-end;
+  align-items: flex-end;
 }
 
 .uru-msg--uru {
-  justify-content: flex-start;
+  align-items: flex-start;
 }
 
+/* Bubble */
 .uru-bubble {
-  max-width: 80%;
+  max-width: 85%;
   padding: 10px 14px;
   border-radius: 16px;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -128,17 +175,103 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
+/* Feedback buttons */
+.uru-feedback {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  margin-left: 4px;
+}
+
+.uru-feedback-done {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 3px;
+  margin-left: 4px;
+}
+
+.uru-feedback-btn {
+  background: none;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #64748b;
+}
+.uru-feedback-btn:hover {
+  background: #f1f5f9;
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+}
+.uru-feedback-btn.active {
+  background: #e0f2fe;
+  border-color: #0ea5e9;
+  color: #0284c7;
+}
+
+/* Typing indicator (animated dots) */
 .uru-typing {
-  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 14px !important;
+  color: #94a3b8 !important;
   font-style: italic;
 }
 
+.uru-typing-dot {
+  width: 6px;
+  height: 6px;
+  background: #94a3b8;
+  border-radius: 50%;
+  animation: uru-typing-bounce 1.2s ease-in-out infinite;
+}
+.uru-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.uru-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes uru-typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Quick replies */
+.uru-quick-replies {
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: #f1f5f9;
+  border-top: 1px solid #e2e8f0;
+}
+
+.uru-quick-btn {
+  background: white;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.uru-quick-btn:hover {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Input area */
 .uru-input-area {
-  padding: 12px;
+  padding: 10px 12px;
   border-top: 1px solid #e2e8f0;
   display: flex;
   gap: 8px;
   background: white;
+  align-items: center;
 }
 
 .uru-input {
@@ -148,10 +281,14 @@
   padding: 10px 16px;
   font-size: 14px;
   outline: none;
+  transition: border-color 0.15s;
 }
-
 .uru-input:focus {
   border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+.uru-input:disabled {
+  opacity: 0.6;
 }
 
 .uru-send {
@@ -167,8 +304,42 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: all 0.15s;
+}
+.uru-send:hover:not(:disabled) {
+  background: #0284c7;
+  transform: scale(1.05);
+}
+.uru-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.uru-send:disabled {
-  opacity: 0.6;
+/* Spinner for send button while loading */
+.uru-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: uru-spin 0.7s linear infinite;
+}
+
+@keyframes uru-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Scrollbar styling */
+.uru-messages::-webkit-scrollbar {
+  width: 5px;
+}
+.uru-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+.uru-messages::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.uru-messages::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
