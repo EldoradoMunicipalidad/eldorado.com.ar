@@ -7,6 +7,47 @@ const INITIAL_MESSAGE = {
   text: '¡Hola! Soy URU, tu asistente virtual de la Municipalidad de Eldorado. ¿En qué puedo ayudarte hoy?',
 };
 
+const MODEL = 'deepseek/deepseek-chat-v3-0324';
+
+async function chatOpenRouter(question, context) {
+  const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+  if (!API_KEY) throw new Error('API key no configurada');
+
+  const systemPrompt = `Sos URU, el asistente virtual de la Municipalidad de Eldorado, Misiones, Argentina.
+Eldorado es una ciudad de aproximadamente 90.000 habitantes, ubicada en el nordeste de Misiones, a 177 km de Posadas, sobre el río Paraná. Fue fundada en 1919.
+Tu función es responder preguntas de los ciudadanos sobre:
+- Trámites y servicios municipales (Turnero de Planeamiento, Reclamos, Preinscripción Comercial, Licitaciones, Bolsa de Empleo)
+- Información de contacto (teléfonos, direcciones, horarios de atención al público: Lunes a Viernes 7:00 a 13:00)
+- Novedades y noticias del municipio (publicadas en prensa.eldorado.gob.ar)
+- Datos generales de la ciudad (geografía, historia, cultura, economía, turismo)
+- Guía para usar el sitio web municipal (eldorado.gob.ar)
+- Secretarías, departamentos y áreas de gobierno
+- Guía de Trámites del municipio
+
+Responde SIEMPRE en español, de forma clara, amigable y concisa (máximo 3-4 oraciones).
+Si no sabés algo, decilo con honestidad y sugerí contactar directamente al área correspondiente.
+No inventes datos, teléfonos ni direcciones.`;
+
+  const messages = [{ role: 'system', content: systemPrompt }];
+  if (context) messages.push({ role: 'system', content: 'Información de contexto del sitio municipal:\n' + context });
+  messages.push({ role: 'user', content: question });
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + API_KEY,
+      'HTTP-Referer': 'https://eldorado.gob.ar',
+      'X-Title': 'URU - Chatbot Municipal',
+    },
+    body: JSON.stringify({ model: MODEL, messages, max_tokens: 300 }),
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || 'Error de OpenRouter');
+  return data.choices?.[0]?.message?.content || 'No pude obtener una respuesta.';
+}
+
 export default function UruChatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
@@ -27,15 +68,10 @@ export default function UruChatbot() {
     setMessages(m => [...m, { from: 'user', text }]);
     setLoading(true);
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, context: uruKnowledge }),
-      });
-      const data = await res.json();
-      setMessages(m => [...m, { from: 'uru', text: data.answer || 'No pude obtener una respuesta.' }]);
-    } catch {
-      setMessages(m => [...m, { from: 'uru', text: 'Error de conexión. Intentá de nuevo.' }]);
+      const answer = await chatOpenRouter(text, uruKnowledge);
+      setMessages(m => [...m, { from: 'uru', text: answer }]);
+    } catch (e) {
+      setMessages(m => [...m, { from: 'uru', text: 'Error: ' + e.message }]);
     }
     setLoading(false);
   };
