@@ -95,7 +95,6 @@ import { allNavigationLinks } from './data/navigationData' // Importamos la uni√
 import Breadcrumbs from './assets/components/Header/Breadcrumbs'
 import ScrollToHash from '../src/assets/components/ScrollToHash'
 import { Footer } from './assets/components/Footer/Footer'
-import UruChatbot from './components/UruChatbot'
 
 function App() {
   return (
@@ -243,7 +242,6 @@ function App() {
       </main>
 
       <Footer /> {/* Footer integrado al final */}
-      <UruChatbot />
     </div>
   )
 }
