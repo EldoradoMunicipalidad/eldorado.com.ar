@@ -260,9 +260,20 @@ export default function PreinscripcionComercialPage() {
         .catch(() => {
           clearInterval(interval);
           setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
-          // Even if server isn't available, mark as uploaded for demo
-          setUploadedFiles((prev) => ({ ...prev, [fieldName]: { url: URL.createObjectURL(file), name: file.name } }));
-          resolve({ url: URL.createObjectURL(file), name: file.name });
+          // Fallback: read file as base64 data URL so it persists (works without server)
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const base64 = e.target.result;
+            const dataUrl = base64;
+            setUploadedFiles((prev) => ({ ...prev, [fieldName]: { url: dataUrl, name: file.name } }));
+            resolve({ url: dataUrl, name: file.name });
+          };
+          reader.onerror = () => {
+            // Last resort fallback
+            setUploadedFiles((prev) => ({ ...prev, [fieldName]: { url: URL.createObjectURL(file), name: file.name } }));
+            resolve({ url: URL.createObjectURL(file), name: file.name });
+          };
+          reader.readAsDataURL(file);
         });
     });
   };
