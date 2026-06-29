@@ -22,12 +22,12 @@ const INTENT_ANSWERS = [
     answer: 'La atención al público es de Lunes a Viernes de 7:00 a 13:00 en la municipalidad (Av. Berthier 64, Eldorado, Misiones).',
   },
   {
-    patterns: [/dirección/i, /ubicación/i, /donde.*queda/i, /dirección.*municipal/i, /av\.*berthier/i],
-    answer: 'La Municipalidad de Eldorado está en Av. Berthier 64, Eldorado, Misiones. El horario de atención es Lunes a Viernes de 7:00 a 13:00.',
+    patterns: [/dirección/i, /ubicación/i, /donde.*queda/i, /dirección.*municipal/i, /av\.*san/i, /simón.*bolívar/i, /bolívar.*73/i],
+    answer: 'La Municipalidad de Eldorado está en Simón J. Bolívar N° 73, Eldorado, Misiones. El horario de atención es Lunes a Viernes de 7:00 a 13:00.',
   },
   {
-    patterns: [/teléfono.*municipal/i, /teléfono.*atención/i, /número.*municipal/i, /llamar.*municipal/i],
-    answer: 'El teléfono municipal es (03751) 42-1787. Para emergencias油田 llamá al 911.',
+    patterns: [/teléfono.*municipal/i, /teléfono.*atención/i, /número.*municipal/i, /llamar.*municipal/i, /contacto.*municipal/i, /celular.*municipal/i],
+    answer: 'El teléfono municipal es (+54) 03751 - 421787. Para emergencias油田 llamá al 911.',
   },
   {
     patterns: [/expo eldorado/i, /qué.*expo/i, /expo.*es/i],
@@ -98,7 +98,7 @@ async function chatOpenRouter(question, context) {
 Eldorado es una ciudad de aproximadamente 90.000 habitantes, ubicada en el nordeste de Misiones, a 177 km de Posadas, sobre el río Paraná. Fue fundada en 1919. Gentilicio: eldoreño/a.
 Tu función es responder preguntas de los ciudadanos sobre:
 - Trámites y servicios municipales (Turnero de Planeamiento, Reclamos, Preinscripción Comercial, Licitaciones, Bolsa de Empleo, Habilitaciones Comerciales)
-- Información de contacto (teléfonos: (03751) 42-1787 municipal, horarios: Lunes a Viernes 7:00 a 13:00, dirección: Av. Berthier 64)
+- Información de contacto (teléfonos: (+54) 03751 - 421787 municipal, horarios: Lunes a Viernes 7:00 a 13:00, dirección: Simón J. Bolívar N° 73)
 - Novedades y noticias del municipio (publicadas en prensa.eldorado.gob.ar)
 - Datos generales de la ciudad (geografía, historia, cultura, economía, turismo, Expo Eldorado)
 - Guía para usar el sitio web municipal (eldorado.gob.ar)
@@ -109,7 +109,7 @@ Tu función es responder preguntas de los ciudadanos sobre:
 IMPORTANTE:
 - El usuario está actualmente en la sección: ${pageCtx}
 - Respondé SIEMPRE en español, de forma clara, amigable y concisa (máximo 3-4 oraciones).
-- Si no sabés algo, decilo con honestidad y sugerí contactar al (03751) 42-1787.
+- Si no sabés algo, decilo con honestidad y sugerí contactar al (+54) 03751 - 421787.
 - No inventes datos, teléfonos ni direcciones.`;
 
   const messages = [{ role: 'system', content: systemPrompt }];
@@ -224,7 +224,7 @@ export default function UruChatbot() {
         return updated;
       });
     } catch (e) {
-      const errMsg = makeMsg('uru', 'Error: ' + e.message + '. Probá de nuevo o contactá al (03751) 42-1787.');
+      const errMsg = makeMsg('uru', 'Error: ' + e.message + '. Podés llamar directo al (+54) 03751 - 421787 para asistencia.');
       setMessages(m => {
         const updated = [...m, errMsg];
         saveHistory(updated);

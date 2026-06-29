@@ -30,8 +30,8 @@ TRÁMITES PRINCIPALES:
 6. Habilitaciones Comerciales: gestión de permisos de comercio
 
 HORARIO DE ATENCIÓN AL PÚBLICO: Lunes a Viernes de 7:00 a 13:00
-DIRECCIÓN MUNICIPAL: Av. Berthier 64, Eldorado, Misiones
-TELÉFONO MUNICIPAL: (03751) 42-XXXX (verificar en sección Teléfonos Útiles del sitio)
+DIRECCIÓN MUNICIPAL: Simón J. Bolívar N° 73, Eldorado, Misiones
+TELÉFONO MUNICIPAL: (+54) 03751 - 421787
 
 TELÉFONOS ÚTILES (referencia — verificar en el sitio para datos actualizados):
 - Emergencias: 911
