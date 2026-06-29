@@ -224,58 +224,57 @@ export default function PreinscripcionComercialPage() {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
+  const readFileAsDataURL = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.readAsDataURL(file);
+    });
+
   const simulateUpload = async (file, fieldName) => {
     setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-    formDataUpload.append('field', fieldName);
 
-    // Simulate progress
-    return new Promise((resolve) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 30;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-        }
-        setUploadProgress((prev) => ({ ...prev, [fieldName]: Math.min(Math.round(progress), 100) }));
-      }, 300);
+    // Simulate progress independently
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        const current = prev[fieldName] || 0;
+        const next = Math.min(current + Math.random() * 25, 95);
+        return { ...prev, [fieldName]: Math.round(next) };
+      });
+    }, 300);
 
-      // Actual upload
-      fetch('/api/habilitaciones/upload', {
+    let dataUrl;
+    try {
+      // Try real upload first
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', file);
+      formDataUpload.append('field', fieldName);
+      const res = await fetch('/api/habilitaciones/upload', {
         method: 'POST',
         body: formDataUpload,
-      })
-        .then((res) => {
-          if (!res.ok) throw new Error('Upload failed');
-          return res.json();
-        })
-        .then((data) => {
-          clearInterval(interval);
-          setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
-          setUploadedFiles((prev) => ({ ...prev, [fieldName]: data }));
-          resolve(data);
-        })
-        .catch(() => {
-          clearInterval(interval);
-          setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
-          // Fallback: read file as base64 data URL so it persists (works without server)
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const base64 = e.target.result;
-            const dataUrl = base64;
-            setUploadedFiles((prev) => ({ ...prev, [fieldName]: { url: dataUrl, name: file.name } }));
-            resolve({ url: dataUrl, name: file.name });
-          };
-          reader.onerror = () => {
-            // Last resort fallback
-            setUploadedFiles((prev) => ({ ...prev, [fieldName]: { url: URL.createObjectURL(file), name: file.name } }));
-            resolve({ url: URL.createObjectURL(file), name: file.name });
-          };
-          reader.readAsDataURL(file);
-        });
-    });
+      });
+      if (res.ok) {
+        const data = await res.json();
+        clearInterval(interval);
+        setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
+        setUploadedFiles((prev) => ({ ...prev, [fieldName]: data }));
+        return data;
+      }
+      throw new Error('Upload server returned ' + res.status);
+    } catch {
+      // Fallback: read as base64 data URL (persists without server)
+      clearInterval(interval);
+      try {
+        dataUrl = await readFileAsDataURL(file);
+      } catch {
+        dataUrl = URL.createObjectURL(file);
+      }
+      setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
+      const result = { url: dataUrl, name: file.name };
+      setUploadedFiles((prev) => ({ ...prev, [fieldName]: result }));
+      return result;
+    }
   };
 
   const handleSubmit = async () => {
