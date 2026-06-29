@@ -1,10 +1,5 @@
 export const itemsCiudad = [
   {
-    label: "Terminal de Colectivos",
-    breadcrumbLabel: "Terminal de Colectivos",
-    to: "/ciudad/bus-eldorado",
-  },
-  {
     label: "Eldorado",
     breadcrumbLabel: "Eldorado",
     to: "/ciudad/eldorado",
@@ -62,6 +57,14 @@ export const itemsCiudad = [
           { label: "Emprendimientos", to: "/ciudad/expo-eldorado" }
         ],
         to: "/ciudad/expo-eldorado"
+      },
+      {
+        title: "Terminal de Colectivos",
+        keywords: [
+          { label: "Horarios de colectivos", to: "/ciudad/bus-eldorado" },
+          { label: "Rutas y destinos", to: "/ciudad/bus-eldorado" }
+        ],
+        to: "/ciudad/bus-eldorado"
       }
     ]
   },
