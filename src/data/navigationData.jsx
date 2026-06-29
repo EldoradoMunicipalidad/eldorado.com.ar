@@ -1,5 +1,10 @@
 export const itemsCiudad = [
   {
+    label: "Terminal de Colectivos",
+    breadcrumbLabel: "Terminal de Colectivos",
+    to: "/ciudad/bus-eldorado",
+  },
+  {
     label: "Eldorado",
     breadcrumbLabel: "Eldorado",
     to: "/ciudad/eldorado",
