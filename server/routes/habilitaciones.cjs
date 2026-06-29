@@ -262,18 +262,44 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-// ─── 4. PATCH /api/habilitaciones/:id ─ Actualizar status y notas ──────
+// ─── 4. PATCH /api/habilitaciones/:id ─ Actualizar cualquier campo ──────
 router.patch('/:id', async (req, res) => {
   try {
-    const { status, notas } = req.body
+    const body = req.body
+    const fields = [
+      'tipo_persona','dni','cuit','apellido','nombre','domicilio','email','telefono',
+      'seccion','manzana','parcela','direccion','local_oficina','barrio',
+      'superficie_cubierta','superficie_semicubierta','superficie_total','georeferenciacion',
+      'categoria','sub_categoria',
+      'actividad_principal','actividad_secundaria','otra_actividad',
+      'archivos','status','notas'
+    ]
+    const updates = []
+    const values = []
+    let idx = 1
+
+    for (const field of fields) {
+      if (body[field] !== undefined) {
+        updates.push(`${field} = $${idx}`)
+        if (field === 'archivos') {
+          values.push(JSON.stringify(body[field]))
+        } else {
+          values.push(body[field])
+        }
+        idx++
+      }
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No se envió ningún campo para actualizar' })
+    }
+
+    updates.push(`updated_at = NOW()`)
+    values.push(req.params.id)
+
     const { rows } = await pool.query(
-      `UPDATE habilitaciones
-       SET status = COALESCE($1, status),
-           notas  = COALESCE($2, notas),
-           updated_at = NOW()
-       WHERE id = $3
-       RETURNING *`,
-      [status || null, notas !== undefined ? notas : null, req.params.id]
+      `UPDATE habilitaciones SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
     )
     if (rows.length === 0) {
       return res.status(404).json({ error: 'No encontrado' })

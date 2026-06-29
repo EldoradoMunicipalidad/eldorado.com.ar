@@ -118,12 +118,9 @@ export default function PreinscripcionComercialPage() {
     if (formData.tipo_persona === 'fisica') {
       if (!formData.dni) errs.dni = 'DNI es obligatorio';
       if (!formData.apellido_nombre) errs.apellido_nombre = 'Apellido y Nombre es obligatorio';
-      if (!formData.dni_file) errs.dni_file = 'Subí una copia del DNI';
     }
     if (formData.tipo_persona === 'juridica') {
       if (!formData.razon_social) errs.razon_social = 'Razón Social es obligatoria';
-      if (!formData.estatuto_file) errs.estatuto_file = 'Subí el Estatuto';
-      if (!formData.acta_designacion_file) errs.acta_designacion_file = 'Subí el Acta de designación';
     }
     if (!formData.domicilio_real) errs.domicilio_real = 'Domicilio real es obligatorio';
     if (!formData.email) errs.email = 'Email es obligatorio';
@@ -133,13 +130,7 @@ export default function PreinscripcionComercialPage() {
 
   const validateStep2 = () => {
     const errs = {};
-    if (!formData.seccion) errs.seccion = 'Sección es obligatoria';
-    if (!formData.manzana) errs.manzana = 'Manzana es obligatoria';
-    if (!formData.parcela) errs.parcela = 'Parcela es obligatoria';
     if (!formData.direccion_completa) errs.direccion_completa = 'Dirección completa es obligatoria';
-    if (!formData.propietario_local) errs.propietario_local = 'Propietario del local es obligatorio';
-    if (!formData.barrio) errs.barrio = 'Barrio es obligatorio';
-    if (!formData.documento_propiedad_file) errs.documento_propiedad_file = 'Subí el documento de propiedad';
     return errs;
   };
 
@@ -148,7 +139,6 @@ export default function PreinscripcionComercialPage() {
     if (!formData.tipo_tramite) errs.tipo_tramite = 'Seleccioná el tipo de trámite';
     if (!formData.categoria) errs.categoria = 'Seleccioná la categoría';
     if (!formData.actividad_principal) errs.actividad_principal = 'Actividad principal es obligatoria';
-    if (!formData.constancia_arca_file) errs.constancia_arca_file = 'Subí la constancia ARCA/ATM';
     return errs;
   };
 

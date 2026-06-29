@@ -6,7 +6,6 @@ import {
   Filter,
   CalendarDays,
   ChevronDown,
-  ChevronUp,
   Eye,
   Trash2,
   X,
@@ -20,14 +19,17 @@ import {
   UserCheck,
   Building2,
   FileText,
-  Mail,
-  Phone,
+  Download as DownloadIcon,
   MapPin,
   Briefcase,
   ChevronLeft,
   ChevronRight,
   SortAsc,
   SortDesc,
+  Edit3,
+  Phone,
+  Mail,
+  File,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -42,6 +44,55 @@ const STATUS_FILTER_OPTIONS = [
   { value: 'en_revision', label: 'En Revisión' },
   { value: 'finalizado', label: 'Finalizado' },
 ];
+
+const TIPO_PERSONA_OPTIONS = [
+  { value: 'fisica', label: 'Persona Física' },
+  { value: 'juridica', label: 'Persona Jurídica' },
+];
+
+const TIPO_TRAMITE_OPTIONS = [
+  { value: '', label: 'Seleccionar...' },
+  { value: 'habilitacion', label: 'Habilitación' },
+  { value: 'anexo', label: 'Anexo' },
+  { value: 'traslado', label: 'Traslado' },
+  { value: 'cambio_titular', label: 'Cambio de Titular' },
+  { value: 'cambio_rubro', label: 'Cambio de Rubro' },
+];
+
+const CATEGORIA_OPTIONS = [
+  { value: '', label: 'Seleccionar...' },
+  { value: 'servicio', label: 'Servicio' },
+  { value: 'comercial', label: 'Comercial' },
+  { value: 'industrial', label: 'Industrial' },
+];
+
+const EMPTY_EDIT_FORM = {
+  tipo_persona: '',
+  dni: '',
+  cuit: '',
+  apellido: '',
+  nombre: '',
+  domicilio: '',
+  email: '',
+  telefono: '',
+  seccion: '',
+  manzana: '',
+  parcela: '',
+  direccion: '',
+  local_oficina: '',
+  barrio: '',
+  superficie_cubierta: '',
+  superficie_semicubierta: '',
+  superficie_total: '',
+  georeferenciacion: '',
+  categoria: '',
+  sub_categoria: '',
+  actividad_principal: '',
+  actividad_secundaria: '',
+  otra_actividad: '',
+  status: 'pendiente',
+  notas: '',
+};
 
 export default function PreinscripcionComercialAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -67,9 +118,9 @@ export default function PreinscripcionComercialAdminPage() {
   const [saving, setSaving] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
 
-  // Detail modal state
-  const [detailStatus, setDetailStatus] = useState('');
-  const [detailNotas, setDetailNotas] = useState('');
+  // Editable form state
+  const [editForm, setEditForm] = useState({ ...EMPTY_EDIT_FORM });
+  const [editMode, setEditMode] = useState(false);
 
   // Document preview state
   const [previewDoc, setPreviewDoc] = useState(null);
@@ -107,7 +158,6 @@ export default function PreinscripcionComercialAdminPage() {
         setLoginError('Usuario o contraseña incorrectos');
       }
     } catch {
-      // Para demo: login local si falla conexión
       if (loginUser === 'admin' && loginPass === 'admin') {
         sessionStorage.setItem('habilitaciones_admin_auth', 'true');
         setIsAuthenticated(true);
@@ -134,7 +184,6 @@ export default function PreinscripcionComercialAdminPage() {
           const data = await res.json();
           setSolicitudes(data.entries || data);
         } else {
-          // Demo data if API not available
           setSolicitudes(generateDemoData());
         }
       } catch {
@@ -192,7 +241,6 @@ export default function PreinscripcionComercialAdminPage() {
   const filteredData = useMemo(() => {
     let data = [...solicitudes];
 
-    // Search
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       data = data.filter(
@@ -209,12 +257,10 @@ export default function PreinscripcionComercialAdminPage() {
       );
     }
 
-    // Status filter
     if (statusFilter !== 'todos') {
       data = data.filter((item) => item.status === statusFilter);
     }
 
-    // Date range filter
     if (filterDateFrom) {
       const from = new Date(filterDateFrom);
       data = data.filter((item) => {
@@ -231,7 +277,6 @@ export default function PreinscripcionComercialAdminPage() {
       });
     }
 
-    // Sort
     data.sort((a, b) => {
       let aVal, bVal;
       switch (sortField) {
@@ -297,15 +342,13 @@ export default function PreinscripcionComercialAdminPage() {
     if (tipo === 'fisica') {
       return (
         <span className="text-xs font-medium text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-          <UserCheck className="w-3 h-3" />
-          Física
+          <UserCheck className="w-3 h-3" />Física
         </span>
       );
     }
     return (
       <span className="text-xs font-medium text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full flex items-center gap-1">
-        <Building2 className="w-3 h-3" />
-        Jurídica
+        <Building2 className="w-3 h-3" />Jurídica
       </span>
     );
   };
@@ -344,9 +387,36 @@ export default function PreinscripcionComercialAdminPage() {
 
   const handleOpenDetail = (item) => {
     setSelectedItem(item);
-    setDetailStatus(item.status || 'pendiente');
-    setDetailNotas(item.notas || '');
+    setEditForm({
+      tipo_persona: item.tipo_persona || '',
+      dni: item.dni || '',
+      cuit: item.cuit || '',
+      apellido: item.apellido || item.apellido_alt || '',
+      nombre: item.nombre || '',
+      domicilio: item.domicilio || '',
+      email: item.email || '',
+      telefono: item.telefono || '',
+      seccion: item.seccion || '',
+      manzana: item.manzana || '',
+      parcela: item.parcela || '',
+      direccion: item.direccion || '',
+      local_oficina: item.local_oficina || '',
+      barrio: item.barrio || '',
+      superficie_cubierta: item.superficie_cubierta || '',
+      superficie_semicubierta: item.superficie_semicubierta || '',
+      superficie_total: item.superficie_total || '',
+      georeferenciacion: item.georeferenciacion || '',
+      categoria: item.categoria || '',
+      sub_categoria: item.sub_categoria || '',
+      actividad_principal: item.actividad_principal || '',
+      actividad_secundaria: item.actividad_secundaria || '',
+      otra_actividad: item.otra_actividad || '',
+      status: item.status || 'pendiente',
+      notas: item.notas || '',
+    });
+    setEditMode(false);
     setShowDetailModal(true);
+    setConfirmSave(false);
   };
 
   const handleSaveDetail = async () => {
@@ -356,38 +426,38 @@ export default function PreinscripcionComercialAdminPage() {
       const res = await fetch(`/api/habilitaciones/${selectedItem.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: detailStatus, notas: detailNotas }),
+        body: JSON.stringify(editForm),
       });
       if (res.ok) {
+        const updated = await res.json();
         setSolicitudes((prev) =>
-          prev.map((s) =>
-            s.id === selectedItem.id ? { ...s, estado: detailStatus, notas: detailNotas } : s
-          )
+          prev.map((s) => (s.id === selectedItem.id ? { ...s, ...editForm } : s))
         );
         showToast('Solicitud actualizada correctamente');
         setShowDetailModal(false);
         setSelectedItem(null);
+        setEditMode(false);
+        setConfirmSave(false);
       } else {
         // Optimistic update for demo
         setSolicitudes((prev) =>
-          prev.map((s) =>
-            s.id === selectedItem.id ? { ...s, estado: detailStatus, notas: detailNotas } : s
-          )
+          prev.map((s) => (s.id === selectedItem.id ? { ...s, ...editForm } : s))
         );
         showToast('Solicitud actualizada correctamente');
         setShowDetailModal(false);
         setSelectedItem(null);
+        setEditMode(false);
+        setConfirmSave(false);
       }
     } catch {
-      // Optimistic update for demo
       setSolicitudes((prev) =>
-        prev.map((s) =>
-          s.id === selectedItem.id ? { ...s, estado: detailStatus, notas: detailNotas } : s
-        )
+        prev.map((s) => (s.id === selectedItem.id ? { ...s, ...editForm } : s))
       );
       showToast('Solicitud actualizada correctamente');
       setShowDetailModal(false);
       setSelectedItem(null);
+      setEditMode(false);
+      setConfirmSave(false);
     } finally {
       setSaving(false);
     }
@@ -408,14 +478,18 @@ export default function PreinscripcionComercialAdminPage() {
     }
   };
 
-  // Sort arrow icon
   const SortIcon = ({ field }) => {
     if (sortField !== field) return <SortAsc className="w-3 h-3 text-gray-300" />;
     return sortDirection === 'asc' ? (
-      <ChevronUp className="w-3 h-3 text-sky-500" />
-    ) : (
       <ChevronDown className="w-3 h-3 text-sky-500" />
+    ) : (
+      <ChevronUp className="w-3 h-3 text-sky-500" />
     );
+  };
+
+  // ─── Edit Form helpers ─────────────────────────────────────────
+  const updateField = (field, value) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
   };
 
   // ─── Admin Management ─────────────────────────────────────────
@@ -475,6 +549,49 @@ export default function PreinscripcionComercialAdminPage() {
     }
   };
 
+  // ─── Editable field component ─────────────────────────────────
+  const FieldDisplay = ({ label, value, empty = '-' }) => (
+    <div>
+      <span className="text-xs text-slate-400 block">{label}</span>
+      <p className="text-sm font-medium text-slate-700">{value || empty}</p>
+    </div>
+  );
+
+  const EditableField = ({ label, field, type = 'text', rows, options, placeholder }) => (
+    <div>
+      <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">
+        {label}
+      </label>
+      {options ? (
+        <select
+          value={editForm[field]}
+          onChange={(e) => updateField(field, e.target.value)}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm bg-white"
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      ) : type === 'textarea' ? (
+        <textarea
+          value={editForm[field]}
+          onChange={(e) => updateField(field, e.target.value)}
+          rows={rows || 3}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm resize-none"
+        />
+      ) : (
+        <input
+          type={type}
+          value={editForm[field]}
+          onChange={(e) => updateField(field, e.target.value)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+        />
+      )}
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
       <div className="bg-slate-50 text-slate-900 font-sans min-h-screen">
@@ -491,15 +608,11 @@ export default function PreinscripcionComercialAdminPage() {
                   <Building2 className="w-8 h-8 text-sky-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">Panel de Administración</h3>
-                <p className="text-sm text-slate-500 mt-1">
-                  Habilitaciones Comerciales
-                </p>
+                <p className="text-sm text-slate-500 mt-1">Habilitaciones Comerciales</p>
               </div>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Usuario
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
                   <input
                     type="text"
                     value={loginUser}
@@ -510,9 +623,7 @@ export default function PreinscripcionComercialAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Contraseña
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
                   <input
                     type="password"
                     value={loginPass}
@@ -544,11 +655,7 @@ export default function PreinscripcionComercialAdminPage() {
   if (loading) {
     return (
       <div className="bg-slate-50 text-slate-900 font-sans min-h-screen">
-        <SectionLayout
-          title="Panel de"
-          highlight="Administración"
-          description="Cargando solicitudes..."
-        />
+        <SectionLayout title="Panel de" highlight="Administración" description="Cargando solicitudes..." />
         <Section>
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 text-sky-500 animate-spin" />
@@ -571,30 +678,27 @@ export default function PreinscripcionComercialAdminPage() {
             onClick={() => { setShowAdminModal(true); loadAdmins(); }}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-sky-600 hover:bg-sky-50 border border-transparent hover:border-sky-200 transition-colors"
           >
-            <UserCheck className="w-4 h-4" />
-            Usuarios
+            <UserCheck className="w-4 h-4" />Usuarios
           </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm text-red-500 hover:bg-red-50 border border-transparent hover:border-red-200 transition-colors"
           >
-            <LogOut className="w-4 h-4" />
-            Cerrar Sesión
+            <LogOut className="w-4 h-4" />Cerrar Sesión
           </button>
         </div>
       </SectionLayout>
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-6 right-6 z-50 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-pulse flex items-center gap-2 ${
+        <div className={`fixed top-6 right-6 z-50 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-2 ${
           toast.type === 'error' ? 'bg-red-500' : 'bg-emerald-600'
         }`}>
-          <CheckCircle2 className="w-4 h-4" />
-          {toast.message}
+          <CheckCircle2 className="w-4 h-4" />{toast.message}
         </div>
       )}
 
-      {/* Dashboard Stats */}
+      {/* Stats */}
       <Section>
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -632,7 +736,7 @@ export default function PreinscripcionComercialAdminPage() {
 
       <Section>
         <div className="max-w-7xl mx-auto">
-          {/* Search and Filters */}
+          {/* Filters */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
             <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1 relative">
@@ -640,47 +744,25 @@ export default function PreinscripcionComercialAdminPage() {
                 <input
                   type="text"
                   value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setVisibleCount(10);
-                  }}
-                  placeholder="Buscar por DNI, CUIT, Apellido, Email, Teléfono..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all text-sm"
+                  onChange={(e) => { setSearchTerm(e.target.value); setVisibleCount(10); }}
+                  placeholder="Buscar por DNI, CUIT, Apellido, Email..."
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm"
                 />
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <CalendarDays className="w-4 h-4 text-gray-400" />
-                <input
-                  type="date"
-                  value={filterDateFrom}
-                  onChange={(e) => { setFilterDateFrom(e.target.value); setVisibleCount(10); }}
-                  className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm bg-white w-[150px]"
-                  title="Desde"
-                />
+                <input type="date" value={filterDateFrom} onChange={(e) => { setFilterDateFrom(e.target.value); setVisibleCount(10); }}
+                  className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white w-[150px]" />
                 <span className="text-gray-400 text-sm">—</span>
-                <input
-                  type="date"
-                  value={filterDateTo}
-                  onChange={(e) => { setFilterDateTo(e.target.value); setVisibleCount(10); }}
-                  className="px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm bg-white w-[150px]"
-                  title="Hasta"
-                />
+                <input type="date" value={filterDateTo} onChange={(e) => { setFilterDateTo(e.target.value); setVisibleCount(10); }}
+                  className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white w-[150px]" />
               </div>
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-gray-400" />
-                <select
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setVisibleCount(10);
-                  }}
-                  className="px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none text-sm bg-white"
-                >
+                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setVisibleCount(10); }}
+                  className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white">
                   {STATUS_FILTER_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                      {opt.value !== 'todos' && ` (${solicitudes.filter(s => opt.value === 'todos' || s.status === opt.value).length})`}
-                    </option>
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
               </div>
@@ -699,8 +781,7 @@ export default function PreinscripcionComercialAdminPage() {
                 }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-white rounded-lg font-semibold text-sm hover:bg-emerald-600 transition-colors"
               >
-                <Download className="w-4 h-4" />
-                Exportar CSV
+                <DownloadIcon className="w-4 h-4" />Exportar CSV
               </button>
             </div>
           </div>
@@ -711,81 +792,24 @@ export default function PreinscripcionComercialAdminPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-slate-50">
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('status')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Estado
-                        <SortIcon field="status" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('tipo')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Tipo
-                        <SortIcon field="tipo" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('dni')}
-                    >
-                      <div className="flex items-center gap-1">
-                        DNI/CUIT
-                        <SortIcon field="dni" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('apellido')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Apellido / Razón Social
-                        <SortIcon field="apellido" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('email')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Email
-                        <SortIcon field="email" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('categoria')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Categoría
-                        <SortIcon field="categoria" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('tramite')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Trámite
-                        <SortIcon field="tramite" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
-                      onClick={() => handleSort('fecha')}
-                    >
-                      <div className="flex items-center gap-1">
-                        Fecha
-                        <SortIcon field="fecha" />
-                      </div>
-                    </th>
-                    <th className="text-left px-4 py-3 font-semibold text-slate-600">
-                      Acciones
-                    </th>
+                    {[
+                      { field: 'status', label: 'Estado' },
+                      { field: 'tipo', label: 'Tipo' },
+                      { field: 'dni', label: 'DNI/CUIT' },
+                      { field: 'apellido', label: 'Apellido / Razón Social' },
+                      { field: 'email', label: 'Email' },
+                      { field: 'categoria', label: 'Categoría' },
+                      { field: 'tramite', label: 'Trámite' },
+                      { field: 'fecha', label: 'Fecha' },
+                    ].map(({ field, label }) => (
+                      <th key={field}
+                        className="text-left px-4 py-3 font-semibold text-slate-600 cursor-pointer select-none"
+                        onClick={() => handleSort(field)}
+                      >
+                        <div className="flex items-center gap-1">{label}<SortIcon field={field} /></div>
+                      </th>
+                    ))}
+                    <th className="text-left px-4 py-3 font-semibold text-slate-600">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -800,49 +824,31 @@ export default function PreinscripcionComercialAdminPage() {
                     </tr>
                   ) : (
                     visibleData.map((item) => (
-                      <tr
-                        key={item.id}
+                      <tr key={item.id}
                         className={`border-b border-gray-50 hover:bg-sky-50/30 transition-colors ${
                           item.status === 'pendiente' ? 'border-l-4 border-l-amber-400' :
                           item.status === 'en_revision' ? 'border-l-4 border-l-blue-400' :
-                          item.status === 'finalizado' ? 'border-l-4 border-l-emerald-400' :
-                          ''
+                          item.status === 'finalizado' ? 'border-l-4 border-l-emerald-400' : ''
                         }`}
                       >
                         <td className="px-4 py-3">{getStatusBadge(item.status)}</td>
                         <td className="px-4 py-3">{getTipoPersonaBadge(item.tipo_persona)}</td>
-                        <td className="px-4 py-3 text-slate-600 font-medium">
-                          {item.dni || item.cuit || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-slate-700">
-                          {item.apellido || item.apellido_alt || '-'}
-                        </td>
+                        <td className="px-4 py-3 text-slate-600 font-medium">{item.dni || item.cuit || '-'}</td>
+                        <td className="px-4 py-3 text-slate-700">{item.apellido || item.apellido_alt || '-'}</td>
                         <td className="px-4 py-3 text-slate-500">{item.email || '-'}</td>
                         <td className="px-4 py-3">
-                          <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                            {getCategoriaLabel(item.categoria)}
-                          </span>
+                          <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">{getCategoriaLabel(item.categoria)}</span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {getTramiteLabel(item.sub_categoria)}
-                        </td>
-                        <td className="px-4 py-3 text-slate-400 text-xs">
-                          {formatDate(item.created_at || item.fecha)}
-                        </td>
+                        <td className="px-4 py-3 text-slate-600">{getTramiteLabel(item.sub_categoria)}</td>
+                        <td className="px-4 py-3 text-slate-400 text-xs">{formatDate(item.created_at || item.fecha)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => handleOpenDetail(item)}
-                              className="p-2 text-slate-400 hover:text-sky-600 transition-colors rounded-lg hover:bg-sky-50"
-                              title="Ver detalle"
-                            >
+                            <button onClick={() => handleOpenDetail(item)}
+                              className="p-2 text-slate-400 hover:text-sky-600 transition-colors rounded-lg hover:bg-sky-50" title="Ver/Editar">
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => setShowDeleteConfirm(item.id)}
-                              className="p-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
-                              title="Eliminar"
-                            >
+                            <button onClick={() => setShowDeleteConfirm(item.id)}
+                              className="p-2 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50" title="Eliminar">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -854,250 +860,305 @@ export default function PreinscripcionComercialAdminPage() {
               </table>
             </div>
 
-            {/* Pagination / Load More */}
             {filteredData.length > visibleCount && (
               <div className="px-4 py-4 border-t border-gray-100 flex justify-center">
-                <button
-                  onClick={loadMore}
-                  className="flex items-center gap-2 px-6 py-2.5 border border-sky-200 text-sky-600 rounded-xl font-semibold text-sm hover:bg-sky-50 transition-colors"
-                >
-                  Cargar más ({filteredData.length - visibleCount} restantes)
-                  <ChevronDown className="w-4 h-4" />
+                <button onClick={loadMore}
+                  className="flex items-center gap-2 px-6 py-2.5 border border-sky-200 text-sky-600 rounded-xl font-semibold text-sm hover:bg-sky-50 transition-colors">
+                  Cargar más ({filteredData.length - visibleCount} restantes)<ChevronDown className="w-4 h-4" />
                 </button>
               </div>
             )}
-
             {filteredData.length > 0 && (
               <div className="px-4 py-3 bg-slate-50 border-t border-gray-100 text-xs text-slate-400">
                 Mostrando {visibleData.length} de {filteredData.length} solicitudes
-                {filteredData.length < solicitudes.length &&
-                  ` (filtradas de ${solicitudes.length} totales)`}
               </div>
             )}
           </div>
         </div>
       </Section>
 
-      {/* Detail Modal */}
+      {/* ─────────────────────────────────────── DETAIL / EDIT MODAL ── */}
       {showDetailModal && selectedItem && (
-        <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center pt-10 px-4 pb-10 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[85vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-2xl">
+        <div className="fixed inset-0 z-50 bg-black/30 flex items-start justify-center pt-6 px-4 pb-6 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[92vh] overflow-y-auto">
+
+            {/* Modal Header */}
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-2xl">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-sky-500" />
-                Detalle de Solicitud
-                <span className="text-sm font-normal text-slate-400 ml-2">#{selectedItem.id}</span>
+                Solicitud #{selectedItem.id}
               </h3>
-              <button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setSelectedItem(null);
-                }}
-                className="p-1 text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <div className="flex items-center gap-2">
+                {!editMode ? (
+                  <button onClick={() => setEditMode(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 transition-colors">
+                    <Edit3 className="w-4 h-4" />Editar
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => { setEditMode(false); setEditForm({ ...EMPTY_EDIT_FORM, status: selectedItem.status, notas: selectedItem.notas }); setConfirmSave(false); }}
+                      className="px-4 py-2 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">
+                      Cancelar
+                    </button>
+                    <button onClick={() => setConfirmSave(true)}
+                      disabled={saving}
+                      className="flex items-center gap-1.5 px-5 py-2 bg-emerald-500 text-white rounded-xl font-semibold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                      <Save className="w-4 h-4" />Guardar
+                    </button>
+                  </div>
+                )}
+                <button onClick={() => { setShowDetailModal(false); setSelectedItem(null); setEditMode(false); setConfirmSave(false); }}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Estado actual */}
-              <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4">
-                <div>
-                  <p className="text-sm text-slate-500">Estado actual</p>
-                  {getStatusBadge(selectedItem.status)}
-                </div>
-                <div className="text-xs text-slate-400">
-                  Recibido: {formatDate(selectedItem.created_at || selectedItem.fecha)}
-                </div>
-              </div>
 
-              {/* Datos Personales */}
-              <div>
-                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <UserCheck className="w-4 h-4" />
-                  Datos Personales
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 rounded-xl p-4">
+              {/* Confirm save dialog */}
+              {confirmSave && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-xs text-slate-400">Tipo de Persona</span>
-                    <p className="text-sm font-medium text-slate-700">
-                      {selectedItem.tipo_persona === 'fisica' ? 'Persona Física' : 'Persona Jurídica'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400">CUIT/CUIL</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.cuit || '-'}</p>
-                  </div>
-                  {selectedItem.tipo_persona === 'fisica' && (
-                    <>
-                      <div>
-                        <span className="text-xs text-slate-400">DNI</span>
-                        <p className="text-sm font-medium text-slate-700">{selectedItem.dni || '-'}</p>
-                      </div>
-                      <div>
-                        <span className="text-xs text-slate-400">Apellido y Nombre</span>
-                        <p className="text-sm font-medium text-slate-700">
-                          {[selectedItem.apellido, selectedItem.nombre].filter(Boolean).join(', ') || '-'}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                  {selectedItem.tipo_persona === 'juridica' && (
-                    <div className="md:col-span-2">
-                      <span className="text-xs text-slate-400">Razón Social</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.apellido || '-'}</p>
+                    <p className="text-sm font-semibold text-amber-800">¿Confirmar cambios?</p>
+                    <p className="text-xs text-amber-600 mt-1">Se actualizará la solicitud con los datos editados.</p>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => setConfirmSave(false)} className="px-4 py-1.5 border border-amber-300 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors">Volver</button>
+                      <button onClick={() => { setConfirmSave(false); handleSaveDetail(); }} disabled={saving}
+                        className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-500 text-white rounded-lg text-sm font-semibold hover:bg-emerald-600 transition-colors disabled:opacity-50">
+                        {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><CheckCircle2 className="w-4 h-4" /> Confirmar</>}
+                      </button>
                     </div>
-                  )}
-                  <div>
-                    <span className="text-xs text-slate-400">Email</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.email || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400">Teléfono</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.telefono || '-'}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <span className="text-xs text-slate-400">Domicilio Real</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.domicilio || '-'}</p>
                   </div>
                 </div>
-              </div>
-
-              {/* Ubicación */}
-              <div>
-                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Ubicación del Local
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 rounded-xl p-4">
-                  <div>
-                    <span className="text-xs text-slate-400">Sección</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.seccion || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400">Manzana</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.manzana || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400">Parcela</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.parcela || '-'}</p>
-                  </div>
-                  <div className="md:col-span-3">
-                    <span className="text-xs text-slate-400">Dirección Completa</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.direccion || '-'}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <span className="text-xs text-slate-400">Propietario del Local</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.local_oficina || '-'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-slate-400">Barrio</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.barrio || '-'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Superficie */}
-              {(selectedItem.superficie_cubierta || selectedItem.superficie_semicubierta || selectedItem.superficie_total || selectedItem.georeferenciacion) && (
-              <div>
-                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Superficie del Local
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 rounded-xl p-4">
-                  {selectedItem.superficie_cubierta && (
-                    <div>
-                      <span className="text-xs text-slate-400">Superficie Cubierta</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.superficie_cubierta}</p>
-                    </div>
-                  )}
-                  {selectedItem.superficie_semicubierta && (
-                    <div>
-                      <span className="text-xs text-slate-400">Superficie Semicubierta</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.superficie_semicubierta}</p>
-                    </div>
-                  )}
-                  {selectedItem.superficie_total && (
-                    <div>
-                      <span className="text-xs text-slate-400">Superficie Total</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.superficie_total}</p>
-                    </div>
-                  )}
-                  {selectedItem.georeferenciacion && (
-                    <div className="md:col-span-3">
-                      <span className="text-xs text-slate-400">Georeferenciación</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.georeferenciacion}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
               )}
 
-              {/* Actividad */}
+              {/* Estado badge */}
+              <div className="flex items-center justify-between bg-slate-50 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  {getStatusBadge(editMode ? editForm.status : selectedItem.status)}
+                  <span className="text-xs text-slate-400">Recibido: {formatDate(selectedItem.created_at || selectedItem.fecha)}</span>
+                </div>
+                {editMode && (
+                  <div className="w-40">
+                    <label className="block text-xs font-semibold text-slate-500 mb-1">Estado</label>
+                    <select value={editForm.status} onChange={(e) => updateField('status', e.target.value)}
+                      className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white">
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* ─── DATOS PERSONALES ─── */}
               <div>
-                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  Actividad Comercial
+                <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <UserCheck className="w-4 h-4" />Datos Personales
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 rounded-xl p-4">
-                  <div>
-                    <span className="text-xs text-slate-400">Tipo de Trámite</span>
-                    <p className="text-sm font-medium text-slate-700">{getTramiteLabel(selectedItem.sub_categoria)}</p>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Tipo de Persona */}
+                    {editMode ? (
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Tipo de Persona</label>
+                        <select value={editForm.tipo_persona} onChange={(e) => updateField('tipo_persona', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                          {TIPO_PERSONA_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ) : (
+                      <FieldDisplay label="Tipo de Persona" value={selectedItem.tipo_persona === 'fisica' ? 'Persona Física' : 'Persona Jurídica'} />
+                    )}
+
+                    {/* DNI */}
+                    {editMode ? (
+                      <EditableField label="DNI" field="dni" placeholder="Ej: 12345678" />
+                    ) : (
+                      <FieldDisplay label="DNI" value={selectedItem.dni} />
+                    )}
+
+                    {/* CUIT */}
+                    {editMode ? (
+                      <EditableField label="CUIT / CUIL" field="cuit" placeholder="Ej: 20-12345678-5" />
+                    ) : (
+                      <FieldDisplay label="CUIT / CUIL" value={selectedItem.cuit} />
+                    )}
+
+                    {/* Apellido / Razón Social */}
+                    {editMode ? (
+                      <div className="md:col-span-2">
+                        <EditableField
+                          label={editForm.tipo_persona === 'juridica' ? 'Razón Social' : 'Apellido y Nombre'}
+                          field="apellido"
+                          placeholder={editForm.tipo_persona === 'juridica' ? 'Nombre de la empresa S.A.' : 'Apellido, Nombre'}
+                        />
+                      </div>
+                    ) : (
+                      <div className="md:col-span-2">
+                        <FieldDisplay
+                          label={selectedItem.tipo_persona === 'juridica' ? 'Razón Social' : 'Apellido y Nombre'}
+                          value={selectedItem.apellido || selectedItem.apellido_alt || '-'}
+                        />
+                      </div>
+                    )}
+
+                    {/* Domicilio */}
+                    {editMode ? (
+                      <div className="md:col-span-2">
+                        <EditableField label="Domicilio Real" field="domicilio" placeholder="Calle y número" />
+                      </div>
+                    ) : (
+                      <div className="md:col-span-2">
+                        <FieldDisplay label="Domicilio Real" value={selectedItem.domicilio} />
+                      </div>
+                    )}
+
+                    {/* Email */}
+                    {editMode ? (
+                      <EditableField label="Email" field="email" type="email" placeholder="correo@ejemplo.com" />
+                    ) : (
+                      <FieldDisplay label="Email" value={selectedItem.email} />
+                    )}
+
+                    {/* Teléfono */}
+                    {editMode ? (
+                      <EditableField label="Teléfono" field="telefono" placeholder="Ej: 3755-123456" />
+                    ) : (
+                      <FieldDisplay label="Teléfono" value={selectedItem.telefono} />
+                    )}
                   </div>
-                  <div>
-                    <span className="text-xs text-slate-400">Categoría</span>
-                    <p className="text-sm font-medium text-slate-700">{getCategoriaLabel(selectedItem.categoria)}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <span className="text-xs text-slate-400">Actividad Principal</span>
-                    <p className="text-sm font-medium text-slate-700">{selectedItem.actividad_principal || '-'}</p>
-                  </div>
-                  {selectedItem.actividad_secundaria && (
-                    <div>
-                      <span className="text-xs text-slate-400">Actividad Secundaria</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.actividad_secundaria}</p>
-                    </div>
-                  )}
-                  {selectedItem.otra_actividad && (
-                    <div>
-                      <span className="text-xs text-slate-400">Otra Actividad</span>
-                      <p className="text-sm font-medium text-slate-700">{selectedItem.otra_actividad}</p>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Documentos */}
+              {/* ─── UBICACIÓN ─── */}
               <div>
-                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Documentos Adjuntos
+                <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <MapPin className="w-4 h-4" />Ubicación del Local
+                </h4>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {editMode ? (
+                      <>
+                        <EditableField label="Sección" field="seccion" placeholder="Ej: A" />
+                        <EditableField label="Manzana" field="manzana" placeholder="Ej: 12" />
+                        <EditableField label="Parcela" field="parcela" placeholder="Ej: 3" />
+                        <EditableField label="Barrio" field="barrio" placeholder="Nombre del barrio" />
+                        <div className="md:col-span-2">
+                          <EditableField label="Dirección Completa" field="direccion" placeholder="Calle y número" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <EditableField label="Propietario del Local" field="local_oficina" placeholder="Nombre del propietario" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FieldDisplay label="Sección" value={selectedItem.seccion} />
+                        <FieldDisplay label="Manzana" value={selectedItem.manzana} />
+                        <FieldDisplay label="Parcela" value={selectedItem.parcela} />
+                        <FieldDisplay label="Barrio" value={selectedItem.barrio} />
+                        <div className="md:col-span-2"><FieldDisplay label="Dirección Completa" value={selectedItem.direccion} /></div>
+                        <div className="md:col-span-2"><FieldDisplay label="Propietario del Local" value={selectedItem.local_oficina} /></div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── SUPERFICIE ─── */}
+              <div>
+                <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />Superficie del Local
+                </h4>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {editMode ? (
+                      <>
+                        <EditableField label="Superficie Cubierta (m²)" field="superficie_cubierta" placeholder="Ej: 120" />
+                        <EditableField label="Superficie Semicubierta (m²)" field="superficie_semicubierta" placeholder="Ej: 30" />
+                        <EditableField label="Superficie Total (m²)" field="superficie_total" placeholder="Ej: 150" />
+                        <div className="md:col-span-1">
+                          <EditableField label="Georeferenciación" field="georeferenciacion" placeholder="Coordenadas" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FieldDisplay label="Superficie Cubierta (m²)" value={selectedItem.superficie_cubierta} empty="" />
+                        <FieldDisplay label="Superficie Semicubierta (m²)" value={selectedItem.superficie_semicubierta} empty="" />
+                        <FieldDisplay label="Superficie Total (m²)" value={selectedItem.superficie_total} empty="" />
+                        <FieldDisplay label="Georeferenciación" value={selectedItem.georeferenciacion} empty="" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── ACTIVIDAD COMERCIAL ─── */}
+              <div>
+                <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4" />Actividad Comercial
+                </h4>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {editMode ? (
+                      <>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Tipo de Trámite</label>
+                          <select value={editForm.sub_categoria} onChange={(e) => updateField('sub_categoria', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                            {TIPO_TRAMITE_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Categoría</label>
+                          <select value={editForm.categoria} onChange={(e) => updateField('categoria', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white">
+                            {CATEGORIA_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="md:col-span-1">
+                          <EditableField label="Actividad Principal" field="actividad_principal" placeholder="Descripción de la actividad" />
+                        </div>
+                        <EditableField label="Actividad Secundaria" field="actividad_secundaria" placeholder="Otra actividad (opcional)" />
+                        <EditableField label="Otra Actividad" field="otra_actividad" placeholder="Otra actividad (opcional)" />
+                      </>
+                    ) : (
+                      <>
+                        <FieldDisplay label="Tipo de Trámite" value={getTramiteLabel(selectedItem.sub_categoria)} />
+                        <FieldDisplay label="Categoría" value={getCategoriaLabel(selectedItem.categoria)} />
+                        <div className="md:col-span-1"><FieldDisplay label="Actividad Principal" value={selectedItem.actividad_principal} /></div>
+                        <FieldDisplay label="Actividad Secundaria" value={selectedItem.actividad_secundaria} empty="" />
+                        <FieldDisplay label="Otra Actividad" value={selectedItem.otra_actividad} empty="" />
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── DOCUMENTOS ─── */}
+              <div>
+                <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <File className="w-4 h-4" />Documentos Adjuntos
                 </h4>
                 <div className="bg-slate-50 rounded-xl p-4">
                   {selectedItem.archivos && selectedItem.archivos.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {selectedItem.archivos.map((doc, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200 hover:border-sky-200 hover:bg-sky-50 transition-all group">
+                        <div key={idx} className="flex items-center gap-2 p-3 bg-white rounded-lg border border-gray-200 hover:border-sky-200 transition-all group">
                           <FileText className="w-4 h-4 text-sky-500 shrink-0" />
-                          <span className="text-sm text-slate-600 group-hover:text-sky-600 flex-1 min-w-0 truncate">
-                            {doc.nombre}
-                          </span>
+                          <span className="text-sm text-slate-600 flex-1 min-w-0 truncate">{doc.nombre}</span>
                           <div className="flex gap-1 shrink-0">
-                            <button
-                              onClick={() => setPreviewDoc(doc)}
-                              className="p-1.5 text-sky-500 hover:bg-sky-100 rounded-lg transition-colors"
-                              title="Ver documento"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <a
-                              href={doc.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 text-slate-400 hover:text-sky-500 hover:bg-sky-50 rounded-lg transition-colors"
-                              title="Descargar"
-                            >
-                              <Download className="w-3.5 h-3.5" />
+                            <button onClick={() => setPreviewDoc(doc)} className="p-1.5 text-sky-500 hover:bg-sky-100 rounded-lg transition-colors" title="Ver"><Eye className="w-4 h-4" /></button>
+                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-sky-500 rounded-lg transition-colors" title="Descargar">
+                              <DownloadIcon className="w-3.5 h-3.5" />
                             </a>
                           </div>
                         </div>
@@ -1109,86 +1170,24 @@ export default function PreinscripcionComercialAdminPage() {
                 </div>
               </div>
 
-              {/* Change Status */}
+              {/* ─── NOTAS ─── */}
               <div>
-                <h4 className="text-sm font-semibold text-sky-600 uppercase tracking-wide mb-3">
-                  Actualizar Estado
-                </h4>
-                <div className="bg-slate-50 rounded-xl p-4 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Nuevo Estado
-                    </label>
-                    <select
-                      value={detailStatus}
-                      onChange={(e) => setDetailStatus(e.target.value)}
-                      className="w-full md:w-64 px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none bg-white text-sm"
-                    >
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                      Notas
-                    </label>
+                <h4 className="text-sm font-bold text-sky-600 uppercase tracking-wide mb-3">Notas Internas</h4>
+                <div className="bg-slate-50 rounded-xl p-4">
+                  {editMode ? (
                     <textarea
-                      value={detailNotas}
-                      onChange={(e) => setDetailNotas(e.target.value)}
-                      rows={3}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 outline-none resize-none text-sm"
-                      placeholder="Agregar notas internas sobre esta solicitud..."
+                      value={editForm.notas}
+                      onChange={(e) => updateField('notas', e.target.value)}
+                      rows={4}
+                      placeholder="Agregar notas sobre esta solicitud..."
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none"
                     />
-                  </div>
+                  ) : (
+                    <p className="text-sm text-slate-600 whitespace-pre-wrap">{selectedItem.notas || 'Sin notas'}</p>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-gray-100 flex items-center justify-between">
-              <button
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setSelectedItem(null);
-                  setConfirmSave(false);
-                }}
-                className="px-5 py-2.5 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              {confirmSave ? (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setConfirmSave(false)}
-                    className="px-5 py-2.5 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
-                  >
-                    Volver
-                  </button>
-                  <button
-                    onClick={() => { setConfirmSave(false); handleSaveDetail(); }}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 text-white rounded-xl font-semibold text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50"
-                  >
-                    {saving ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-                    ) : (
-                      <><CheckCircle2 className="w-4 h-4" /> Confirmar Cambio</>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmSave(true)}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-sky-500 text-white rounded-xl font-semibold text-sm hover:bg-sky-600 transition-colors disabled:opacity-50"
-                >
-                  <Save className="w-4 h-4" />
-                  Guardar Cambios
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -1203,23 +1202,13 @@ export default function PreinscripcionComercialAdminPage() {
                 <Trash2 className="w-7 h-7 text-red-500" />
               </div>
               <h3 className="text-lg font-bold text-slate-800 mb-2">¿Eliminar solicitud?</h3>
-              <p className="text-sm text-slate-500">
-                Esta acción no se puede deshacer. Se eliminará la solicitud y todos sus datos asociados.
-              </p>
+              <p className="text-sm text-slate-500">Esta acción no se puede deshacer.</p>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => handleDelete(showDeleteConfirm)}
-                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition-colors"
-              >
-                Eliminar
-              </button>
+              <button onClick={() => setShowDeleteConfirm(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-slate-600 rounded-xl font-semibold text-sm hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button onClick={() => handleDelete(showDeleteConfirm)}
+                className="flex-1 px-4 py-2.5 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition-colors">Eliminar</button>
             </div>
           </div>
         </div>
@@ -1229,58 +1218,33 @@ export default function PreinscripcionComercialAdminPage() {
       {previewDoc && (
         <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header */}
             <div className="p-4 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-sky-500" />
-                {previewDoc.nombre}
+                <FileText className="w-5 h-5 text-sky-500" />{previewDoc.nombre}
               </h3>
               <div className="flex items-center gap-2">
-                <a
-                  href={previewDoc.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Descargar
+                <a href={previewDoc.url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-sky-600 hover:bg-sky-50 rounded-lg transition-colors">
+                  <DownloadIcon className="w-4 h-4" />Descargar
                 </a>
-                <button
-                  onClick={() => setPreviewDoc(null)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
-                >
+                <button onClick={() => setPreviewDoc(null)} className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors">
                   <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
-            {/* Preview content */}
             <div className="flex-1 overflow-auto bg-slate-100 p-4">
               {previewDoc.url.match(/\.(jpg|jpeg|png|gif|webp|bmp)(\?|$)/i) ? (
                 <div className="flex items-center justify-center min-h-[300px]">
-                  <img
-                    src={previewDoc.url}
-                    alt={previewDoc.nombre}
-                    className="max-w-full max-h-[70vh] rounded-xl shadow-md object-contain"
-                  />
+                  <img src={previewDoc.url} alt={previewDoc.nombre} className="max-w-full max-h-[70vh] rounded-xl shadow-md object-contain" />
                 </div>
               ) : previewDoc.url.match(/\.pdf(\?|$)/i) ? (
-                <iframe
-                  src={`${previewDoc.url}#view=FitH`}
-                  className="w-full h-[75vh] rounded-xl shadow-md"
-                  title={previewDoc.nombre}
-                />
+                <iframe src={`${previewDoc.url}#view=FitH`} className="w-full h-[75vh] rounded-xl shadow-md" title={previewDoc.nombre} />
               ) : (
                 <div className="flex flex-col items-center justify-center min-h-[200px] text-slate-500 gap-3">
                   <FileText className="w-16 h-16 text-slate-300" />
-                  <p className="text-sm">Vista previa no disponible para este tipo de archivo</p>
-                  <a
-                    href={previewDoc.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-sky-500 text-white rounded-xl text-sm font-semibold hover:bg-sky-600 transition-colors"
-                  >
-                    Abrir en nueva pestaña
-                  </a>
+                  <p className="text-sm">Vista previa no disponible</p>
+                  <a href={previewDoc.url} target="_blank" rel="noopener noreferrer"
+                    className="px-4 py-2 bg-sky-500 text-white rounded-xl text-sm font-semibold hover:bg-sky-600 transition-colors">Abrir en nueva pestaña</a>
                 </div>
               )}
             </div>
@@ -1294,33 +1258,22 @@ export default function PreinscripcionComercialAdminPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
             <div className="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-sky-500" />
-                Administradores
+                <UserCheck className="w-5 h-5 text-sky-500" />Administradores
               </h3>
-              <button
-                onClick={() => { setShowAdminModal(false); setShowDeleteAdminConfirm(null); }}
-                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <button onClick={() => { setShowAdminModal(false); setShowDeleteAdminConfirm(null); }}
+                className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors"><X className="w-6 h-6" /></button>
             </div>
             <div className="p-5 space-y-5 overflow-y-auto flex-1">
-              {/* Existing admins */}
               <div>
                 <h4 className="text-sm font-semibold text-slate-700 mb-3">Usuarios existentes</h4>
                 {loadingAdmins ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="w-5 h-5 text-sky-500 animate-spin" />
-                  </div>
+                  <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 text-sky-500 animate-spin" /></div>
                 ) : admins.length === 0 ? (
                   <p className="text-sm text-slate-400">No hay admins cargados</p>
                 ) : (
                   <div className="space-y-2">
                     {admins.map((admin) => (
-                      <div
-                        key={admin.username}
-                        className="flex items-center justify-between p-3 bg-slate-50 rounded-xl"
-                      >
+                      <div key={admin.username} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 bg-sky-100 rounded-full flex items-center justify-center">
                             <UserCheck className="w-4 h-4 text-sky-600" />
@@ -1331,11 +1284,8 @@ export default function PreinscripcionComercialAdminPage() {
                           )}
                         </div>
                         {admin.username !== 'admin' && (
-                          <button
-                            onClick={() => setShowDeleteAdminConfirm(admin.username)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
-                            title="Eliminar admin"
-                          >
+                          <button onClick={() => setShowDeleteAdminConfirm(admin.username)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50" title="Eliminar admin">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         )}
@@ -1344,54 +1294,30 @@ export default function PreinscripcionComercialAdminPage() {
                   </div>
                 )}
               </div>
-
-              {/* Add new admin */}
               <div className="border-t border-gray-100 pt-5">
                 <h4 className="text-sm font-semibold text-slate-700 mb-3">Agregar nuevo administrador</h4>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={newAdminUser}
-                    onChange={(e) => setNewAdminUser(e.target.value)}
+                  <input type="text" value={newAdminUser} onChange={(e) => setNewAdminUser(e.target.value)}
                     placeholder="Nombre de usuario"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                  />
-                  <input
-                    type="password"
-                    value={newAdminPass}
-                    onChange={(e) => setNewAdminPass(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+                  <input type="password" value={newAdminPass} onChange={(e) => setNewAdminPass(e.target.value)}
                     placeholder="Contraseña"
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                  />
-                  <button
-                    onClick={handleAddAdmin}
-                    className="w-full px-4 py-2.5 bg-sky-500 text-white rounded-lg font-semibold text-sm hover:bg-sky-600 transition-colors"
-                  >
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-sky-500 outline-none" />
+                  <button onClick={handleAddAdmin}
+                    className="w-full px-4 py-2.5 bg-sky-500 text-white rounded-lg font-semibold text-sm hover:bg-sky-600 transition-colors">
                     Agregar Admin
                   </button>
                 </div>
               </div>
             </div>
-
-            {/* Delete admin confirm */}
             {showDeleteAdminConfirm && (
               <div className="p-4 border-t border-gray-100 bg-red-50">
-                <p className="text-sm text-red-700 mb-3">
-                  ¿Eliminar al administrador <strong>{showDeleteAdminConfirm}</strong>?
-                </p>
+                <p className="text-sm text-red-700 mb-3">¿Eliminar al administrador <strong>{showDeleteAdminConfirm}</strong>?</p>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => setShowDeleteAdminConfirm(null)}
-                    className="flex-1 px-4 py-2 border border-gray-200 text-slate-600 rounded-lg font-semibold text-sm hover:bg-white transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => handleDeleteAdmin(showDeleteAdminConfirm)}
-                    className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors"
-                  >
-                    Eliminar
-                  </button>
+                  <button onClick={() => setShowDeleteAdminConfirm(null)}
+                    className="flex-1 px-4 py-2 border border-gray-200 text-slate-600 rounded-lg font-semibold text-sm hover:bg-white transition-colors">Cancelar</button>
+                  <button onClick={() => handleDeleteAdmin(showDeleteAdminConfirm)}
+                    className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors">Eliminar</button>
                 </div>
               </div>
             )}
