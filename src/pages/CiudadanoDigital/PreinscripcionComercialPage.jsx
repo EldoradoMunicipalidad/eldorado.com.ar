@@ -44,6 +44,11 @@ const INITIAL_FORM_DATA = {
   propietario_local: '',
   barrio: '',
   documento_propiedad_file: null,
+  // Superficie (Paso 2)
+  superficie_cubierta: '',
+  superficie_semicubierta: '',
+  superficie_total: '',
+  georeferenciacion: '',
   // Paso 3
   tipo_tramite: '',
   categoria: '',
@@ -325,6 +330,10 @@ export default function PreinscripcionComercialPage() {
         direccion: formData.direccion_completa,
         local_oficina: formData.propietario_local,
         barrio: formData.barrio,
+        superficie_cubierta: formData.superficie_cubierta,
+        superficie_semicubierta: formData.superficie_semicubierta,
+        superficie_total: formData.superficie_total,
+        georeferenciacion: formData.georeferenciacion,
         categoria: formData.categoria,
         sub_categoria: formData.tipo_tramite,
         actividad_principal: formData.actividad_principal,
@@ -636,6 +645,17 @@ export default function PreinscripcionComercialPage() {
                     onFileSelect={(f) => updateFile('documento_propiedad_file', f)}
                     onRemove={() => removeFile('documento_propiedad_file')}
                   />
+
+                  {/* Superficie del local */}
+                  <div className="border border-gray-100 bg-slate-50 rounded-xl p-4">
+                    <h4 className="text-sm font-semibold text-slate-600 mb-3">Superficie del Local</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      {renderTextField('superficie_cubierta', '')}
+                      {renderTextField('superficie_semicubierta', '')}
+                      {renderTextField('superficie_total', '')}
+                      {renderTextField('georeferenciacion', '')}
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -785,7 +805,7 @@ function FileUploadField({
   return (
     <div>
       <label className="block text-sm font-medium text-slate-700 mb-1.5">
-        {label} <span className="text-red-500">*</span>
+        {label}
       </label>
 
       {!file && (

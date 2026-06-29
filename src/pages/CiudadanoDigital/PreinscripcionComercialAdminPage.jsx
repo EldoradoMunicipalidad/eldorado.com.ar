@@ -125,6 +125,7 @@ export default function PreinscripcionComercialAdminPage() {
   const [visibleCount, setVisibleCount] = useState(10);
   const [saving, setSaving] = useState(false);
   const [confirmSave, setConfirmSave] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState(true);
 
   // Editable form state
   const [editForm, setEditForm] = useState({ ...EMPTY_EDIT_FORM });
@@ -197,11 +198,16 @@ export default function PreinscripcionComercialAdminPage() {
         if (res.ok) {
           const data = await res.json();
           setSolicitudes(data.entries || data);
+          setBackendAvailable(true);
         } else {
-          setSolicitudes(generateDemoData());
+          // Server responded but returned error — show empty state, not demo
+          setSolicitudes([]);
+          setBackendAvailable(false);
         }
       } catch {
-        setSolicitudes(generateDemoData());
+        // Network error or server down — show empty state with offline indicator
+        setSolicitudes([]);
+        setBackendAvailable(false);
       } finally {
         setLoading(false);
       }
@@ -510,7 +516,7 @@ export default function PreinscripcionComercialAdminPage() {
   const loadAdmins = async () => {
     setLoadingAdmins(true);
     try {
-      const res = await fetch('/api/admins');
+      const res = await fetch('/api/habilitaciones/admins');
       if (res.ok) {
         const data = await res.json();
         setAdmins(data);
@@ -528,7 +534,7 @@ export default function PreinscripcionComercialAdminPage() {
       return;
     }
     try {
-      const res = await fetch('/api/admins', {
+      const res = await fetch('/api/habilitaciones/admins', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: newAdminUser.trim(), password: newAdminPass }),
@@ -549,7 +555,7 @@ export default function PreinscripcionComercialAdminPage() {
 
   const handleDeleteAdmin = async (username) => {
     try {
-      const res = await fetch(`/api/admins/${username}`, { method: 'DELETE' });
+      const res = await fetch(`/api/habilitaciones/admins/${encodeURIComponent(username)}`, { method: 'DELETE' });
       if (res.ok) {
         showToast(`Admin "${username}" eliminado`);
         setShowDeleteAdminConfirm(null);
@@ -798,6 +804,12 @@ export default function PreinscripcionComercialAdminPage() {
         description="Gestioná las solicitudes de habilitación comercial."
       >
         <div className="flex gap-2 mt-6 flex-wrap">
+          {!backendAvailable && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              Sin conexión al servidor — modo solo lectura
+            </div>
+          )}
           <div className="flex-1 min-w-[200px]" />
           <button
             onClick={() => { setShowAdminModal(true); loadAdmins(); }}

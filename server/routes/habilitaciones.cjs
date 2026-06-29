@@ -367,4 +367,66 @@ router.post('/auth/login', async (req, res) => {
   }
 })
 
+// ─── 8. GET /api/habilitaciones/admins ─ Listar admins ──────────────────
+router.get('/admins', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT username, rol, nombre, email, last_login FROM admins ORDER BY username'
+    )
+    res.json(rows)
+  } catch (err) {
+    console.error('GET /api/habilitaciones/admins error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── 9. POST /api/habilitaciones/admins ─ Crear admin ───────────────────
+router.post('/admins', async (req, res) => {
+  try {
+    const { username, password, nombre, email } = req.body
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña son obligatorios' })
+    }
+    if (username.length < 3 || password.length < 4) {
+      return res.status(400).json({ error: 'El usuario debe tener al menos 3 caracteres y la contraseña al menos 4' })
+    }
+    const hash = simpleHash(password)
+    const { rows } = await pool.query(
+      `INSERT INTO admins (username, password_hash, rol, nombre, email)
+       VALUES ($1, $2, 'admin', $3, $4)
+       ON CONFLICT (username) DO UPDATE SET
+         password_hash = EXCLUDED.password_hash,
+         nombre = EXCLUDED.nombre,
+         email = EXCLUDED.email
+       RETURNING username, rol, nombre, email`,
+      [username, hash, nombre || '', email || '']
+    )
+    res.json(rows[0])
+  } catch (err) {
+    console.error('POST /api/habilitaciones/admins error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── 10. DELETE /api/habilitaciones/admins/:username ─ Eliminar admin ────
+router.delete('/admins/:username', async (req, res) => {
+  try {
+    const { username } = req.params
+    if (username === 'admin') {
+      return res.status(400).json({ error: 'No se puede eliminar el administrador principal' })
+    }
+    const { rowCount } = await pool.query(
+      'DELETE FROM admins WHERE username = $1',
+      [username]
+    )
+    if (rowCount === 0) {
+      return res.status(404).json({ error: 'Administrador no encontrado' })
+    }
+    res.json({ success: true })
+  } catch (err) {
+    console.error('DELETE /api/habilitaciones/admins/:username error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router
