@@ -5,53 +5,55 @@ import './UruChatbot.css';
 const STORAGE_KEY = 'uru_chat_history';
 const MODEL = 'deepseek/deepseek-chat-v3-0324';
 
-// Quick reply buttons
 const QUICK_REPLIES = [
   '¿Qué trámites puedo hacer?',
-  '¿Cuáles son los horarios de atención?',
   '¿Cómo saco un turno?',
+  '¿Cómo hago un reclamo?',
   '¿Dónde queda la municipalidad?',
   '¿Qué es la Expo Eldorado?',
-  '¿Cómo hago un reclamo?',
 ];
 
 // Intent patterns → direct answers (no LLM needed)
 const INTENT_ANSWERS = [
   {
-    patterns: [/horario/i, /atención/i, /hora/i, /desde.*hasta/i, /días?.*aten/i],
-    answer: 'La atención al público es de Lunes a Viernes de 7:00 a 13:00 en la municipalidad (Av. Berthier 64, Eldorado, Misiones).',
-  },
-  {
-    patterns: [/dirección/i, /ubicación/i, /donde.*queda/i, /dirección.*municipal/i, /av\.*san/i, /simón.*bolívar/i, /bolívar.*73/i],
-    answer: 'La Municipalidad de Eldorado está en Simón J. Bolívar N° 73, Eldorado, Misiones. El horario de atención es Lunes a Viernes de 7:00 a 13:00.',
-  },
-  {
-    patterns: [/teléfono.*municipal/i, /teléfono.*atención/i, /número.*municipal/i, /llamar.*municipal/i, /contacto.*municipal/i, /celular.*municipal/i],
-    answer: 'El teléfono municipal es (+54) 03751 - 421787. Para emergencias油田 llamá al 911.',
-  },
-  {
-    patterns: [/expo eldorado/i, /qué.*expo/i, /expo.*es/i],
-    answer: 'La Expo Eldorado es el evento anual más importante de la ciudad, conocido como "La Capital de la Expo". Se realiza típicamente en agosto y reúne a productores, comercios y artistas locales. Mirá más en: eldorado.gob.ar/ciudad/expo-eldorado',
-  },
-  {
     patterns: [/turno.*planeamiento/i, /sacar.*turno/i, /reservar.*turno/i, /pedir.*turno/i, /turnero/i],
-    answer: 'Podés sacar turno para Planeamiento en: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero. Necesitás registrarte y elegir fecha y hora disponible.',
+    answer: 'Podés sacar turno para Planeamiento en: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero',
   },
   {
-    patterns: [/reclamo/i, /denunciar/i, /报告/i],
+    patterns: [/reclamo/i, /denunciar/i],
     answer: 'Podés hacer un reclamo ciudadano en: eldorado.gob.ar/ciudadano-digital/reclamos. También podés seguir el estado de tu reclamo desde el mismo link.',
   },
   {
     patterns: [/preinscrip.*comercial/i, /habilitación.*comercio/i, /comercio.*nuevo/i, /registrar.*comercio/i],
-    answer: 'La preinscripción comercial está en: eldorado.gob.ar/ciudadano-digital/preinscripcion-comercial. Es el primer paso para habilitar un comercio nuevo.',
+    answer: 'La preinscripción comercial está en: eldorado.gob.ar/ciudadano-digital/preinscripcion-comercial',
   },
   {
-    patterns: [/licencia.*conducir/i, /licencia/i, /manejo/i, /escuela.*manejo/i],
-    answer: 'Para sacar o renovar tu licencia de conducir, visitá la sección de Licencias de Conducir en el sitio municipal. También funciona la Escuela de Manejo municipal.',
+    patterns: [/expo eldorado/i, /qué.*expo/i, /expo.*es/i],
+    answer: 'La Expo Eldorado es el evento anual más importante de la ciudad. Más información en: eldorado.gob.ar/ciudad/expo-eldorado',
   },
   {
-    patterns: [/911/i, /emergencia/i, /bomberos/i, /policía/i, /hospital/i],
-    answer: 'Para emergencias油田 llamá al 911. Para去医院 (hospital): (03751) 42-XXXX. Policía: 101. Bomberos: 100.',
+    patterns: [/balancete/i, /balance.*trimestral/i, /finanzas/i, /tributo/i],
+    answer: 'Encontrás los balances y finanzas públicas en: eldorado.gob.ar/gobierno-abierto/finanzas-publicas y eldorado.gob.ar/gobierno-abierto/balancetes-trimestrales',
+  },
+  {
+    patterns: [/licitacion/i, /compra.*municipal/i, /proveedor/i],
+    answer: 'Las licitaciones públicas están en: eldorado.gob.ar/gobierno-abierto/licitaciones',
+  },
+  {
+    patterns: [/organigrama/i, /planta.*personal/i, /empleado/i, /escal.*salari/i],
+    answer: 'Encontrás esa info en la sección de Gobierno Abierto: eldorado.gob.ar/gobierno-abierto/organigrama y eldorado.gob.ar/gobierno-abierto/planta-personal',
+  },
+  {
+    patterns: [/horario/i, /atención/i, /hora/i],
+    answer: 'Consultá la sección de contacto o teléfonos útiles del sitio municipal para conocer los horarios actualizados: eldorado.gob.ar/ciudad/contacto',
+  },
+  {
+    patterns: [/teléfono/i, /contacto/i, /llamar/i],
+    answer: 'Los teléfonos útiles están en: eldorado.gob.ar/ciudad/telefonos-utiles',
+  },
+  {
+    patterns: [/dirección/i, /ubicación/i, /donde.*queda/i],
+    answer: 'La dirección y ubicación están en la sección de contacto: eldorado.gob.ar/ciudad/contacto',
   },
 ];
 
@@ -77,7 +79,6 @@ function loadHistory() {
 
 function saveHistory(messages) {
   try {
-    // Keep last 20 messages
     const trimmed = messages.slice(-20);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
   } catch {}
@@ -85,35 +86,39 @@ function saveHistory(messages) {
 
 const INITIAL_MESSAGE = {
   from: 'uru',
-  text: '¡Hola! Soy URU, tu asistente virtual de la Municipalidad de Eldorado. ¿En qué puedo ayudarte hoy?',
+  text: '¡Hola! Soy URU, tu asistente virtual de la Municipalidad de Eldorado. Solo puedo ayudarte con información publicada en el sitio web eldorado.gob.ar. ¿En qué puedo ayudarte?',
   id: Date.now(),
 };
 
 async function chatOpenRouter(question, context) {
   const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!API_KEY) throw new Error('API key no configurada — contactá al administrador');
+  if (!API_KEY) throw new Error('API key no configurada');
 
   const pageCtx = getPageContext();
-  const systemPrompt = `Sos URU, el asistente virtual de la Municipalidad de Eldorado, Misiones, Argentina.
-Eldorado es una ciudad de aproximadamente 90.000 habitantes, ubicada en el nordeste de Misiones, a 177 km de Posadas, sobre el río Paraná. Fue fundada en 1919. Gentilicio: eldoreño/a.
-Tu función es responder preguntas de los ciudadanos sobre:
-- Trámites y servicios municipales (Turnero de Planeamiento, Reclamos, Preinscripción Comercial, Licitaciones, Bolsa de Empleo, Habilitaciones Comerciales)
-- Información de contacto (teléfonos: (+54) 03751 - 421787 municipal, horarios: Lunes a Viernes 7:00 a 13:00, dirección: Simón J. Bolívar N° 73)
-- Novedades y noticias del municipio (publicadas en prensa.eldorado.gob.ar)
-- Datos generales de la ciudad (geografía, historia, cultura, economía, turismo, Expo Eldorado)
-- Guía para usar el sitio web municipal (eldorado.gob.ar)
-- Secretarías, departamentos y áreas de gobierno
-- Guía de Trámites del municipio
-- Teléfonos útiles, ubicación, servicios de emergencia (911)
+  const systemPrompt = `Sos URU, el asistente virtual de la Municipalidad de Eldorado.
+ Solo podés responder usando INFORMACIÓN que figure en el sitio web oficial: eldorado.gob.ar
+ NO podés inventar, asumir ni completar datos que no estén explicitamente en el sitio.
 
-IMPORTANTE:
-- El usuario está actualmente en la sección: ${pageCtx}
-- Respondé SIEMPRE en español, de forma clara, amigable y concisa (máximo 3-4 oraciones).
-- Si no sabés algo, decilo con honestidad y sugerí contactar al (+54) 03751 - 421787.
-- No inventes datos, teléfonos ni direcciones.`;
+ El usuario está actualmente en: ${pageCtx}
+
+ SECCIONES PRINCIPALES DEL SITIO:
+ - Trámites: /ciudadano-digital/reclamos, /ciudadano-digital/preinscripcion-comercial
+ - Turnero: /gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero
+ - Finanzas: /gobierno-abierto/finanzas-publicas, /gobierno-abierto/balancetes-trimestrales
+ - Tributos: /gobierno-abierto/tributos
+ - Licitaciones: /gobierno-abierto/licitaciones
+ - Gobierno: /gobierno/intendencia, /gobierno/secretaria-gobierno, /gobierno/secretaria-hacienda
+ - Contacto: /ciudad/contacto, /ciudad/telefonos-utiles
+ - Noticias: prensa.eldorado.gob.ar
+
+ REGLAS:
+ - Si no estás seguro de un dato (horario, teléfono, dirección), decí que consultes la sección correspondiente del sitio.
+ - Nunca inventés información de contacto.
+ - Respondé en español, máximo 3 oraciones.
+ - Solo hablá de contenidos que estén publicados en el sitio oficial.`;
 
   const messages = [{ role: 'system', content: systemPrompt }];
-  if (context) messages.push({ role: 'system', content: 'Información de contexto del sitio municipal:\n' + context });
+  if (context) messages.push({ role: 'system', content: 'Contexto del sitio:\n' + context });
   messages.push({ role: 'user', content: question });
 
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -152,14 +157,12 @@ export default function UruChatbot() {
   const panelRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Scroll to bottom
   useEffect(() => {
     if (open && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, open]);
 
-  // Badge: when panel is closed and there's a new reply, show indicator
   useEffect(() => {
     if (!open && messages.length > 1) {
       const last = messages[messages.length - 1];
@@ -169,7 +172,6 @@ export default function UruChatbot() {
     }
   }, [messages, open]);
 
-  // Keyboard shortcut: Ctrl+K
   useEffect(() => {
     const handler = (e) => {
       if (e.ctrlKey && e.key === 'k') {
@@ -181,7 +183,6 @@ export default function UruChatbot() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  // Persist history
   useEffect(() => {
     saveHistory(messages);
   }, [messages]);
@@ -201,10 +202,9 @@ export default function UruChatbot() {
 
     setLoading(true);
 
-    // Check intent first (no LLM)
     const intentAnswer = matchesIntent(text);
     if (intentAnswer) {
-      await new Promise(r => setTimeout(r, 400)); // tiny delay for UX
+      await new Promise(r => setTimeout(r, 400));
       const uruMsg = makeMsg('uru', intentAnswer);
       setMessages(m => {
         const updated = [...m, uruMsg];
@@ -224,7 +224,7 @@ export default function UruChatbot() {
         return updated;
       });
     } catch (e) {
-      const errMsg = makeMsg('uru', 'Error: ' + e.message + '. Podés llamar directo al (+54) 03751 - 421787 para asistencia.');
+      const errMsg = makeMsg('uru', 'Error al obtener respuesta. Podés consultar directamente en el sitio: eldorado.gob.ar');
       setMessages(m => {
         const updated = [...m, errMsg];
         saveHistory(updated);
@@ -304,7 +304,6 @@ export default function UruChatbot() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Quick replies */}
           {!loading && messages.length <= 2 && (
             <div className="uru-quick-replies">
               {QUICK_REPLIES.map((q, i) => (

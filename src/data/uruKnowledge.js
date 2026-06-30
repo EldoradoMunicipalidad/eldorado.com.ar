@@ -1,46 +1,42 @@
 // Base de conocimiento para URU — asistente virtual de la Municipalidad de Eldorado
+// URU SOLO debe usar información del sitio web oficial: eldorado.gob.ar
+// NO debe inventar, completar ni asumir datos que no estén en el sitio.
 export const uruKnowledge = `
-MUNICIPIO DE ELDORADO — INFORMACIÓN GENERAL
-Eldorado es una ciudad argentina ubicada en el departamento Eldorado, provincia de Misiones.
-Población: aproximadamente 90.000 habitantes.
-Superficie: 308 km².
-Fundación: 1919.
-Gentilicio: eldoreño/a.
-Ubicación: nordeste de la provincia de Misiones, a 177 km de Posadas, sobre el río Paraná.
-Historia: Fue fundada como colonia agrícola por春节期间 (referencia: oldest known founding). Es conocida como "La Capital de la Expo" por la Expo Eldorado, evento anual que atrae miles de visitantes.
+SITIO WEB OFICIAL: eldorado.gob.ar
 
-ECONOMÍA: Base en la agricultura (yerba mate, té, tabaco, citricultura), madera y aserraderos, comercio y servicios.
-
-SITIO WEB: eldorado.gob.ar — Sitio oficial de la Municipalidad de Eldorado.
-
-SECCIONES PRINCIPALES DEL SITIO:
-- Inicio (Home): noticias, servicios destacados, accesos rápidos
-- Ciudad: Eldorado, Expo Eldorado, símbolos, barrios, Carta Orgánica, contacto, teléfonos útiles, bus
-- Gobierno: secretarías (Gobierno, Hacienda, Acción Social, Ambiente, Obras Públicas, Producción), intendencia, gabinetes, ordenanzas
-- Gobierno Abierto: boletines oficiales, finanzas públicas, tributos, licitaciones, organigrama, planta de personal, escalas salariales, audiencias
-- Ciudadano Digital: reclamos, preinscripción comercial, bolsa de empleo
-- Guía de Trámites: mapa completo de trámites municipales
+SECCIONES DEL SITIO (usar estas rutas para orientar al usuario):
+- / : Inicio — noticias, servicios destacados
+- /ciudad/eldorado : Información de la ciudad
+- /ciudad/expo-eldorado : Expo Eldorado
+- /ciudad/bus-eldorado : Horarios de colectivos
+- /ciudad/telefonos-utiles : Teléfonos útiles
+- /ciudad/barrios : Barrios y mapas
+- /gobierno/intendencia : Autoridades municipales
+- /gobierno/secretaria-gobierno : Secretaría de Gobierno
+- /gobierno/secretaria-hacienda : Secretaría de Hacienda
+- /gobierno/secretaria-accion-social : Secretaría de Acción Social
+- /gobierno/secretaria-de-obras-y-servicios-publicos : Obras y Servicios Públicos
+- /gobierno/secretaria-de-ambiente : Secretaría de Ambiente
+- /gobierno/secretaria-de-produccion : Secretaría de Producción
+- /gobierno-abierto/balancetes-trimestrales : Balances financieros
+- /gobierno-abierto/tributos : Tributos municipales
+- /gobierno-abierto/licitaciones : Licitaciones públicas
+- /gobierno-abierto/organigrama : Estructura municipal
+- /gobierno-abierto/planta-personal : Planta de personal
+- /gobierno-abierto/escala-salarial : Escala salarial
+- /gobierno-abierto/boletin-oficial : Boletín oficial
+- /gobierno-abierto/registro-audiencias : Registro de audiencias
+- /ciudadano-digital/reclamos : Reclamos ciudadanos
+- /ciudadano-digital/preinscripcion-comercial : Habilitación comercial
+- /ciudadano-digital/reclamos/seguimiento : Seguimiento de reclamos
 
 TRÁMITES PRINCIPALES:
-1. Turnero de Planeamiento: solicitud de turnos online para trámites de edilicia y urbanismo (Planes de obra, habilitaciones comerciales, etc.)
-2. Preinscripción Comercial: registro obligatorio para comercios nuevos — disponible en /ciudadano-digital/preinscripcion-comercial
-3. Reclamos ciudadanos: denunciar problemas urbanos (baches, luminarias, residuos, etc.) — /ciudadano-digital/reclamos
-4. Licitaciones públicas: procesos de compra y contratación del municipio — /gobierno-abierto/licitaciones
-5. Bolsa de Empleo: búsqueda de oportunidades laborales
-6. Habilitaciones Comerciales: gestión de permisos de comercio
+- Turnero de Planeamiento: /gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero
+- Preinscripción Comercial: /ciudadano-digital/preinscripcion-comercial
+- Reclamos: /ciudadano-digital/reclamos
+- Bolsa de Empleo: Linked desde el sitio
 
-HORARIO DE ATENCIÓN AL PÚBLICO: Lunes a Viernes de 7:00 a 13:00
-DIRECCIÓN MUNICIPAL: Simón J. Bolívar N° 73, Eldorado, Misiones
-TELÉFONO MUNICIPAL: (+54) 03751 - 421787
+NOTICIAS: prensa.eldorado.gob.ar
 
-TELÉFONOS ÚTILES (referencia — verificar en el sitio para datos actualizados):
-- Emergencias: 911
-- Hospital: (03751) 42-XXXX
-- Policía: 101
-
-NOTICIAS: Se publican en prensa.eldorado.gob.ar y se muestran en la página de inicio del sitio municipal.
-
-EXPO ELDORADO: Evento anual más importante de la ciudad. Ver: /ciudad/expo-eldorado
-
-TURNO PLANEAMIENTO: Sistema de turnos para Planeamiento Urbano. Admin en /gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero/admin (credenciales: admin/admin)
+URU NO DEBE inventar teléfonos, direcciones, horarios ni datos de contacto. Solo debe indicar las rutas del sitio donde el usuario puede encontrar esa información.
 `;
