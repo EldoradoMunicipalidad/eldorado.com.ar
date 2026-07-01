@@ -5,7 +5,7 @@ import { Section } from '../../../../assets/components/Section'
 
 const PLANTA_HORMIGON_CONTENIDO = {
   parrafos: [
-    'Se encuentra ubicada dentro del Parque Industrial Néstor C. Kirchner, sobre la Ruta Nacional N° 12 a la altura del km 1540. La misma fue adquirida por el municipio en el año 2022, mediante la gestión del Dr. Fabio R. Martínez con recursos propios mediante licitación pública, la misma cuenta con una capacidad producción de 35 m3/h de concreto.',
+    'Se encuentra ubicada dentro del Parque Industrial Néstor C. Kirchner, sobre la Ruta Nacional N° 12 a la altura del km 1540. La misma fue adquirida por el municipio en el año 2022 con recursos propios mediante licitación pública, la misma cuenta con una capacidad producción de 35 m3/h de concreto.',
     'La planta de hormigón, en conjunto con la planta de asfalto, hacen parte de una gran inversión para mejorar la infraestructura urbana de nuestra ciudad.',
     'Mediante la elaboración del hormigón se podrán suplir demandas para la realización de cordones cuneta, badenes, veredas y playones para plazas o quinchos de barrios.',
   ],
@@ -63,7 +63,7 @@ const PlantaHormigon = () => {
             <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-sm">
               <p className="text-sm uppercase tracking-widest text-slate-500">Adquisición</p>
               <p className="mt-3 text-slate-800 leading-7">
-                Adquirida con recursos propios en el año 2022 mediante licitación pública, durante la gestión del Dr. Fabio R. Martínez.
+                Adquirida con recursos propios en el año 2022 mediante licitação pública.
               </p>
             </div>
           </aside>
