@@ -33,7 +33,8 @@ const INITIAL_FORM_DATA = {
   email: '',
   telefono: '',
   // Archivos paso 1
-  dni_file: null,
+  dni_frente_file: null,
+  dni_dorso_file: null,
   estatuto_file: null,
   acta_designacion_file: null,
   // Paso 2
@@ -43,7 +44,7 @@ const INITIAL_FORM_DATA = {
   direccion_completa: '',
   propietario_local: '',
   barrio: '',
-  documento_propiedad_file: null,
+  documento_propiedad_file: [],
   // Superficie (Paso 2)
   superficie_cubierta: '',
   superficie_semicubierta: '',
@@ -55,7 +56,7 @@ const INITIAL_FORM_DATA = {
   actividad_principal: '',
   actividad_secundaria: '',
   otra_actividad: '',
-  constancia_arca_file: null,
+  constancia_arca_file: [],
 };
 
 export default function PreinscripcionComercialPage() {
@@ -186,6 +187,32 @@ export default function PreinscripcionComercialPage() {
     });
   };
 
+  const addFileToArray = (field, file) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: [...(prev[field] || []), file],
+    }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  };
+
+  const removeFileFromArray = (field, index) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: (prev[field] || []).filter((_, i) => i !== index),
+    }));
+    setUploadedFiles((prev) => {
+      const arr = [...(prev[field] || [])];
+      arr.splice(index, 1);
+      return { ...prev, [field]: arr };
+    });
+  };
+
   const validateStep = (step) => {
     if (!fieldsConfig) return {};
     const errs = {};
@@ -295,25 +322,39 @@ export default function PreinscripcionComercialPage() {
     try {
       // Upload all files first
       const fileFields = [];
-      if (formData.dni_file) fileFields.push({ file: formData.dni_file, field: 'dni_file' });
+      if (formData.dni_frente_file) fileFields.push({ file: formData.dni_frente_file, field: 'dni_frente_file' });
+      if (formData.dni_dorso_file) fileFields.push({ file: formData.dni_dorso_file, field: 'dni_dorso_file' });
       if (formData.estatuto_file) fileFields.push({ file: formData.estatuto_file, field: 'estatuto_file' });
       if (formData.acta_designacion_file) fileFields.push({ file: formData.acta_designacion_file, field: 'acta_designacion_file' });
-      if (formData.documento_propiedad_file) fileFields.push({ file: formData.documento_propiedad_file, field: 'documento_propiedad_file' });
-      if (formData.constancia_arca_file) fileFields.push({ file: formData.constancia_arca_file, field: 'constancia_arca_file' });
+      // Multi-file fields
+      const docPropiedadFiles = formData.documento_propiedad_file || [];
+      const constanciaArcaFiles = formData.constancia_arca_file || [];
 
       const uploadedResults = {};
       for (const { file, field } of fileFields) {
         const result = await simulateUpload(file, field);
         uploadedResults[field] = result;
       }
+      // Upload multi-file arrays
+      const uploadedDocPropiedad = [];
+      for (const file of docPropiedadFiles) {
+        const result = await simulateUpload(file, 'documento_propiedad_file');
+        uploadedDocPropiedad.push(result);
+      }
+      const uploadedConstanciaArca = [];
+      for (const file of constanciaArcaFiles) {
+        const result = await simulateUpload(file, 'constancia_arca_file');
+        uploadedConstanciaArca.push(result);
+      }
 
       // Build payload with correct field mapping for the API
       const archivos = [];
-      if (uploadedResults.dni_file) archivos.push({ nombre: 'DNI', url: uploadedResults.dni_file.url });
+      if (uploadedResults.dni_frente_file) archivos.push({ nombre: 'DNI Frente', url: uploadedResults.dni_frente_file.url });
+      if (uploadedResults.dni_dorso_file) archivos.push({ nombre: 'DNI Dorso', url: uploadedResults.dni_dorso_file.url });
       if (uploadedResults.estatuto_file) archivos.push({ nombre: 'Estatuto', url: uploadedResults.estatuto_file.url });
       if (uploadedResults.acta_designacion_file) archivos.push({ nombre: 'Acta Designación', url: uploadedResults.acta_designacion_file.url });
-      if (uploadedResults.documento_propiedad_file) archivos.push({ nombre: 'Documento Propiedad', url: uploadedResults.documento_propiedad_file.url });
-      if (uploadedResults.constancia_arca_file) archivos.push({ nombre: 'Constancia ARCA/ATM', url: uploadedResults.constancia_arca_file.url });
+      uploadedDocPropiedad.forEach((f, i) => archivos.push({ nombre: `Documento Propiedad ${i + 1}`, url: f.url }));
+      uploadedConstanciaArca.forEach((f, i) => archivos.push({ nombre: `Constancia ARCA/ATM ${i + 1}`, url: f.url }));
 
       const payload = {
         tipo_persona: formData.tipo_persona,
@@ -512,9 +553,10 @@ export default function PreinscripcionComercialPage() {
                           updateField('dni', '');
                           updateField('apellido_nombre', '');
                           updateField('razon_social', '');
-                          updateField('dni_file', null);
-                          updateField('estatuto_file', null);
-                          updateField('acta_designacion_file', null);
+                          updateFile('dni_frente_file', null);
+                          updateFile('dni_dorso_file', null);
+                          updateFile('estatuto_file', null);
+                          updateFile('acta_designacion_file', null);
                         }}
                         className={`flex items-center gap-3 p-4 border-2 rounded-xl transition-all ${
                           formData.tipo_persona === 'fisica'
@@ -534,9 +576,10 @@ export default function PreinscripcionComercialPage() {
                           updateField('dni', '');
                           updateField('apellido_nombre', '');
                           updateField('razon_social', '');
-                          updateField('dni_file', null);
-                          updateField('estatuto_file', null);
-                          updateField('acta_designacion_file', null);
+                          updateFile('dni_frente_file', null);
+                          updateFile('dni_dorso_file', null);
+                          updateFile('estatuto_file', null);
+                          updateFile('acta_designacion_file', null);
                         }}
                         className={`flex items-center gap-3 p-4 border-2 rounded-xl transition-all ${
                           formData.tipo_persona === 'juridica'
@@ -576,17 +619,30 @@ export default function PreinscripcionComercialPage() {
 
                   {/* File uploads - Step 1 */}
                   {formData.tipo_persona === 'fisica' && (
-                    <FileUploadField
-                      label="Copia del DNI (frente y dorso)"
-                      field="dni_file"
-                      accept="image/*,.pdf"
-                      error={errors.dni_file}
-                      file={formData.dni_file}
-                      progress={uploadProgress.dni_file}
-                      uploaded={uploadedFiles.dni_file}
-                      onFileSelect={(f) => updateFile('dni_file', f)}
-                      onRemove={() => removeFile('dni_file')}
-                    />
+                    <div className="space-y-4">
+                      <FileUploadField
+                        label="Copia del DNI - Frente"
+                        field="dni_frente_file"
+                        accept="image/*,.pdf"
+                        error={errors.dni_frente_file}
+                        file={formData.dni_frente_file}
+                        progress={uploadProgress.dni_frente_file}
+                        uploaded={uploadedFiles.dni_frente_file}
+                        onFileSelect={(f) => updateFile('dni_frente_file', f)}
+                        onRemove={() => removeFile('dni_frente_file')}
+                      />
+                      <FileUploadField
+                        label="Copia del DNI - Dorso"
+                        field="dni_dorso_file"
+                        accept="image/*,.pdf"
+                        error={errors.dni_dorso_file}
+                        file={formData.dni_dorso_file}
+                        progress={uploadProgress.dni_dorso_file}
+                        uploaded={uploadedFiles.dni_dorso_file}
+                        onFileSelect={(f) => updateFile('dni_dorso_file', f)}
+                        onRemove={() => removeFile('dni_dorso_file')}
+                      />
+                    </div>
                   )}
 
                   {formData.tipo_persona === 'juridica' && (
@@ -634,16 +690,15 @@ export default function PreinscripcionComercialPage() {
                     {renderTextField('barrio', '')}
                   </div>
 
-                  <FileUploadField
-                    label="Documento de Propiedad (título, boleto, contrato de alquiler)"
+                  <MultiFileUploadField
+                    label="Documento de Propiedad (título, contrato de alquiler)"
                     field="documento_propiedad_file"
                     accept=".pdf,image/*"
                     error={errors.documento_propiedad_file}
-                    file={formData.documento_propiedad_file}
-                    progress={uploadProgress.documento_propiedad_file}
-                    uploaded={uploadedFiles.documento_propiedad_file}
-                    onFileSelect={(f) => updateFile('documento_propiedad_file', f)}
-                    onRemove={() => removeFile('documento_propiedad_file')}
+                    files={formData.documento_propiedad_file || []}
+                    uploaded={uploadedFiles.documento_propiedad_file || []}
+                    onFileSelect={(f) => addFileToArray('documento_propiedad_file', f)}
+                    onRemove={(idx) => removeFileFromArray('documento_propiedad_file', idx)}
                   />
 
                   {/* Superficie del local */}
@@ -674,16 +729,15 @@ export default function PreinscripcionComercialPage() {
                     {renderTextField('otra_actividad', '')}
                   </div>
 
-                  <FileUploadField
+                  <MultiFileUploadField
                     label="Constancia ARCA/ATM"
                     field="constancia_arca_file"
                     accept=".pdf"
                     error={errors.constancia_arca_file}
-                    file={formData.constancia_arca_file}
-                    progress={uploadProgress.constancia_arca_file}
-                    uploaded={uploadedFiles.constancia_arca_file}
-                    onFileSelect={(f) => updateFile('constancia_arca_file', f)}
-                    onRemove={() => removeFile('constancia_arca_file')}
+                    files={formData.constancia_arca_file || []}
+                    uploaded={uploadedFiles.constancia_arca_file || []}
+                    onFileSelect={(f) => addFileToArray('constancia_arca_file', f)}
+                    onRemove={(idx) => removeFileFromArray('constancia_arca_file', idx)}
                   />
                 </div>
               )}
@@ -879,6 +933,121 @@ function FileUploadField({
           )}
         </div>
       )}
+
+      {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+    </div>
+  );
+}
+
+function MultiFileUploadField({
+  label,
+  field,
+  accept,
+  error,
+  files,
+  uploaded,
+  onFileSelect,
+  onRemove,
+}) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const inputRef = React.useRef(null);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) onFileSelect(droppedFile);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleClick = () => {
+    inputRef.current?.click();
+  };
+
+  const handleChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) onFileSelect(selectedFile);
+    e.target.value = '';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+        {label}
+      </label>
+
+      {/* List of already selected files */}
+      {files.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {files.map((file, idx) => (
+            <div key={idx} className="border border-gray-200 rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 bg-sky-50 rounded-lg flex items-center justify-center shrink-0">
+                    <File className="w-5 h-5 text-sky-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+                    <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onRemove(idx)}
+                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-2"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Drop zone to add more files */}
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onClick={handleClick}
+        className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+          isDragOver
+            ? 'border-sky-400 bg-sky-50'
+            : error
+            ? 'border-red-300 bg-red-50'
+            : 'border-gray-200 hover:border-sky-300 hover:bg-sky-50/50'
+        }`}
+      >
+        <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+        <p className="text-sm text-gray-500">
+          <span className="text-sky-600 font-medium">Hacé clic</span> o arrastrá {files.length > 0 ? 'otro ' : 'el '}archivo aquí
+        </p>
+        <p className="text-xs text-gray-400 mt-1">
+          {accept?.replace(/,/g, ', ') || 'Todos los formatos'}
+        </p>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        onChange={handleChange}
+        className="hidden"
+      />
 
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>

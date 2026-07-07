@@ -88,14 +88,25 @@ export const DEFAULT_FIELDS_CONFIG = {
     showIf: null,
   },
   // Archivos paso 1
-  dni_file: {
+  dni_frente_file: {
     step: 1,
-    label: "DNI (file upload)",
+    label: "Copia del DNI - Frente",
     type: "file",
     required: false,
-    visible: false, // hidden by default
+    visible: true,
     options: null,
     showIf: { field: "tipo_persona", value: "fisica" },
+    multiple: false,
+  },
+  dni_dorso_file: {
+    step: 1,
+    label: "Copia del DNI - Dorso",
+    type: "file",
+    required: false,
+    visible: true,
+    options: null,
+    showIf: { field: "tipo_persona", value: "fisica" },
+    multiple: false,
   },
   estatuto_file: {
     step: 1,
@@ -179,12 +190,13 @@ export const DEFAULT_FIELDS_CONFIG = {
   },
   documento_propiedad_file: {
     step: 2,
-    label: "Documento de Propiedad (file upload)",
+    label: "Documento de Propiedad (título, contrato de alquiler)",
     type: "file",
     required: false,
-    visible: false,
+    visible: true,
     options: null,
     showIf: null,
+    multiple: true,
   },
   superficie_cubierta: {
     step: 2,
@@ -292,12 +304,13 @@ export const DEFAULT_FIELDS_CONFIG = {
   },
   constancia_arca_file: {
     step: 3,
-    label: "Constancia ARCA/ATM (file upload)",
+    label: "Constancia ARCA/ATM",
     type: "file",
     required: false,
-    visible: false,
+    visible: true,
     options: null,
     showIf: null,
+    multiple: true,
   },
 };
 
