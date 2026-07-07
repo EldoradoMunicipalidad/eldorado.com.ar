@@ -252,7 +252,6 @@ export default function UruChatbot() {
     <div className="uru-container">
       {!open && (
         <button className="uru-fab" onClick={handleOpen} aria-label="Abrir chat URU">
-          {hasNewReply ? <span className="uru-fab-badge" /> : null}
           <img src="/uru-chat-icon.png" alt="URU" className="uru-fab-icon" />
         </button>
       )}
