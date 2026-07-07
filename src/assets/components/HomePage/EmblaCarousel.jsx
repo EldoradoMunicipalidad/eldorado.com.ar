@@ -33,9 +33,9 @@ export function EmblaCarousel() {
       id: 1,
       title: "",
       subtitle: "",
-      imgDesktop: "/slider-2026.jpg",
-      imgTablet: "/slider-2026.jpg",
-      imgMobile: "/slider-2026.jpg",
+      imgDesktop: "/slider-2.jpg",
+      imgTablet: "/slider-2.jpg", 
+      imgMobile: "/slider-2.jpg",
     },
     {
       id: 2,
