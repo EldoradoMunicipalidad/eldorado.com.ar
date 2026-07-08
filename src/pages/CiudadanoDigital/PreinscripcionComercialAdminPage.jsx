@@ -1379,7 +1379,7 @@ export default function PreinscripcionComercialAdminPage() {
                 <div className="flex items-center justify-center min-h-[300px]">
                   <img src={previewDoc.url} alt={previewDoc.nombre} className="max-w-full max-h-[70vh] rounded-xl shadow-md object-contain" />
                 </div>
-              ) : previewDoc.url.match(/^data:application\\/pdf|\\.pdf(\\?|$)/i) ? (
+              ) : previewDoc.url.match(/^data:application\/pdf|\.pdf(\?|$)/i) ? (
                 <iframe src={`${previewDoc.url}#view=FitH`} className="w-full h-[75vh] rounded-xl shadow-md" title={previewDoc.nombre} />
               ) : (
                 <div className="flex flex-col items-center justify-center min-h-[200px] text-slate-500 gap-3">
