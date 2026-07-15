@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
 
-export const AppSection = () => {
+export const AppSection = ({ title, subtitle, features: propFeatures, videoId: propVideoId }) => {
     const [showVideo, setShowVideo] = useState(false);
-    const videoId = "wcDWGr0ygSg";
-
-    const features = [
+    const videoId = propVideoId || "wcDWGr0ygSg";
+    const features = propFeatures || [
         { icon: "smartphone", label: "Trámites online" },
         { icon: "payments", label: "Pagos digitales" },
         { icon: "notifications", label: "Alertas y noticias" },
         { icon: "verified", label: "Seguro y confiable" },
     ];
+    const sectionTitle = title || { pre: 'MI MUNI', post: 'MI CUENTA' }
+    const sectionSubtitle = subtitle || 'Accedé a trámites, pagos, noticias y servicios municipales desde tu celular. Rápido, seguro y siempre a mano.'
 
     return (
         <section id="app" className="relative py-20 px-6 md:px-12 lg:px-24 overflow-hidden">
@@ -32,13 +33,13 @@ export const AppSection = () => {
                     <div className="space-y-3">
                         <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
                             <span className="bg-gradient-to-r from-sky-600 to-emerald-500 bg-clip-text text-transparent">
-                                MI MUNI
+                                {typeof sectionTitle === 'string' ? sectionTitle.split(' ').slice(0, 2).join(' ') : sectionTitle.pre}
                             </span>
                             <br />
-                            <span className="text-slate-700">MI CUENTA</span>
+                            <span className="text-slate-700">{typeof sectionTitle === 'string' ? sectionTitle.split(' ').slice(2).join(' ') || sectionTitle.split(' ')[1] : sectionTitle.post}</span>
                         </h2>
                         <p className="text-slate-500 text-lg max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                            Accedé a trámites, pagos, noticias y servicios municipales desde tu celular. Rápido, seguro y siempre a mano.
+                            {sectionSubtitle}
                         </p>
                     </div>
 

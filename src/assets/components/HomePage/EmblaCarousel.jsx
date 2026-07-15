@@ -2,13 +2,21 @@ import React, { useState, useEffect, useCallback } from 'react'
 import useEmblaCarousel from 'embla-carousel-react'
 import Autoplay from 'embla-carousel-autoplay'
 
-export function EmblaCarousel() {
+export function EmblaCarousel({ slides: propSlides }) {
   // 1. Estados para la navegación
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [scrollSnaps, setScrollSnaps] = useState([])
 
   // 2. Inicializar Embla con Autoplay
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay()])
+
+  // 3. Array de slides — aceita props ou fallback
+  const slides = propSlides || [
+    {
+      id: 1,
+      img: "/slider-2.jpg",
+    }
+  ]
 
   // Funciones de navegación
   const scrollPrev = useCallback(() => emblaApi && emblaApi.scrollPrev(), [emblaApi])
@@ -26,18 +34,6 @@ export function EmblaCarousel() {
     setScrollSnaps(emblaApi.scrollSnapList())
     emblaApi.on('select', onSelect)
   }, [emblaApi, onSelect])
-
-  // 3. Array de slides — dos imágenes distintas
-  const slides = [
-    {
-      id: 1,
-      img: "/slider-2.jpg",
-    },
-    {
-      id: 2,
-      img: "/slider-3.jpg",
-    }
-  ]
 
   return (
     <section className="w-full bg-white pt-3 pb-12 flex justify-center">

@@ -111,6 +111,7 @@ export { default as ReportarReclamoPage } from './Reclamos/ReportarReclamoPage';
 export { default as SeguimientoPage } from './Reclamos/SeguimientoPage';
 export { default as AdminReclamosPage } from './Reclamos/AdminReclamosPage';
 export { default as ContenidoPage } from './Admin/ContenidoPage';
+export { default as HomeAdminPage } from './Admin/HomeAdminPage';
 export { default as SetupPage } from './Reclamos/SetupPage';
 export { default as AdminUsersPage } from './Reclamos/AdminUsersPage';
 export { default as CategoriasPage } from './Reclamos/CategoriasPage';
