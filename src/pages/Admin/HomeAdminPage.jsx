@@ -168,6 +168,7 @@ function Toggle({ checked, onChange, label }) {
 // ─── Section: Carrusel ───────────────────────────────────────────────
 function CarouselEditor({ data, onChange }) {
   const slides = data || []
+  const [uploading, setUploading] = useState(null) // { id, uploading }
 
   const addSlide = () => {
     onChange([...slides, { id: Date.now(), img: '/slider-2.jpg', title: '', subtitle: '' }])
@@ -182,6 +183,19 @@ function CarouselEditor({ data, onChange }) {
     onChange(slides.map((s) => s.id === id ? { ...s, [key]: value } : s))
   }
 
+  const handleUpload = async (id, file) => {
+    setUploading({ id })
+    try {
+      const { uploadHomeImage } = await import('../../lib/homeContent')
+      const { url } = await uploadHomeImage(file)
+      updateSlide(id, 'img', url)
+    } catch (err) {
+      alert('Error subiendo imagen: ' + err.message)
+    } finally {
+      setUploading(null)
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -190,7 +204,6 @@ function CarouselEditor({ data, onChange }) {
           <Plus className="w-4 h-4" /> Agregar imagen
         </button>
       </div>
-      <p className="text-xs text-slate-500">Las imágenes deben estar en la carpeta /public del proyecto y ser accesibles via URL (ej: /slider-2.jpg)</p>
 
       <div className="space-y-4">
         {slides.map((slide, idx) => (
@@ -201,20 +214,50 @@ function CarouselEditor({ data, onChange }) {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-            <Field label="URL de imagen (ej: /slider-2.jpg)">
-              <Input value={slide.img} onChange={(v) => updateSlide(slide.id, 'img', v)} placeholder="/slider-2.jpg" />
-            </Field>
-            {slide.img && (
-              <div className="relative w-full h-24 rounded-lg overflow-hidden bg-slate-200">
-                <img src={slide.img} alt="" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+
+            {/* Preview + Upload */}
+            <div className="flex gap-4 items-start">
+              <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-slate-200 shrink-0">
+                {uploading?.id === slide.id ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-200">
+                    <Loader2 className="w-6 h-6 animate-spin text-sky-600" />
+                  </div>
+                ) : slide.img ? (
+                  <img src={slide.img} alt="" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                    <Image className="w-8 h-8" />
+                  </div>
+                )}
               </div>
-            )}
-            <Field label="Título (opcional)">
-              <Input value={slide.title} onChange={(v) => updateSlide(slide.id, 'title', v)} placeholder="" />
+
+              <div className="flex-1 space-y-2">
+                <label className="flex items-center gap-2 px-3 py-2 bg-white border border-sky-300 text-sky-700 rounded-lg text-sm font-medium cursor-pointer hover:bg-sky-50 transition-colors w-fit">
+                  <Image className="w-4 h-4" />
+                  <span>{uploading?.id === slide.id ? 'Subiendo...' : 'Subir imagen'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={(e) => { if (e.target.files[0]) handleUpload(slide.id, e.target.files[0]) }}
+                    disabled={uploading?.id === slide.id}
+                  />
+                </label>
+                <p className="text-xs text-slate-400">JPG, PNG, GIF, WebP, SVG — máx 10MB</p>
+              </div>
+            </div>
+
+            <Field label="URL de imagen (ingresala manualmente o usá el botón de arriba)">
+              <Input value={slide.img} onChange={(v) => updateSlide(slide.id, 'img', v)} placeholder="/uploads/xxx.jpg" />
             </Field>
-            <Field label="Subtítulo (opcional)">
-              <Input value={slide.subtitle} onChange={(v) => updateSlide(slide.id, 'subtitle', v)} placeholder="" />
-            </Field>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Field label="Título (opcional)">
+                <Input value={slide.title} onChange={(v) => updateSlide(slide.id, 'title', v)} placeholder="" />
+              </Field>
+              <Field label="Subtítulo (opcional)">
+                <Input value={slide.subtitle} onChange={(v) => updateSlide(slide.id, 'subtitle', v)} placeholder="" />
+              </Field>
+            </div>
           </div>
         ))}
       </div>
@@ -338,9 +381,23 @@ function TramitesEditor({ data, onChange }) {
 function InfoAdicionalEditor({ data, onChange }) {
   const d = data || { cards: DEFAULT_CONTENT.infoAdicional.cards, stats: [] }
   const cards = d.cards || []
+  const [uploading, setUploading] = useState(null)
 
   const updateCard = (id, key, value) => {
     onChange({ ...d, cards: cards.map((c) => c.id === id ? { ...c, [key]: value } : c) })
+  }
+
+  const handleBgUpload = async (id, file) => {
+    setUploading({ id })
+    try {
+      const { uploadHomeImage } = await import('../../lib/homeContent')
+      const { url } = await uploadHomeImage(file)
+      updateCard(id, 'bgImage', url)
+    } catch (err) {
+      alert('Error subiendo imagen: ' + err.message)
+    } finally {
+      setUploading(null)
+    }
   }
 
   return (
@@ -354,9 +411,21 @@ function InfoAdicionalEditor({ data, onChange }) {
               <Field label="Título">
                 <Input value={card.title} onChange={(v) => updateCard(card.id, 'title', v)} />
               </Field>
-              <Field label="URL de imagen de fondo">
-                <Input value={card.bgImage} onChange={(v) => updateCard(card.id, 'bgImage', v)} />
-              </Field>
+              <div className="space-y-1">
+                <Field label="Imagen de fondo">
+                  <div className="flex items-center gap-2">
+                    <Input value={card.bgImage} onChange={(v) => updateCard(card.id, 'bgImage', v)} placeholder="/card-ciudad.jpg" />
+                    <label className="flex items-center gap-1 px-3 py-2 bg-white border border-sky-300 text-sky-700 rounded-lg text-sm font-medium cursor-pointer hover:bg-sky-50 shrink-0">
+                      <Image className="w-4 h-4" />
+                      <input type="file" accept="image/*" className="sr-only"
+                        onChange={(e) => { if (e.target.files[0]) handleBgUpload(card.id, e.target.files[0]) }}
+                        disabled={uploading?.id === card.id}
+                      />
+                    </label>
+                  </div>
+                  {uploading?.id === card.id && <span className="text-xs text-sky-600 flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" />Subiendo...</span>}
+                </Field>
+              </div>
               <Field label="URL de destino">
                 <Input value={card.href} onChange={(v) => updateCard(card.id, 'href', v)} />
               </Field>
