@@ -279,11 +279,13 @@ const reclamosRoutes = require('./routes/reclamos.cjs')
 const pagesRoutes = require('./routes/pages.cjs')
 const ambienteRoutes = require('./routes/ambiente.cjs')
 const homeContentRoutes = require('./routes/homeContent.cjs')
+const registroVehiculosRoutes = require('./routes/registroVehiculos.cjs')
 app.use('/api/habilitaciones', habilitacionesRoutes)
 app.use('/api/reclamos', reclamosRoutes)
 app.use('/api/pages', pagesRoutes)
 app.use('/api/ambiente', ambienteRoutes)
 app.use('/api/home-content', homeContentRoutes)
+app.use('/api/registro-vehiculos', registroVehiculosRoutes)
 
 // ─── Serve uploads as static files ──────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
