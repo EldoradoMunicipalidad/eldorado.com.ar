@@ -97,6 +97,10 @@ import Breadcrumbs from './assets/components/Header/Breadcrumbs'
 import ScrollToHash from '../src/assets/components/ScrollToHash'
 import { Footer } from './assets/components/Footer/Footer'
 import UruChatbot from './components/UruChatbot'
+import RegistroVehiculosLayout from './pages/RegistroVehiculos/RegistroVehiculosLayout'
+import HomeVehiculos from './pages/RegistroVehiculos/HomeVehiculos'
+import RegistroColectivoVehiculos from './pages/RegistroVehiculos/RegistroColectivoVehiculos'
+import RegistroEspecializadoVehiculos from './pages/RegistroVehiculos/RegistroEspecializadoVehiculos'
 
 function App() {
   return (
@@ -238,6 +242,13 @@ function App() {
           
           <Route path='/empleado-municipal' element={<EmpleadoMunicipalPage />} />
 
+
+          {/* REGISTRO VEHICULOS - RUTA OCULTA (no aparece en navigationData) */}
+          <Route path="/xcsda" element={<RegistroVehiculosLayout />}>
+            <Route index element={<HomeVehiculos />} />
+            <Route path="colectivo" element={<RegistroColectivoVehiculos />} />
+            <Route path="transporte-especializado" element={<RegistroEspecializadoVehiculos />} />
+          </Route>
 
           {/* Ruta para manejar errores 404 */}
           <Route path="*" element={<NotFound />} />
