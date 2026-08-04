@@ -245,6 +245,14 @@ router.post('/', async (req, res) => {
     sendNotificationEmail(body, rows[0].id)
   } catch (err) {
     console.error('POST /api/habilitaciones error:', err.message)
+    // Postgres "value too long" (22001) -> 400 con mensaje entendible
+    if (err.code === '22001') {
+      return res.status(400).json({ error: 'Uno de los campos excede el largo máximo permitido.' })
+    }
+    // Postgres "null value violates not-null" (23502) -> 400
+    if (err.code === '23502') {
+      return res.status(400).json({ error: `Falta un campo obligatorio: ${err.column}` })
+    }
     res.status(500).json({ error: err.message })
   }
 })
