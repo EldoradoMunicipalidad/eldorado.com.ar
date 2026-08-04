@@ -30,8 +30,6 @@ export default function RegistroVehiculosLayout() {
 
     // Si no hay sesión, redirige al login
     if (!session) {
-        // No usamos <Navigate> para evitar loops; usamos window.location
-        // porque el layout no debe mostrarse nunca sin auth
         window.location.replace('/xcsda/login')
         return null
     }
@@ -44,18 +42,21 @@ export default function RegistroVehiculosLayout() {
 
     return (
         <div className="min-h-screen bg-slate-50 flex">
-            <aside className="hidden md:flex flex-col w-64 fixed left-0 top-0 h-screen bg-white border-r border-slate-200 z-20">
+            {/* ─── Sidebar ─── */}
+            <aside className="hidden md:flex flex-col w-64 fixed left-0 top-0 h-screen bg-white border-r border-slate-100 z-20">
                 <div className="p-6 flex flex-col h-full">
+                    {/* Logo / Branding */}
                     <div className="flex items-center gap-3 mb-8 px-2">
-                        <div className="w-10 h-10 rounded-lg bg-blue-700 flex items-center justify-center text-white text-sm font-bold shadow-md">
-                            RV
+                        <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center shadow-sm">
+                            <span className="material-symbols-outlined text-white text-xl leading-none">directions_car</span>
                         </div>
                         <div>
-                            <h1 className="text-base font-semibold text-slate-900">Registro Vehicular</h1>
-                            <p className="text-xs text-slate-500">Municipalidad de Eldorado</p>
+                            <h1 className="text-base font-semibold text-slate-900 leading-tight">Registro Vehicular</h1>
+                            <p className="text-xs text-slate-500 leading-tight">Municipalidad de Eldorado</p>
                         </div>
                     </div>
 
+                    {/* Nav */}
                     <nav className="flex-1 flex flex-col gap-1">
                         {navItems.map(item => (
                             <NavLink
@@ -63,50 +64,68 @@ export default function RegistroVehiculosLayout() {
                                 to={item.to}
                                 end={item.end}
                                 className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
                                         isActive
-                                            ? 'bg-blue-50 text-blue-700'
+                                            ? 'bg-sky-50 text-sky-600'
                                             : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                                     }`
                                 }
                             >
-                                <span className="material-symbols-outlined text-xl">{item.icon}</span>
+                                <span className="material-symbols-outlined text-xl leading-none">{item.icon}</span>
                                 {item.label}
                             </NavLink>
                         ))}
                     </nav>
 
-                    <div className="flex flex-col gap-3 pt-4 border-t border-slate-100">
-                        <div className="text-xs text-slate-500 px-2">
-                            Sesión: <span className="font-semibold text-slate-700">{session.username}</span>
+                    {/* Sesión / logout */}
+                    <div className="flex flex-col gap-2 pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2 px-2 text-xs text-slate-500">
+                            <span className="material-symbols-outlined text-base leading-none">person</span>
+                            <span className="font-semibold text-slate-700">{session.username}</span>
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-red-700 rounded-lg transition-colors"
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-red-600 rounded-xl transition-colors"
                         >
-                            <span className="material-symbols-outlined text-xl">logout</span>
+                            <span className="material-symbols-outlined text-xl leading-none">logout</span>
                             Cerrar sesión
                         </button>
                     </div>
                 </div>
             </aside>
 
+            {/* ─── Contenido ─── */}
             <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
-                <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
-                    <h2 className="text-base font-semibold text-slate-900">Sistema de Registro Vehicular</h2>
+                {/* Franja de gradiente (identidad del sitio) */}
+                <div className="h-1 bg-gradient-to-r from-sky-500 via-blue-500 to-sky-600 shrink-0" />
+
+                {/* Top bar */}
+                <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 md:px-10 shrink-0">
+                    <h2 className="text-base font-semibold text-slate-900">
+                        Registro Vehicular
+                    </h2>
                     <a
                         href="https://eldorado.gob.ar"
-                        className="text-xs text-slate-500 hover:text-blue-700 transition-colors"
+                        className="text-xs text-slate-500 hover:text-sky-600 transition-colors flex items-center gap-1"
                     >
-                        ← Volver al sitio
+                        <span className="material-symbols-outlined text-base leading-none">arrow_back</span>
+                        Volver al sitio
                     </a>
                 </header>
 
-                <main className="flex-1 px-4 md:px-8 py-8">
-                    <div className="max-w-4xl mx-auto w-full pb-12">
+                {/* Contenido */}
+                <main className="flex-1 px-6 md:px-10 py-10 md:py-16">
+                    <div className="max-w-7xl mx-auto w-full pb-12">
                         <Outlet />
                     </div>
                 </main>
+
+                {/* Footer simple */}
+                <footer className="px-6 md:px-10 py-4 border-t border-slate-100 bg-white">
+                    <p className="text-xs text-slate-400 text-center">
+                        © Municipalidad de Eldorado · Registro Vehicular · Acceso restringido
+                    </p>
+                </footer>
             </div>
         </div>
     )

@@ -1,10 +1,10 @@
 import { useState } from 'react'
 
 const sectionClass = "bg-white rounded-2xl shadow-sm border border-slate-200 p-8"
-const titleClass = "flex items-center gap-3 text-blue-700 font-semibold text-lg mb-6"
-const numberClass = "w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center text-sm font-bold"
+const titleClass = "flex items-center gap-3 text-sky-600 font-semibold text-lg mb-6"
+const numberClass = "w-8 h-8 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center text-sm font-bold"
 const labelClass = "block text-xs font-medium text-slate-600 mb-1.5"
-const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm"
+const inputClass = "w-full px-3 py-2 border border-slate-300 rounded-lg bg-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-sm"
 
 export default function RegistroEspecializadoVehiculos() {
     const [submitting, setSubmitting] = useState(false)
@@ -174,7 +174,7 @@ export default function RegistroEspecializadoVehiculos() {
                 <button
                     type="submit"
                     disabled={submitting}
-                    className="px-8 py-2 bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-8 py-2 bg-sky-500 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-sky-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {submitting ? 'Guardando…' : 'Guardar Registro'}
                 </button>

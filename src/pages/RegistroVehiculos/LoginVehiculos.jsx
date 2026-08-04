@@ -40,8 +40,8 @@ export default function LoginVehiculos() {
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
                     <div className="flex items-center gap-3 mb-8">
-                        <div className="w-12 h-12 rounded-lg bg-blue-700 flex items-center justify-center text-white text-base font-bold shadow-md">
-                            RV
+                        <div className="w-12 h-12 bg-sky-500 rounded-xl flex items-center justify-center shadow-sm">
+                            <span className="material-symbols-outlined text-white text-2xl leading-none">directions_car</span>
                         </div>
                         <div>
                             <h1 className="text-lg font-semibold text-slate-900">Registro Vehicular</h1>
@@ -67,7 +67,7 @@ export default function LoginVehiculos() {
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white transition-all focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-sm"
                                 placeholder="vehiculos"
                                 required
                                 autoComplete="username"
@@ -83,7 +83,7 @@ export default function LoginVehiculos() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-sm"
+                                className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white transition-all focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 text-sm"
                                 required
                                 autoComplete="current-password"
                             />
@@ -92,7 +92,7 @@ export default function LoginVehiculos() {
                         <button
                             type="submit"
                             disabled={submitting}
-                            className="mt-4 px-6 py-2.5 bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-md hover:bg-blue-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="mt-4 px-6 py-2.5 bg-sky-500 text-white text-sm font-semibold rounded-lg shadow-sm hover:bg-sky-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {submitting ? 'Ingresando…' : 'Ingresar'}
                         </button>
