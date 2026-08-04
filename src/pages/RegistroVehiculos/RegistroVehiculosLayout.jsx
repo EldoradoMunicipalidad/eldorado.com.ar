@@ -1,6 +1,41 @@
-import { Outlet, NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+
+const SESSION_KEY = 'vehiculo_auth'
 
 export default function RegistroVehiculosLayout() {
+    const navigate = useNavigate()
+    const [session, setSession] = useState(null)
+    const [ready, setReady] = useState(false)
+
+    useEffect(() => {
+        const raw = localStorage.getItem(SESSION_KEY)
+        if (raw) {
+            try {
+                setSession(JSON.parse(raw))
+            } catch {
+                localStorage.removeItem(SESSION_KEY)
+            }
+        }
+        setReady(true)
+    }, [])
+
+    function handleLogout() {
+        localStorage.removeItem(SESSION_KEY)
+        navigate('/xcsda/login', { replace: true })
+    }
+
+    // Mientras valida localStorage, no renderiza nada (evita flash)
+    if (!ready) return null
+
+    // Si no hay sesión, redirige al login
+    if (!session) {
+        // No usamos <Navigate> para evitar loops; usamos window.location
+        // porque el layout no debe mostrarse nunca sin auth
+        window.location.replace('/xcsda/login')
+        return null
+    }
+
     const navItems = [
         { to: '/xcsda', label: 'Inicio', icon: 'dashboard', end: true },
         { to: '/xcsda/colectivo', label: 'Reg. Colectivo', icon: 'directions_bus' },
@@ -41,8 +76,17 @@ export default function RegistroVehiculosLayout() {
                         ))}
                     </nav>
 
-                    <div className="text-xs text-slate-400 pt-4 border-t border-slate-100">
-                        Acceso restringido
+                    <div className="flex flex-col gap-3 pt-4 border-t border-slate-100">
+                        <div className="text-xs text-slate-500 px-2">
+                            Sesión: <span className="font-semibold text-slate-700">{session.username}</span>
+                        </div>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-red-700 rounded-lg transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-xl">logout</span>
+                            Cerrar sesión
+                        </button>
                     </div>
                 </div>
             </aside>

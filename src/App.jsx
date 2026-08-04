@@ -101,6 +101,7 @@ import RegistroVehiculosLayout from './pages/RegistroVehiculos/RegistroVehiculos
 import HomeVehiculos from './pages/RegistroVehiculos/HomeVehiculos'
 import RegistroColectivoVehiculos from './pages/RegistroVehiculos/RegistroColectivoVehiculos'
 import RegistroEspecializadoVehiculos from './pages/RegistroVehiculos/RegistroEspecializadoVehiculos'
+import LoginVehiculos from './pages/RegistroVehiculos/LoginVehiculos'
 
 function App() {
   return (
@@ -244,6 +245,7 @@ function App() {
 
 
           {/* REGISTRO VEHICULOS - RUTA OCULTA (no aparece en navigationData) */}
+          <Route path="/xcsda/login" element={<LoginVehiculos />} />
           <Route path="/xcsda" element={<RegistroVehiculosLayout />}>
             <Route index element={<HomeVehiculos />} />
             <Route path="colectivo" element={<RegistroColectivoVehiculos />} />
