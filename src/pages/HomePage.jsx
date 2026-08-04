@@ -4,7 +4,6 @@ import { InformacionAdicionalSection } from '../assets/components/HomePage/Infor
 import TramitesAndServiciosSection from '../assets/components/HomePage/TramitesAndServicios/TramitesAndServiciosSection'
 import { AppSection } from '../assets/components/HomePage/AppSection.jsx/AppSection'
 import { NoticiasSection } from '../assets/components/HomePage/Noticias/NoticiasSection'
-import { Footer } from '../assets/components/Footer/Footer'
 import { getHomeContent } from '../lib/homeContent'
 import * as Icons from '../assets/Icons/TramitesAndServicios/AllIcons'
 
@@ -147,8 +146,6 @@ export const HomePage = () => {
 
       {/* Noticias (ya es dinámico vía Directus) */}
       <NoticiasSection />
-
-      <Footer />
     </div>
   )
 }
