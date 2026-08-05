@@ -103,7 +103,17 @@ import RegistroColectivoVehiculos from './pages/RegistroVehiculos/RegistroColect
 import RegistroEspecializadoVehiculos from './pages/RegistroVehiculos/RegistroEspecializadoVehiculos'
 import LoginVehiculos from './pages/RegistroVehiculos/LoginVehiculos'
 
+// ─── Subdominio dedicado: expo.eldorado.gob.ar → Expo Eldorado ───────
+const EXPO_HOST = 'expo.eldorado.gob.ar'
+const isExpoHost = typeof window !== 'undefined' && window.location.host === EXPO_HOST
+
 function App() {
+  // Reverse-proxy a nivel SPA: cuando el host es expo.eldorado.gob.ar,
+  // se monta solo la página de Expo, sin Navbar/Footer/Breadcrumbs.
+  if (isExpoHost) {
+    return <ExpoEldoradoPage />
+  }
+
   return (
     <div className="flex flex-col min-h-screen"> {/* Contenedor para empujar el footer */}
       <Navbar />
