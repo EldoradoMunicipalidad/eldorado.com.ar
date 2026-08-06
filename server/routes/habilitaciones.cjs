@@ -141,14 +141,13 @@ const storage = multer.diskStorage({
 })
 
 const fileFilter = (req, file, cb) => {
-  const allowed = /\.(pdf|jpg|jpeg|png|gif)$/i
+  const allowed = /\.(pdf|jpg|jpeg|png|gif|webp)$/i
   if (allowed.test(path.extname(file.originalname))) {
     cb(null, true)
   } else {
-    cb(new Error('Solo se permiten archivos PDF, JPG, JPEG, PNG o GIF'), false)
+    cb(new Error('Solo se permiten archivos PDF, JPG, JPEG, PNG, GIF o WEBP'), false)
   }
 }
-
 const upload = multer({
   storage,
   fileFilter,
