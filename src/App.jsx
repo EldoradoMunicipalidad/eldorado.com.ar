@@ -34,7 +34,6 @@ import {
   DirJuventudPage,
   DirProteccionCivilPage,
   DirRecursosHumanosPage,
-  DirTransitoAndTransportePage,
   ParqueIndustrialPage,
   PoloAcademicoPage,
   DirContabilidadGeneralPage,
@@ -55,9 +54,13 @@ import {
   ProgramasPage,
   ObservatorioAmbientalPage,
   DirIntegracionProductivaPage,
-  DirProduccionAndDesarrolloSosteniblePage,
+  DirTransitoAndTransportePage,
   CentroEmisionLicenciasPage,
   TransportePage,
+  DirEscuelaManejoPage,
+  TurneroEscuelaManejoPage,
+  TurneroEscuelaManejoAdminPage,
+  DirProduccionAndDesarrolloSosteniblePage,
   DtoAsistenciaSocial,
   CentroDeDia,
   CIC,
@@ -161,6 +164,9 @@ function App() {
           <Route path="/gobierno/secretaria-gobierno/recursos-humanos" element={<DirRecursosHumanosPage />} />
           <Route path="/gobierno/secretaria-gobierno/transito-y-transporte" element={<DirTransitoAndTransportePage />} />
           <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias" element={<CentroEmisionLicenciasPage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo" element={<DirEscuelaManejoPage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero" element={<TurneroEscuelaManejoPage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero/admin" element={<TurneroEscuelaManejoAdminPage />} />
           <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/transporte" element={<TransportePage />} />
           
           <Route path="/gobierno/secretaria-gobierno/parque-industrial" element={<ParqueIndustrialPage />} />

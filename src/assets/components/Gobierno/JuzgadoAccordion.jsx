@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Listado } from "./Listado";
 import Icon from "../../Icons/Icon";
 
@@ -13,27 +14,47 @@ export const JuzgadoAccordion = ({
     Lista2,
     Lista3,
     whatsapp,
-    email
+    email,
+    to,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const isLink = Boolean(to);
+
+    const Header = (
+        <>
+            <div className="flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isOpen ? 'bg-sky-500 text-white' : 'bg-sky-100 text-sky-600'}`}>
+                    <Icon name={isOpen ? 'visibilityIcon' : icon} />
+                </div>
+                <span className="font-bold text-slate-800 text-lg leading-tight">
+                    {titulo}
+                </span>
+            </div>
+            <Icon
+                name={isLink ? 'arrowOutwardIcon' : 'expandMoreIcon'}
+                className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+            />
+        </>
+    );
 
     return (
         <div id={id} className="border border-slate-100 rounded-2xl mb-4 overflow-hidden bg-white shadow-sm transition-all hover:shadow-md">
             {/* Encabezado / Botón de Acción */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-5 text-left bg-white hover:bg-slate-50/50 transition-colors"
-            >
-                <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${isOpen ? 'bg-sky-500 text-white' : 'bg-sky-100 text-sky-600'}`}>
-                        <Icon name={isOpen ? 'visibilityIcon' : icon} />
-                    </div>
-                    <span className="font-bold text-slate-800 text-lg leading-tight">
-                        {titulo}
-                    </span>
-                </div>
-                <Icon name="expandMoreIcon" className={`text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
+            {isLink ? (
+                <Link
+                    to={to}
+                    className="w-full flex items-center justify-between p-5 text-left bg-white hover:bg-sky-50 transition-colors"
+                >
+                    {Header}
+                </Link>
+            ) : (
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="w-full flex items-center justify-between p-5 text-left bg-white hover:bg-slate-50/50 transition-colors"
+                >
+                    {Header}
+                </button>
+            )}
 
             {/* Contenido Desplegable */}
             <div className={`transition-all duration-300 ease-in-out ${isOpen ? 'max-h-750 opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>

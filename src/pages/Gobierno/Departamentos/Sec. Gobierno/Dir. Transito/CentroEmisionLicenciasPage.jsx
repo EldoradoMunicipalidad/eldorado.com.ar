@@ -37,6 +37,7 @@ const CentroEmisionLicenciasPage = () => {
                                     Lista3={card.Lista3}
                                     whatsapp={card.whatsapp}
                                     email={card.email}
+                                    to={card.to}
                                 />
                             ))}
                         </div>

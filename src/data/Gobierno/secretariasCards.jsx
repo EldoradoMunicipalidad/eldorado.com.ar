@@ -50,14 +50,20 @@
                     title: "Centro de emisión de Licencias",
                     description: "Gestión de los recursos financieros de manera eficiente",
                     icon: "badgeIcon",
-                    to: "/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias",
-                    innerCards: [
-                        {
-                            title: "Turno Charla en Centro Emisión de Licencia",
-                            description: "Solicita un turno para la charla informativa en el Centro de Emisión de Licencias.",
-                            icon: "turnosZoonosisIcon",
-                            to: "",
-                        },
+                                to: "/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias",
+                                innerCards: [
+                                    {
+                                        title: "Escuela de Manejo",
+                                        description: "Inscripción online a clases prácticas de manejo en el Autódromo km 4. 2 alumnos por hora, 14 a 18 hs.",
+                                        icon: "directionsCarIcon",
+                                        to: "/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo",
+                                    },
+                                    {
+                                        title: "Turno Charla en Centro Emisión de Licencia",
+                                        description: "Solicita un turno para la charla informativa en el Centro de Emisión de Licencias.",
+                                        icon: "turnosZoonosisIcon",
+                                        to: "",
+                                    },
                         {
                             title: "Obtención Boleta CENAT",
                             description: "Información para obtener la boleta del Certificado Nacional de Antecedentes de Tránsito.",

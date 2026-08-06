@@ -41,6 +41,9 @@ export { default as PoloAcademicoPage } from './Gobierno/Departamentos/Sec. Gobi
 export { default as DirTransitoAndTransportePage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/DirTransitoAndTransportePage';
 export { default as CentroEmisionLicenciasPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/CentroEmisionLicenciasPage';
 export { default as TransportePage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/TransportePage';
+export { default as DirEscuelaManejoPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/EscuelaManejo/DirEscuelaManejoPage';
+export { default as TurneroEscuelaManejoPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/EscuelaManejo/TurneroEscuelaManejoPage';
+export { default as TurneroEscuelaManejoAdminPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/EscuelaManejo/TurneroEscuelaManejoAdminPage';
 
 //Ficheros dentro de /pages/Gobierno/Departamentos/Sec. Hacienda
 export { default as DirContabilidadGeneralPage } from './Gobierno/Departamentos/Sec. Hacienda/DirContabilidadGeneralPage';
