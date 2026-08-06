@@ -67,7 +67,14 @@ export default function PreinscripcionComercialPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({});
   const [uploadedFiles, setUploadedFiles] = useState({});
+  // Ref espejo de uploadedFiles para acceder al valor actual sincrónicamente
+  // en handleSubmit (state de React es async; setState no es visible de inmediato).
+  const uploadedFilesRef = React.useRef({});
+  React.useEffect(() => {
+    uploadedFilesRef.current = uploadedFiles;
+  }, [uploadedFiles]);
   const [submitError, setSubmitError] = useState('');
+  const [uploadError, setUploadError] = useState('');
   const [fieldsConfig, setFieldsConfig] = useState(null);
 
   // Load config on mount
@@ -183,11 +190,18 @@ export default function PreinscripcionComercialPage() {
     setUploadedFiles((prev) => {
       const next = { ...prev };
       delete next[field];
+      uploadedFilesRef.current = next;
+      return next;
+    });
+    setUploadProgress((prev) => {
+      const next = { ...prev };
+      delete next[field];
       return next;
     });
   };
 
   const addFileToArray = (field, file) => {
+    const newIndex = (formData[field] || []).length;
     setFormData((prev) => ({
       ...prev,
       [field]: [...(prev[field] || []), file],
@@ -199,6 +213,7 @@ export default function PreinscripcionComercialPage() {
         return next;
       });
     }
+    return newIndex;
   };
 
   const removeFileFromArray = (field, index) => {
@@ -209,7 +224,9 @@ export default function PreinscripcionComercialPage() {
     setUploadedFiles((prev) => {
       const arr = [...(prev[field] || [])];
       arr.splice(index, 1);
-      return { ...prev, [field]: arr };
+      const next = { ...prev, [field]: arr };
+      uploadedFilesRef.current = next;
+      return next;
     });
   };
 
@@ -260,53 +277,132 @@ export default function PreinscripcionComercialPage() {
     new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = (e) => resolve(e.target.result);
-      reader.onerror = () => reject(new Error('FileReader failed'));
+      reader.onerror = () => reject(new Error('No se pudo leer el archivo localmente.'));
       reader.readAsDataURL(file);
     });
 
-  const simulateUpload = async (file, fieldName) => {
-    setUploadProgress((prev) => ({ ...prev, [fieldName]: 0 }));
-
-    // Simulate progress independently
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        const current = prev[fieldName] || 0;
-        const next = Math.min(current + Math.random() * 25, 95);
-        return { ...prev, [fieldName]: Math.round(next) };
-      });
-    }, 300);
-
-    let dataUrl;
+  // Sube un archivo al server (/api/habilitaciones/upload con multer).
+  // Si el server falla, hace fallback a base64 data URL (persiste aunque el
+  // server se caiga). NO usa blob URL porque se rompe en Dokploy.
+  // Devuelve { url, name } o lanza error.
+  const uploadOneFile = async (file) => {
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+    formDataUpload.append('field', file._fieldHint || 'archivo');
     try {
-      // Try real upload first
-      const formDataUpload = new FormData();
-      formDataUpload.append('file', file);
-      formDataUpload.append('field', fieldName);
       const res = await fetch('/api/habilitaciones/upload', {
         method: 'POST',
         body: formDataUpload,
       });
       if (res.ok) {
         const data = await res.json();
-        clearInterval(interval);
-        setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
-        setUploadedFiles((prev) => ({ ...prev, [fieldName]: data }));
-        return data;
+        return { url: data.url, name: file.name, source: 'server' };
       }
-      throw new Error('Upload server returned ' + res.status);
-    } catch {
-      // Fallback: read as base64 data URL (persists without server)
-      clearInterval(interval);
+      throw new Error('Server respondió ' + res.status);
+    } catch (serverErr) {
+      // Fallback: base64 data URL
       try {
-        dataUrl = await readFileAsDataURL(file);
-      } catch {
-        dataUrl = URL.createObjectURL(file);
+        const dataUrl = await readFileAsDataURL(file);
+        return { url: dataUrl, name: file.name, source: 'base64' };
+      } catch (readErr) {
+        throw new Error(
+          `No se pudo subir "${file.name}". El servidor no responde y la lectura local falló. ` +
+          'Verificá tu conexión y reintentá.'
+        );
       }
-      setUploadProgress((prev) => ({ ...prev, [fieldName]: 100 }));
-      const result = { url: dataUrl, name: file.name };
-      setUploadedFiles((prev) => ({ ...prev, [fieldName]: result }));
-      return result;
     }
+  };
+
+  // Sube un archivo mostrando progreso y guardando el resultado en uploadedFiles.
+  // Se llama al seleccionar un archivo (no al submit) para tener progreso inmediato.
+  // isArray=true usa uploadedFiles[field] como array y uploadProgress[field] como array.
+  const simulateUpload = async (file, fieldName, isArray = false, arrayIndex = null) => {
+    if (!file) return null;
+
+    setUploadProgress((prev) => {
+      const next = { ...prev };
+      if (isArray && arrayIndex !== null) {
+        const arr = [...(next[fieldName] || [])];
+        arr[arrayIndex] = 0;
+        next[fieldName] = arr;
+      } else {
+        next[fieldName] = 0;
+      }
+      return next;
+    });
+
+    // Progreso simulado mientras sube (independiente del server real)
+    const interval = setInterval(() => {
+      setUploadProgress((prev) => {
+        const next = { ...prev };
+        if (isArray && arrayIndex !== null) {
+          const arr = [...(next[fieldName] || [])];
+          const current = arr[arrayIndex] || 0;
+          const v = Math.min(current + Math.random() * 25, 95);
+          arr[arrayIndex] = Math.round(v);
+          next[fieldName] = arr;
+        } else {
+          const current = next[fieldName] || 0;
+          next[fieldName] = Math.round(Math.min(current + Math.random() * 25, 95));
+        }
+        return next;
+      });
+    }, 300);
+
+    try {
+      const result = await uploadOneFile(file);
+      clearInterval(interval);
+      setUploadProgress((prev) => {
+        const next = { ...prev };
+        if (isArray && arrayIndex !== null) {
+          const arr = [...(next[fieldName] || [])];
+          arr[arrayIndex] = 100;
+          next[fieldName] = arr;
+        } else {
+          next[fieldName] = 100;
+        }
+        return next;
+      });
+      // Guardar en uploadedFiles (state + ref)
+      setUploadedFiles((prev) => {
+        const next = { ...prev };
+        if (isArray && arrayIndex !== null) {
+          const arr = [...(next[fieldName] || [])];
+          arr[arrayIndex] = result;
+          next[fieldName] = arr;
+        } else {
+          next[fieldName] = result;
+        }
+        uploadedFilesRef.current = next;
+        return next;
+      });
+      return result;
+    } catch (err) {
+      clearInterval(interval);
+      setUploadProgress((prev) => {
+        const next = { ...prev };
+        if (isArray && arrayIndex !== null) {
+          const arr = [...(next[fieldName] || [])];
+          arr[arrayIndex] = -1;
+          next[fieldName] = arr;
+        } else {
+          next[fieldName] = -1;
+        }
+        return next;
+      });
+      setUploadError(err.message);
+      throw err;
+    }
+  };
+
+  // Para un File de un array (documento_propiedad_file, constancia_arca_file):
+  // chequea si ya está subido por nombre; si no, lo sube.
+  const ensureUploaded = async (file, fieldName, arrayIndex) => {
+    const existing = uploadedFilesRef.current[fieldName];
+    if (Array.isArray(existing) && existing[arrayIndex] && existing[arrayIndex].name === file.name) {
+      return existing[arrayIndex];
+    }
+    return await simulateUpload(file, fieldName, true, arrayIndex);
   };
 
   const handleSubmit = async () => {
@@ -318,43 +414,56 @@ export default function PreinscripcionComercialPage() {
     setErrors({});
     setIsSubmitting(true);
     setSubmitError('');
+    setUploadError('');
 
     try {
-      // Upload all files first
-      const fileFields = [];
-      if (formData.dni_frente_file) fileFields.push({ file: formData.dni_frente_file, field: 'dni_frente_file' });
-      if (formData.dni_dorso_file) fileFields.push({ file: formData.dni_dorso_file, field: 'dni_dorso_file' });
-      if (formData.estatuto_file) fileFields.push({ file: formData.estatuto_file, field: 'estatuto_file' });
-      if (formData.acta_designacion_file) fileFields.push({ file: formData.acta_designacion_file, field: 'acta_designacion_file' });
-      // Multi-file fields
-      const docPropiedadFiles = formData.documento_propiedad_file || [];
-      const constanciaArcaFiles = formData.constancia_arca_file || [];
+      // Verificar y resubir solo lo que falte (en paralelo)
+      const uploadedRef = uploadedFilesRef.current;
+      const pending = [];
+      if (formData.dni_frente_file && !uploadedRef.dni_frente_file) {
+        pending.push(simulateUpload(formData.dni_frente_file, 'dni_frente_file'));
+      }
+      if (formData.dni_dorso_file && !uploadedRef.dni_dorso_file) {
+        pending.push(simulateUpload(formData.dni_dorso_file, 'dni_dorso_file'));
+      }
+      if (formData.estatuto_file && !uploadedRef.estatuto_file) {
+        pending.push(simulateUpload(formData.estatuto_file, 'estatuto_file'));
+      }
+      if (formData.acta_designacion_file && !uploadedRef.acta_designacion_file) {
+        pending.push(simulateUpload(formData.acta_designacion_file, 'acta_designacion_file'));
+      }
+      // Multi-file: asegurar todos los items
+      (formData.documento_propiedad_file || []).forEach((file, idx) => {
+        pending.push(ensureUploaded(file, 'documento_propiedad_file', idx));
+      });
+      (formData.constancia_arca_file || []).forEach((file, idx) => {
+        pending.push(ensureUploaded(file, 'constancia_arca_file', idx));
+      });
+      if (pending.length > 0) {
+        await Promise.all(pending);
+      }
 
-      const uploadedResults = {};
-      for (const { file, field } of fileFields) {
-        const result = await simulateUpload(file, field);
-        uploadedResults[field] = result;
-      }
-      // Upload multi-file arrays
-      const uploadedDocPropiedad = [];
-      for (const file of docPropiedadFiles) {
-        const result = await simulateUpload(file, 'documento_propiedad_file');
-        uploadedDocPropiedad.push(result);
-      }
-      const uploadedConstanciaArca = [];
-      for (const file of constanciaArcaFiles) {
-        const result = await simulateUpload(file, 'constancia_arca_file');
-        uploadedConstanciaArca.push(result);
+      // Verificar que no haya errores de upload pendientes
+      const anyError = Object.values(uploadProgress).some((p) =>
+        Array.isArray(p) ? p.includes(-1) : p === -1
+      );
+      if (anyError) {
+        throw new Error(uploadError || 'Uno o más archivos no se pudieron subir.');
       }
 
-      // Build payload with correct field mapping for the API
+      // Build payload con field mapping para la API
+      const uploadedFilesSnapshot = uploadedFilesRef.current;
       const archivos = [];
-      if (uploadedResults.dni_frente_file) archivos.push({ nombre: 'DNI Frente', url: uploadedResults.dni_frente_file.url });
-      if (uploadedResults.dni_dorso_file) archivos.push({ nombre: 'DNI Dorso', url: uploadedResults.dni_dorso_file.url });
-      if (uploadedResults.estatuto_file) archivos.push({ nombre: 'Estatuto', url: uploadedResults.estatuto_file.url });
-      if (uploadedResults.acta_designacion_file) archivos.push({ nombre: 'Acta Designación', url: uploadedResults.acta_designacion_file.url });
-      uploadedDocPropiedad.forEach((f, i) => archivos.push({ nombre: `Documento Propiedad ${i + 1}`, url: f.url }));
-      uploadedConstanciaArca.forEach((f, i) => archivos.push({ nombre: `Constancia ARCA/ATM ${i + 1}`, url: f.url }));
+      if (uploadedFilesSnapshot.dni_frente_file) archivos.push({ nombre: 'DNI Frente', url: uploadedFilesSnapshot.dni_frente_file.url });
+      if (uploadedFilesSnapshot.dni_dorso_file) archivos.push({ nombre: 'DNI Dorso', url: uploadedFilesSnapshot.dni_dorso_file.url });
+      if (uploadedFilesSnapshot.estatuto_file) archivos.push({ nombre: 'Estatuto', url: uploadedFilesSnapshot.estatuto_file.url });
+      if (uploadedFilesSnapshot.acta_designacion_file) archivos.push({ nombre: 'Acta Designación', url: uploadedFilesSnapshot.acta_designacion_file.url });
+      (uploadedFilesSnapshot.documento_propiedad_file || []).forEach((f, i) =>
+        archivos.push({ nombre: `Documento Propiedad ${i + 1}`, url: f.url })
+      );
+      (uploadedFilesSnapshot.constancia_arca_file || []).forEach((f, i) =>
+        archivos.push({ nombre: `Constancia ARCA/ATM ${i + 1}`, url: f.url })
+      );
 
       const payload = {
         tipo_persona: formData.tipo_persona,
@@ -628,7 +737,10 @@ export default function PreinscripcionComercialPage() {
                         file={formData.dni_frente_file}
                         progress={uploadProgress.dni_frente_file}
                         uploaded={uploadedFiles.dni_frente_file}
-                        onFileSelect={(f) => updateFile('dni_frente_file', f)}
+                        onFileSelect={(f) => {
+                          updateFile('dni_frente_file', f);
+                          if (f) simulateUpload(f, 'dni_frente_file');
+                        }}
                         onRemove={() => removeFile('dni_frente_file')}
                       />
                       <FileUploadField
@@ -639,7 +751,10 @@ export default function PreinscripcionComercialPage() {
                         file={formData.dni_dorso_file}
                         progress={uploadProgress.dni_dorso_file}
                         uploaded={uploadedFiles.dni_dorso_file}
-                        onFileSelect={(f) => updateFile('dni_dorso_file', f)}
+                        onFileSelect={(f) => {
+                          updateFile('dni_dorso_file', f);
+                          if (f) simulateUpload(f, 'dni_dorso_file');
+                        }}
                         onRemove={() => removeFile('dni_dorso_file')}
                       />
                     </div>
@@ -655,7 +770,10 @@ export default function PreinscripcionComercialPage() {
                         file={formData.estatuto_file}
                         progress={uploadProgress.estatuto_file}
                         uploaded={uploadedFiles.estatuto_file}
-                        onFileSelect={(f) => updateFile('estatuto_file', f)}
+                        onFileSelect={(f) => {
+                          updateFile('estatuto_file', f);
+                          if (f) simulateUpload(f, 'estatuto_file');
+                        }}
                         onRemove={() => removeFile('estatuto_file')}
                       />
                       <FileUploadField
@@ -666,7 +784,10 @@ export default function PreinscripcionComercialPage() {
                         file={formData.acta_designacion_file}
                         progress={uploadProgress.acta_designacion_file}
                         uploaded={uploadedFiles.acta_designacion_file}
-                        onFileSelect={(f) => updateFile('acta_designacion_file', f)}
+                        onFileSelect={(f) => {
+                          updateFile('acta_designacion_file', f);
+                          if (f) simulateUpload(f, 'acta_designacion_file');
+                        }}
                         onRemove={() => removeFile('acta_designacion_file')}
                       />
                     </>
@@ -697,7 +818,11 @@ export default function PreinscripcionComercialPage() {
                     error={errors.documento_propiedad_file}
                     files={formData.documento_propiedad_file || []}
                     uploaded={uploadedFiles.documento_propiedad_file || []}
-                    onFileSelect={(f) => addFileToArray('documento_propiedad_file', f)}
+                    progress={uploadProgress.documento_propiedad_file}
+                    onFileSelect={(f) => {
+                      const idx = addFileToArray('documento_propiedad_file', f);
+                      if (f && typeof idx === 'number') simulateUpload(f, 'documento_propiedad_file', true, idx);
+                    }}
                     onRemove={(idx) => removeFileFromArray('documento_propiedad_file', idx)}
                   />
 
@@ -736,7 +861,11 @@ export default function PreinscripcionComercialPage() {
                     error={errors.constancia_arca_file}
                     files={formData.constancia_arca_file || []}
                     uploaded={uploadedFiles.constancia_arca_file || []}
-                    onFileSelect={(f) => addFileToArray('constancia_arca_file', f)}
+                    progress={uploadProgress.constancia_arca_file}
+                    onFileSelect={(f) => {
+                      const idx = addFileToArray('constancia_arca_file', f);
+                      if (f && typeof idx === 'number') simulateUpload(f, 'constancia_arca_file', true, idx);
+                    }}
                     onRemove={(idx) => removeFileFromArray('constancia_arca_file', idx)}
                   />
                 </div>
@@ -914,7 +1043,7 @@ function FileUploadField({
               <X className="w-4 h-4" />
             </button>
           </div>
-          {progress !== undefined && progress < 100 && (
+          {progress !== undefined && progress < 100 && progress >= 0 && (
             <div className="mt-3">
               <div className="w-full bg-gray-100 rounded-full h-2">
                 <div
@@ -923,6 +1052,12 @@ function FileUploadField({
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1">Subiendo... {progress}%</p>
+            </div>
+          )}
+          {progress === -1 && (
+            <div className="mt-2 flex items-center gap-1 text-xs text-red-600">
+              <AlertCircle className="w-3 h-3" />
+              Error al subir. Quitalo y reintentá.
             </div>
           )}
           {uploaded && progress === 100 && (
@@ -946,6 +1081,7 @@ function MultiFileUploadField({
   error,
   files,
   uploaded,
+  progress,
   onFileSelect,
   onRemove,
 }) {
@@ -993,28 +1129,49 @@ function MultiFileUploadField({
       {/* List of already selected files */}
       {files.length > 0 && (
         <div className="space-y-2 mb-3">
-          {files.map((file, idx) => (
-            <div key={idx} className="border border-gray-200 rounded-xl p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 bg-sky-50 rounded-lg flex items-center justify-center shrink-0">
-                    <File className="w-5 h-5 text-sky-500" />
+          {files.map((file, idx) => {
+            const fileUploaded = uploaded && uploaded[idx];
+            const fileProgress = progress && progress[idx];
+            const hasError = fileProgress === -1;
+            const isUploading = fileProgress !== undefined && fileProgress >= 0 && fileProgress < 100;
+            const isDone = fileUploaded && fileProgress === 100;
+            return (
+              <div key={idx} className="border border-gray-200 rounded-xl p-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 bg-sky-50 rounded-lg flex items-center justify-center shrink-0">
+                      <File className="w-5 h-5 text-sky-500" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
+                      <p className="text-xs text-gray-400">
+                        {formatFileSize(file.size)}
+                        {hasError && <span className="text-red-600 ml-2">· Error al subir</span>}
+                        {isDone && <span className="text-emerald-600 ml-2">· Subido</span>}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{file.name}</p>
-                    <p className="text-xs text-gray-400">{formatFileSize(file.size)}</p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(idx)}
+                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onRemove(idx)}
-                  className="p-1.5 text-gray-400 hover:text-red-500 transition-colors shrink-0 ml-2"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                {isUploading && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div
+                        className="bg-sky-500 h-1.5 rounded-full transition-all duration-300"
+                        style={{ width: `${fileProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
