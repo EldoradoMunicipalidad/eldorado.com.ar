@@ -22,6 +22,9 @@ import {
 } from 'lucide-react';
 import { loadFieldsConfig, getVisibleFieldsForStep } from '../../data/preinscripcionFieldsConfig';
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_EXTENSIONS = /\.(pdf|jpg|jpeg|png|gif|webp)$/i;
+
 const INITIAL_FORM_DATA = {
   // Paso 1
   tipo_persona: '',
@@ -74,8 +77,9 @@ export default function PreinscripcionComercialPage() {
     uploadedFilesRef.current = uploadedFiles;
   }, [uploadedFiles]);
   const [submitError, setSubmitError] = useState('');
-  const [uploadError, setUploadError] = useState('');
-  const [fieldsConfig, setFieldsConfig] = useState(null);
+    const [uploadError, setUploadError] = useState('');
+    const [fileErrors, setFileErrors] = useState({}); // errores de validación previa por campo
+    const [fieldsConfig, setFieldsConfig] = useState(null);
 
   // Load config on mount
   useEffect(() => {
@@ -163,16 +167,29 @@ export default function PreinscripcionComercialPage() {
     );
   };
 
-  const updateField = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[field];
-        return next;
-      });
-    }
-  };
+  // Valida tipo y tamaño del archivo antes de subirlo.
+    // Devuelve { ok: true } o { ok: false, message: '...' }.
+    const validateFile = (file) => {
+      if (!ALLOWED_EXTENSIONS.test(file.name)) {
+        return { ok: false, message: `Tipo no permitido: ${file.name}. Solo PDF, JPG, PNG, GIF o WEBP.` };
+      }
+      if (file.size > MAX_FILE_SIZE) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        return { ok: false, message: `${file.name} pesa ${sizeMB} MB. Máximo permitido: 10 MB.` };
+      }
+      return { ok: true };
+    };
+
+    const updateField = (field, value) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) {
+        setErrors((prev) => {
+          const next = { ...prev };
+          delete next[field];
+          return next;
+        });
+      }
+    };
 
   const updateFile = (field, file) => {
     setFormData((prev) => ({ ...prev, [field]: file }));
@@ -730,31 +747,45 @@ export default function PreinscripcionComercialPage() {
                   {formData.tipo_persona === 'fisica' && (
                     <div className="space-y-4">
                       <FileUploadField
-                        label="Copia del DNI - Frente"
-                        field="dni_frente_file"
-                        accept="image/*,.pdf"
-                        error={errors.dni_frente_file}
-                        file={formData.dni_frente_file}
-                        progress={uploadProgress.dni_frente_file}
-                        uploaded={uploadedFiles.dni_frente_file}
+                                              label="Copia del DNI - Frente"
+                                              field="dni_frente_file"
+                                              accept="image/*,.pdf"
+                                              error={errors.dni_frente_file}
+                                              fileError={fileErrors.dni_frente_file}
+                                              file={formData.dni_frente_file}
+                                              progress={uploadProgress.dni_frente_file}
+                                              uploaded={uploadedFiles.dni_frente_file}
                         onFileSelect={(f) => {
-                          updateFile('dni_frente_file', f);
-                          if (f) simulateUpload(f, 'dni_frente_file');
-                        }}
+                                                  const validation = validateFile(f);
+                                                  if (!validation.ok) {
+                                                    setFileErrors((prev) => ({ ...prev, dni_frente_file: validation.message }));
+                                                    return;
+                                                  }
+                                                  setFileErrors((prev) => { const n = { ...prev }; delete n.dni_frente_file; return n; });
+                                                  updateFile('dni_frente_file', f);
+                                                  simulateUpload(f, 'dni_frente_file');
+                                                }}
                         onRemove={() => removeFile('dni_frente_file')}
                       />
                       <FileUploadField
-                        label="Copia del DNI - Dorso"
-                        field="dni_dorso_file"
-                        accept="image/*,.pdf"
-                        error={errors.dni_dorso_file}
-                        file={formData.dni_dorso_file}
-                        progress={uploadProgress.dni_dorso_file}
-                        uploaded={uploadedFiles.dni_dorso_file}
+                                              label="Copia del DNI - Dorso"
+                                              field="dni_dorso_file"
+                                              accept="image/*,.pdf"
+                                              error={errors.dni_dorso_file}
+                                              fileError={fileErrors.dni_dorso_file}
+                                              file={formData.dni_dorso_file}
+                                              progress={uploadProgress.dni_dorso_file}
+                                              uploaded={uploadedFiles.dni_dorso_file}
                         onFileSelect={(f) => {
-                          updateFile('dni_dorso_file', f);
-                          if (f) simulateUpload(f, 'dni_dorso_file');
-                        }}
+                                                  const validation = validateFile(f);
+                                                  if (!validation.ok) {
+                                                    setFileErrors((prev) => ({ ...prev, dni_dorso_file: validation.message }));
+                                                    return;
+                                                  }
+                                                  setFileErrors((prev) => { const n = { ...prev }; delete n.dni_dorso_file; return n; });
+                                                  updateFile('dni_dorso_file', f);
+                                                  simulateUpload(f, 'dni_dorso_file');
+                                                }}
                         onRemove={() => removeFile('dni_dorso_file')}
                       />
                     </div>
@@ -763,31 +794,45 @@ export default function PreinscripcionComercialPage() {
                   {formData.tipo_persona === 'juridica' && (
                     <>
                       <FileUploadField
-                        label="Estatuto Social"
-                        field="estatuto_file"
-                        accept=".pdf"
-                        error={errors.estatuto_file}
-                        file={formData.estatuto_file}
-                        progress={uploadProgress.estatuto_file}
-                        uploaded={uploadedFiles.estatuto_file}
+                                              label="Estatuto Social"
+                                              field="estatuto_file"
+                                              accept=".pdf"
+                                              error={errors.estatuto_file}
+                                              fileError={fileErrors.estatuto_file}
+                                              file={formData.estatuto_file}
+                                              progress={uploadProgress.estatuto_file}
+                                              uploaded={uploadedFiles.estatuto_file}
                         onFileSelect={(f) => {
-                          updateFile('estatuto_file', f);
-                          if (f) simulateUpload(f, 'estatuto_file');
-                        }}
+                                                  const validation = validateFile(f);
+                                                  if (!validation.ok) {
+                                                    setFileErrors((prev) => ({ ...prev, estatuto_file: validation.message }));
+                                                    return;
+                                                  }
+                                                  setFileErrors((prev) => { const n = { ...prev }; delete n.estatuto_file; return n; });
+                                                  updateFile('estatuto_file', f);
+                                                  simulateUpload(f, 'estatuto_file');
+                                                }}
                         onRemove={() => removeFile('estatuto_file')}
                       />
                       <FileUploadField
-                        label="Acta de Designación de Autoridades"
-                        field="acta_designacion_file"
-                        accept=".pdf"
-                        error={errors.acta_designacion_file}
-                        file={formData.acta_designacion_file}
-                        progress={uploadProgress.acta_designacion_file}
-                        uploaded={uploadedFiles.acta_designacion_file}
+                                              label="Acta de Designación de Autoridades"
+                                              field="acta_designacion_file"
+                                              accept=".pdf"
+                                              error={errors.acta_designacion_file}
+                                              fileError={fileErrors.acta_designacion_file}
+                                              file={formData.acta_designacion_file}
+                                              progress={uploadProgress.acta_designacion_file}
+                                              uploaded={uploadedFiles.acta_designacion_file}
                         onFileSelect={(f) => {
-                          updateFile('acta_designacion_file', f);
-                          if (f) simulateUpload(f, 'acta_designacion_file');
-                        }}
+                                                  const validation = validateFile(f);
+                                                  if (!validation.ok) {
+                                                    setFileErrors((prev) => ({ ...prev, acta_designacion_file: validation.message }));
+                                                    return;
+                                                  }
+                                                  setFileErrors((prev) => { const n = { ...prev }; delete n.acta_designacion_file; return n; });
+                                                  updateFile('acta_designacion_file', f);
+                                                  simulateUpload(f, 'acta_designacion_file');
+                                                }}
                         onRemove={() => removeFile('acta_designacion_file')}
                       />
                     </>
@@ -812,17 +857,24 @@ export default function PreinscripcionComercialPage() {
                   </div>
 
                   <MultiFileUploadField
-                    label="Documento de Propiedad (título, contrato de alquiler)"
-                    field="documento_propiedad_file"
-                    accept=".pdf,image/*"
-                    error={errors.documento_propiedad_file}
-                    files={formData.documento_propiedad_file || []}
+                                      label="Documento de Propiedad (título, contrato de alquiler)"
+                                      field="documento_propiedad_file"
+                                      accept=".pdf,image/*"
+                                      error={errors.documento_propiedad_file}
+                                      fileError={fileErrors.documento_propiedad_file}
+                                      files={formData.documento_propiedad_file || []}
                     uploaded={uploadedFiles.documento_propiedad_file || []}
                     progress={uploadProgress.documento_propiedad_file}
                     onFileSelect={(f) => {
-                      const idx = addFileToArray('documento_propiedad_file', f);
-                      if (f && typeof idx === 'number') simulateUpload(f, 'documento_propiedad_file', true, idx);
-                    }}
+                                          const validation = validateFile(f);
+                                          if (!validation.ok) {
+                                            setFileErrors((prev) => ({ ...prev, documento_propiedad_file: validation.message }));
+                                            return;
+                                          }
+                                          setFileErrors((prev) => { const n = { ...prev }; delete n.documento_propiedad_file; return n; });
+                                          const idx = addFileToArray('documento_propiedad_file', f);
+                                          simulateUpload(f, 'documento_propiedad_file', true, idx);
+                                        }}
                     onRemove={(idx) => removeFileFromArray('documento_propiedad_file', idx)}
                   />
 
@@ -855,17 +907,24 @@ export default function PreinscripcionComercialPage() {
                   </div>
 
                   <MultiFileUploadField
-                    label="Constancia ARCA/ATM"
-                    field="constancia_arca_file"
-                    accept=".pdf"
-                    error={errors.constancia_arca_file}
-                    files={formData.constancia_arca_file || []}
+                                      label="Constancia ARCA/ATM"
+                                      field="constancia_arca_file"
+                                      accept=".pdf"
+                                      error={errors.constancia_arca_file}
+                                      fileError={fileErrors.constancia_arca_file}
+                                      files={formData.constancia_arca_file || []}
                     uploaded={uploadedFiles.constancia_arca_file || []}
                     progress={uploadProgress.constancia_arca_file}
                     onFileSelect={(f) => {
-                      const idx = addFileToArray('constancia_arca_file', f);
-                      if (f && typeof idx === 'number') simulateUpload(f, 'constancia_arca_file', true, idx);
-                    }}
+                                          const validation = validateFile(f);
+                                          if (!validation.ok) {
+                                            setFileErrors((prev) => ({ ...prev, constancia_arca_file: validation.message }));
+                                            return;
+                                          }
+                                          setFileErrors((prev) => { const n = { ...prev }; delete n.constancia_arca_file; return n; });
+                                          const idx = addFileToArray('constancia_arca_file', f);
+                                          simulateUpload(f, 'constancia_arca_file', true, idx);
+                                        }}
                     onRemove={(idx) => removeFileFromArray('constancia_arca_file', idx)}
                   />
                 </div>
@@ -947,6 +1006,7 @@ function FileUploadField({
   file,
   progress,
   uploaded,
+  fileError,
   onFileSelect,
   onRemove,
 }) {
@@ -1070,11 +1130,14 @@ function FileUploadField({
       )}
 
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
+            {fileError && !file && (
+              <p className="text-red-500 text-xs mt-1">{fileError}</p>
+            )}
+          </div>
+        );
+      }
 
-function MultiFileUploadField({
+      function MultiFileUploadField({
   label,
   field,
   accept,
@@ -1082,6 +1145,7 @@ function MultiFileUploadField({
   files,
   uploaded,
   progress,
+  fileError,
   onFileSelect,
   onRemove,
 }) {
@@ -1207,6 +1271,9 @@ function MultiFileUploadField({
       />
 
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
-    </div>
-  );
-}
+            {fileError && (
+              <p className="text-red-500 text-xs mt-1">{fileError}</p>
+            )}
+          </div>
+        );
+      }
