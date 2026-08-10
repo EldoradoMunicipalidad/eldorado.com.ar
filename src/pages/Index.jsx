@@ -44,6 +44,10 @@ export { default as TransportePage } from './Gobierno/Departamentos/Sec. Gobiern
 export { default as DirEscuelaManejoPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/EscuelaManejo/DirEscuelaManejoPage';
 export { default as TurneroEscuelaManejoPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/EscuelaManejo/TurneroEscuelaManejoPage';
 export { default as TurneroEscuelaManejoAdminPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/EscuelaManejo/TurneroEscuelaManejoAdminPage';
+export { default as RegistroVehiculosPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/RegistroVehiculos/RegistroVehiculosPage';
+export { default as RegistroColectivoPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/RegistroVehiculos/RegistroColectivoPage';
+export { default as RegistroTransporteEspecializadoPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/RegistroVehiculos/RegistroTransporteEspecializadoPage';
+export { default as RegistroVehiculosAdminPage } from './Gobierno/Departamentos/Sec. Gobierno/Dir. Transito/RegistroVehiculos/RegistroVehiculosAdminPage';
 
 //Ficheros dentro de /pages/Gobierno/Departamentos/Sec. Hacienda
 export { default as DirContabilidadGeneralPage } from './Gobierno/Departamentos/Sec. Hacienda/DirContabilidadGeneralPage';

@@ -60,6 +60,10 @@ import {
   DirEscuelaManejoPage,
   TurneroEscuelaManejoPage,
   TurneroEscuelaManejoAdminPage,
+  RegistroVehiculosPage,
+  RegistroColectivoPage,
+  RegistroTransporteEspecializadoPage,
+  RegistroVehiculosAdminPage,
   DirProduccionAndDesarrolloSosteniblePage,
   DtoAsistenciaSocial,
   CentroDeDia,
@@ -168,6 +172,10 @@ function App() {
           <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero" element={<TurneroEscuelaManejoPage />} />
           <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero/admin" element={<TurneroEscuelaManejoAdminPage />} />
           <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/transporte" element={<TransportePage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos" element={<RegistroVehiculosPage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos/colectivo" element={<RegistroColectivoPage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos/transporte-especializado" element={<RegistroTransporteEspecializadoPage />} />
+          <Route path="/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos/admin" element={<RegistroVehiculosAdminPage />} />
           
           <Route path="/gobierno/secretaria-gobierno/parque-industrial" element={<ParqueIndustrialPage />} />
           <Route path="/gobierno/secretaria-gobierno/polo-academico" element={<PoloAcademicoPage />} />

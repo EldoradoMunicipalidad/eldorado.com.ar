@@ -304,6 +304,32 @@
                     ]
                 },
                 {
+                    title: "Registro de Vehículos",
+                    description: "Inscripción de colectivos y vehículos de transporte especializado",
+                    icon: "directionsBusIcon",
+                    to: "/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos",
+                    innerCards: [
+                        {
+                            title: "Registro de Colectivos",
+                            description: "Inscripción de ómnibus y colectivos de transporte urbano, interurbano y larga distancia.",
+                            icon: "directionsBusIcon",
+                            to: "/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos/colectivo",
+                        },
+                        {
+                            title: "Registro de Transporte Especializado",
+                            description: "Inscripción de taxis, remises, autos y transporte escolar con toda la documentación habilitante.",
+                            icon: "localShippingIcon",
+                            to: "/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos/transporte-especializado",
+                        },
+                        {
+                            title: "Panel de Administración",
+                            description: "Acceso restringido para gestionar los registros cargados y la configuración del módulo.",
+                            icon: "lockIcon",
+                            to: "/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos/admin",
+                        },
+                    ]
+                },
+                {
                     title: "Transporte",
                     description: "Asegura la eficiencia y efectividad de los procesos internos",
                     icon: "transitIcon",
