@@ -20,7 +20,8 @@ function simpleHash(str) {
 // ─── Auth middleware ──────────────────────────────────────────────
 // Verifica header Authorization: Bearer <username>:<hash>
 // El frontend guarda el hash de la contraseña del admin en localStorage
-// (es la misma función simpleHash que se usa en el login).
+// (es la misma función simpleHash que se usa en el login) y lo envía
+// directamente. El backend compara contra password_hash en la DB.
 function requireAdmin(req, res, next) {
   const auth = req.headers['authorization'] || ''
   const m = auth.match(/^Bearer\s+([^:]+):(.+)$/)
@@ -28,11 +29,10 @@ function requireAdmin(req, res, next) {
     return res.status(401).json({ error: 'No autorizado: credenciales requeridas' })
   }
   const [, username, hash] = m
-  const expected = simpleHash(hash)
-  // Comparamos contra la DB
+  // Comparamos directamente contra la DB (hash ya viene hasheado del cliente).
   pool.query(
     'SELECT username FROM admins_registro_vehiculos WHERE username = $1 AND password_hash = $2',
-    [username, expected]
+    [username, hash]
   ).then(({ rows }) => {
     if (rows.length > 0) {
       req.admin = { username: rows[0].username }
