@@ -17,6 +17,35 @@ function simpleHash(str) {
   return hash.toString(36)
 }
 
+// ─── Auth middleware ──────────────────────────────────────────────
+// Verifica header Authorization: Bearer <username>:<hash>
+// El frontend guarda el hash de la contraseña del admin en localStorage
+// (es la misma función simpleHash que se usa en el login).
+function requireAdmin(req, res, next) {
+  const auth = req.headers['authorization'] || ''
+  const m = auth.match(/^Bearer\s+([^:]+):(.+)$/)
+  if (!m) {
+    return res.status(401).json({ error: 'No autorizado: credenciales requeridas' })
+  }
+  const [, username, hash] = m
+  const expected = simpleHash(hash)
+  // Comparamos contra la DB
+  pool.query(
+    'SELECT username FROM admins_registro_vehiculos WHERE username = $1 AND password_hash = $2',
+    [username, expected]
+  ).then(({ rows }) => {
+    if (rows.length > 0) {
+      req.admin = { username: rows[0].username }
+      next()
+    } else {
+      res.status(401).json({ error: 'No autorizado: credenciales inválidas' })
+    }
+  }).catch((err) => {
+    console.error('requireAdmin error:', err)
+    res.status(500).json({ error: 'Error de autenticación' })
+  })
+}
+
 // ─── CONFIG ────────────────────────────────────────────────────────
 router.get('/config', async (req, res) => {
   try {
@@ -89,7 +118,7 @@ router.post('/colectivos', async (req, res) => {
   }
 })
 
-router.delete('/colectivos/:id', async (req, res) => {
+router.delete('/colectivos/:id', requireAdmin, async (req, res) => {
   try {
     const { rowCount } = await pool.query('DELETE FROM vehiculos_colectivos WHERE id = $1', [req.params.id])
     if (!rowCount) return res.status(404).json({ error: 'No encontrado' })
@@ -142,7 +171,7 @@ router.post('/especializados', async (req, res) => {
   }
 })
 
-router.delete('/especializados/:id', async (req, res) => {
+router.delete('/especializados/:id', requireAdmin, async (req, res) => {
   try {
     const { rowCount } = await pool.query('DELETE FROM vehiculos_especializados WHERE id = $1', [req.params.id])
     if (!rowCount) return res.status(404).json({ error: 'No encontrado' })
@@ -173,7 +202,7 @@ router.post('/auth/login', async (req, res) => {
 })
 
 // ─── ADMINS management ─────────────────────────────────────────────
-router.get('/admins', async (req, res) => {
+router.get('/admins', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       'SELECT username, nombre, rol, email, created_at FROM admins_registro_vehiculos ORDER BY username'
@@ -184,7 +213,7 @@ router.get('/admins', async (req, res) => {
   }
 })
 
-router.post('/admins', async (req, res) => {
+router.post('/admins', requireAdmin, async (req, res) => {
   try {
     const { username, password, nombre, email, rol } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
@@ -205,7 +234,7 @@ router.post('/admins', async (req, res) => {
   }
 })
 
-router.delete('/admins/:username', async (req, res) => {
+router.delete('/admins/:username', requireAdmin, async (req, res) => {
   try {
     if (req.params.username === 'Usuario1') {
       return res.status(400).json({ error: 'No se puede eliminar el admin principal' })

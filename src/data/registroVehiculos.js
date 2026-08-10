@@ -40,7 +40,10 @@ export async function createColectivo(data) {
 }
 
 export async function deleteColectivo(id) {
-  const res = await fetch(`${API}/colectivos/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/colectivos/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
   const result = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(result.error || 'Error al eliminar')
   return result
@@ -70,10 +73,26 @@ export async function createEspecializado(data) {
 }
 
 export async function deleteEspecializado(id) {
-  const res = await fetch(`${API}/especializados/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/especializados/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
   const result = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(result.error || 'Error al eliminar')
   return result
+}
+
+// Helper: arma header Authorization para endpoints protegidos.
+// El cliente debe haber pasado por authenticateAdmin antes,
+// que guarda username + password en localStorage.
+function getAuthHeaders() {
+  const auth = getStoredAuth()
+  if (!auth || !auth.username || !auth.passwordHash) {
+    return {}
+  }
+  return {
+    Authorization: `Bearer ${auth.username}:${auth.passwordHash}`,
+  }
 }
 
 // ─── AUTH ──────────────────────────────────────────────────────────
@@ -115,13 +134,33 @@ export async function authenticateAdmin(username, password) {
   if (!res.ok || !data.authenticated) {
     throw new Error(data.error || 'Credenciales inválidas')
   }
-  return setStoredAuth({ username: data.username, nombre: data.nombre, rol: data.rol })
+  // Guardamos también passwordHash para reenviar en Authorization Bearer.
+  // El frontend recalcula el hash con la misma función simpleHash del backend.
+  return setStoredAuth({
+    username: data.username,
+    nombre: data.nombre,
+    rol: data.rol,
+    passwordHash: simpleHashClient(password),
+  })
+}
+
+// Misma función simpleHash que server/routes/registroVehiculos.cjs
+// Se usa solo del lado cliente para generar el header Authorization.
+function simpleHashClient(str) {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i)
+    hash |= 0
+  }
+  return hash.toString(36)
 }
 
 // ─── ADMINS management ─────────────────────────────────────────────
 export async function getAdmins() {
   try {
-    const res = await fetch(`${API}/admins`)
+    const res = await fetch(`${API}/admins`, {
+      headers: getAuthHeaders(),
+    })
     if (!res.ok) throw new Error('HTTP ' + res.status)
     return await res.json()
   } catch (e) {
@@ -132,7 +171,7 @@ export async function getAdmins() {
 export async function createAdmin(data) {
   const res = await fetch(`${API}/admins`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(data),
   })
   const result = await res.json().catch(() => ({}))
@@ -141,7 +180,10 @@ export async function createAdmin(data) {
 }
 
 export async function deleteAdmin(username) {
-  const res = await fetch(`${API}/admins/${username}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/admins/${username}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  })
   const result = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(result.error || 'Error al eliminar admin')
   return result
