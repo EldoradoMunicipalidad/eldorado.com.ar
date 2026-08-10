@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de uso — Registro de Vehículos | Municipalidad de Eldorado</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: #1e293b;
+    background: #f8fafc;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 980px; margin: 0 auto; background: white; padding: 3rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+  h1 { color: #0c4a6e; font-size: 2.2rem; margin-bottom: 0.5rem; border-bottom: 4px solid #0ea5e9; padding-bottom: 0.5rem; }
+  h2 { color: #0369a1; font-size: 1.6rem; margin: 2.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 2px solid #e2e8f0; }
+  h3 { color: #0c4a6e; font-size: 1.25rem; margin: 1.5rem 0 0.5rem; }
+  .subtitle { color: #64748b; font-size: 1rem; margin-bottom: 2rem; }
+  .meta { background: #f1f5f9; padding: 1rem 1.25rem; border-left: 4px solid #0ea5e9; border-radius: 0.5rem; margin: 1.5rem 0; font-size: 0.95rem; }
+  .meta strong { color: #0c4a6e; }
+  code { background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-family: "SF Mono", Monaco, Menlo, monospace; font-size: 0.9em; color: #be185d; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-size: 0.85rem; margin: 1rem 0; }
+  .screenshot { width: 100%; border: 1px solid #cbd5e1; border-radius: 0.5rem; margin: 1rem 0 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .caption { color: #64748b; font-size: 0.85rem; font-style: italic; margin-bottom: 1.5rem; text-align: center; }
+  .step { background: #eff6ff; padding: 0.4rem 0.7rem; border-radius: 0.4rem; font-weight: 700; color: #0369a1; display: inline-block; margin-right: 0.5rem; font-size: 0.85rem; }
+  .publico { background: #dcfce7; color: #166534; padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.8rem; font-weight: 600; }
+  .privado { background: #fee2e2; color: #991b1b; padding: 0.2rem 0.6rem; border-radius: 0.3rem; font-size: 0.8rem; font-weight: 600; }
+  ul, ol { margin: 0.5rem 0 1rem 1.5rem; }
+  li { margin: 0.3rem 0; }
+  .toc { background: #f8fafc; padding: 1.5rem; border-radius: 0.5rem; margin: 2rem 0; }
+  .toc h3 { margin-top: 0; color: #0c4a6e; }
+  .toc ol { margin-left: 1.2rem; }
+  .toc a { color: #0369a1; text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.6rem 0.8rem; border: 1px solid #cbd5e1; text-align: left; }
+  th { background: #f1f5f9; color: #0c4a6e; font-weight: 600; }
+  .warning { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0; }
+  .success { background: #dcfce7; border-left: 4px solid #16a34a; padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0; }
+  @media print { body { background: white; padding: 0; } .container { box-shadow: none; padding: 1rem; } .toc { page-break-after: always; } h2 { page-break-before: always; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📋 Guía de uso — Registro de Vehículos</h1>
+<p class="subtitle">Módulo de la Dirección de Tránsito y Transporte — Municipalidad de Eldorado</p>
+
+<div class="meta">
+<strong>Sitio:</strong> https://eldorado.gob.ar &nbsp;•&nbsp;
+<strong>Versión:</strong> 1.0 (Agosto 2026) &nbsp;•&nbsp;
+<strong>Stack:</strong> React + Vite + PostgreSQL (Neon)
+</div>
+
+<div class="toc">
+<h3>📑 Contenido</h3>
+<ol>
+<li><a href="#descripcion">¿Qué es el módulo?</a></li>
+<li><a href="#acceso">Cómo acceder</a></li>
+<li><a href="#publico">Parte 1 — Uso público (registrar vehículos)</a>
+  <ol>
+    <li><a href="#registrar-colectivo">Registrar un colectivo</a></li>
+    <li><a href="#registrar-especializado">Registrar transporte especializado</a></li>
+  </ol>
+</li>
+<li><a href="#admin">Parte 2 — Panel de administración</a>
+  <ol>
+    <li><a href="#login">Iniciar sesión</a></li>
+    <li><a href="#gestion-colectivos">Ver y eliminar colectivos</a></li>
+    <li><a href="#gestion-especializados">Ver transporte especializado</a></li>
+    <li><a href="#gestion-admins">Gestionar administradores</a></li>
+    <li><a href="#config">Configuración del módulo</a></li>
+  </ol>
+</li>
+<li><a href="#seguridad">Seguridad y permisos</a></li>
+<li><a href="#contacto">Contacto y soporte</a></li>
+</ol>
+</div>
+
+<h2 id="descripcion">¿Qué es el módulo?</h2>
+<p>El <strong>Registro de Vehículos</strong> es un sistema para inscribir formalmente los vehículos que prestan servicio de transporte en la ciudad de Eldorado. Permite registrar dos categorías:</p>
+<ul>
+<li><strong>Colectivos</strong> — Ómnibus y colectivos de transporte urbano, interurbano y larga distancia.</li>
+<li><strong>Transporte Especializado</strong> — Taxis, remises, autos particulares y transporte escolar.</li>
+</ul>
+<p>El módulo es <strong>público para registrar</strong> (cualquier ciudadano/empresa puede cargar su vehículo) y <strong>restringido para administrar</strong> (solo personal autorizado puede ver listados o eliminar registros).</p>
+
+<h2 id="acceso">Cómo acceder</h2>
+<p>El módulo está disponible desde el sitio municipal, en la siguiente ruta:</p>
+<pre>Inicio → Gobierno → Sec. De Gobierno → Dir. De Tránsito Y Transporte → Registro Vehículos</pre>
+
+<h3>URLs directas</h3>
+<table>
+<tr><th>Página</th><th>URL</th><th>Acceso</th></tr>
+<tr><td>Index del módulo</td><td><code>/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos</code></td><td><span class="publico">Público</span></td></tr>
+<tr><td>Registro de Colectivos</td><td><code>/.../registro-vehiculos/colectivo</code></td><td><span class="publico">Público</span></td></tr>
+<tr><td>Registro de Transporte Especializado</td><td><code>/.../registro-vehiculos/transporte-especializado</code></td><td><span class="publico">Público</span></td></tr>
+<tr><td>Panel de Administración</td><td><code>/.../registro-vehiculos/admin</code></td><td><span class="privado">Solo admin</span></td></tr>
+</table>
+
+<img src="docs/registro-vehiculos/01-index.png" class="screenshot" alt="Index del módulo Registro de Vehículos">
+<p class="caption">Index del módulo con las 3 secciones disponibles: Colectivos, Transporte Especializado y Panel de Administración.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="publico">Parte 1 — Uso público (registrar vehículos)</h2>
+<div class="success">
+<strong>✅ No requiere login.</strong> Cualquier persona puede registrar un colectivo o vehículo especializado completando los formularios de las secciones siguientes.
+</div>
+
+<h3 id="registrar-colectivo">Registrar un colectivo</h3>
+<p>Dirigirse a <strong>Registro de Colectivos</strong>. El formulario se divide en 3 secciones:</p>
+<ol>
+<li><strong>Información General</strong> — tipo de vehículo, marca, modelo, patente y titular (todos obligatorios).</li>
+<li><strong>Especificaciones Técnicas</strong> — número de asientos, largo del coche, año de fabricación, tipo de motor y tipo de combustible (todos opcionales).</li>
+<li><strong>Documentación y Vencimientos</strong> — vencimiento de VTV, número de póliza de seguro y vencimiento de póliza (opcionales).</li>
+</ol>
+
+<img src="docs/registro-vehiculos/02-colectivo-vacio.png" class="screenshot" alt="Formulario de registro de colectivo vacío">
+<p class="caption">Formulario de Colectivos al ingresar — todos los campos se muestran vacíos con placeholders descriptivos.</p>
+
+<p>A continuación, completar los datos del vehículo:</p>
+
+<img src="docs/registro-vehiculos/03-colectivo-lleno.png" class="screenshot" alt="Formulario de colectivo con datos">
+<p class="caption">Ejemplo de formulario completo: Mercedes-Benz OF 1721, patente AB 123 CD, 42 asientos, etc.</p>
+
+<p>Una vez completado, hacer clic en <strong>Guardar Registro</strong>:</p>
+
+<img src="docs/registro-vehiculos/04-colectivo-exito.png" class="screenshot" alt="Confirmación de registro exitoso">
+<p class="caption">Confirmación visual de éxito. El mensaje muestra la patente y marca/modelo registrados. Hay un enlace para cargar otro colectivo.</p>
+
+<div class="warning">
+<strong>⚠️ Nota:</strong> La patente debe ser única. Si ya existe un colectivo con la misma patente, el sistema mostrará un error "Patente ya registrada".
+</div>
+
+<h3 id="registrar-especializado">Registrar transporte especializado</h3>
+<p>Dirigirse a <strong>Registro de Transporte Especializado</strong>. El formulario se divide en 3 secciones más extensas:</p>
+<ol>
+<li><strong>Datos Particulares y Vehiculares</strong> — apellido, DNI, dominio/patente, marca, modelo y observaciones.</li>
+<li><strong>Datos Resolutivos</strong> — licencia, resolución, fecha de resolución, tipo de servicio (auto / taxi / remis / transporte escolar), parada, fechas de vencimiento de VTV y seguro, número de póliza y fecha de habilitación.</li>
+<li><strong>Datos de la Empresa</strong> — empresa, propietario, dirección, móvil asignado y teléfono de contacto.</li>
+</ol>
+
+<img src="docs/registro-vehiculos/05-especializado-vacio.png" class="screenshot" alt="Formulario de transporte especializado vacío">
+<p class="caption">Formulario de Transporte Especializado en blanco — 19 campos en total.</p>
+
+<p>Completar todos los campos obligatorios (marcados con <code>*</code>):</p>
+
+<img src="docs/registro-vehiculos/06-especializado-lleno.png" class="screenshot" alt="Formulario especializado completo">
+<p class="caption">Ejemplo completo: Apellido Gonzalez, DNI 30123456, dominio AA 999 BB, Toyota Corolla, tipo servicio Taxi, Resolución RES-2026-042, etc.</p>
+
+<p>Hacer clic en <strong>Guardar Registro</strong>:</p>
+
+<img src="docs/registro-vehiculos/07-especializado-exito.png" class="screenshot" alt="Éxito en registro especializado">
+<p class="caption">Confirmación: "Vehículo registrado con éxito — Dominio AA 999 BB — Toyota Corolla (taxi)".</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="admin">Parte 2 — Panel de administración</h2>
+<div class="warning">
+<strong>🔒 Requiere credenciales.</strong> El acceso a esta sección está restringido a usuarios administradores del módulo. Si no tenés usuario, contactá al área de Desarrollo Tecnológico.
+</div>
+
+<h3 id="login">Iniciar sesión</h3>
+<p>Ir a <strong>Panel de Administración</strong>. La pantalla de login se muestra automáticamente:</p>
+
+<img src="docs/registro-vehiculos/08-admin-login.png" class="screenshot" alt="Pantalla de login del panel admin">
+<p class="caption">Login — fondo blanco con un panel central con campos Usuario y Contraseña.</p>
+
+<p>Ingresar las credenciales provistas por el administrador del sistema:</p>
+
+<img src="docs/registro-vehiculos/09-admin-login-lleno.png" class="screenshot" alt="Login con credenciales">
+<p class="caption">Credenciales completadas — Usuario1 / unoUsuario.</p>
+
+<p>Tras hacer clic en <strong>Ingresar</strong>, se accede al panel principal con 4 pestañas:</p>
+
+<img src="docs/registro-vehiculos/10-admin-panel-colectivos.png" class="screenshot" alt="Panel admin tab Colectivos">
+<p class="caption">Panel de Administración — Tab "Colectivos" activo. Muestra la tabla con todos los colectivos registrados, ordenados por fecha de registro (más reciente primero). Cada fila tiene un botón "Eliminar" rojo.</p>
+
+<h3 id="gestion-colectivos">Ver y eliminar colectivos</h3>
+<p>En la pestaña <strong>Colectivos</strong>:</p>
+<ul>
+<li>Ver todos los registros cargados con su información completa: patente, marca/modelo, tipo, titular, asientos, fechas de VTV y póliza.</li>
+<li>Para eliminar un registro, hacer clic en <strong>Eliminar</strong> (rojo) en la fila correspondiente.</li>
+<li>El sistema pedirá confirmación antes de borrar.</li>
+</ul>
+
+<h3 id="gestion-especializados">Ver transporte especializado</h3>
+<p>Cambiar a la pestaña <strong>Transporte Especializado</strong>:</p>
+
+<img src="docs/registro-vehiculos/11-admin-especializados.png" class="screenshot" alt="Tab Transporte Especializado">
+<p class="caption">Listado de vehículos especializados. Se muestran: dominio, apellido y DNI del titular, marca/modelo, tipo de servicio, empresa y número de resolución con su fecha.</p>
+
+<h3 id="gestion-admins">Gestionar administradores</h3>
+<p>La pestaña <strong>Administradores</strong> permite:</p>
+<ol>
+<li>Ver la lista de usuarios administradores actuales.</li>
+<li>Crear un nuevo administrador completando usuario, contraseña, nombre y email (este último opcional).</li>
+<li>Eliminar administradores secundarios (no se puede eliminar al admin principal <code>Usuario1</code>).</li>
+</ol>
+
+<img src="docs/registro-vehiculos/12-admin-admins.png" class="screenshot" alt="Tab Administradores">
+<p class="caption">Listado de administradores actuales y formulario para agregar uno nuevo.</p>
+
+<p>Completar los datos del nuevo admin:</p>
+
+<img src="docs/registro-vehiculos/13-admin-crear-admin-form.png" class="screenshot" alt="Form crear admin">
+<p class="caption">Formulario completo: supervisor1 / Sup3rvisor2026! / Maria Lopez / maria.lopez@eldorado.gob.ar</p>
+
+<p>Al hacer clic en <strong>Crear admin</strong>, el sistema valida los datos y crea el nuevo usuario:</p>
+
+<img src="docs/registro-vehiculos/14-admin-creado.png" class="screenshot" alt="Admin creado exitosamente">
+<p class="caption">Mensaje "Administrador creado con éxito" y el nuevo admin ya aparece en la lista inferior.</p>
+
+<h3 id="config">Configuración del módulo</h3>
+<p>La pestaña <strong>Configuración</strong> muestra el estado actual del módulo en formato JSON:</p>
+
+<img src="docs/registro-vehiculos/15-admin-config.png" class="screenshot" alt="Tab Configuración">
+<p class="caption">Estado del módulo: <code>modulo_pausado: false</code>, <code>permitir_publico: true</code>. La configuración detallada se gestiona desde la base de datos.</p>
+
+<h3>Cerrar sesión</h3>
+<p>Para salir del panel, hacer clic en <strong>Cerrar sesión</strong> arriba a la derecha. El sistema vuelve a la pantalla de login:</p>
+
+<img src="docs/registro-vehiculos/16-admin-logout.png" class="screenshot" alt="Logout exitoso">
+<p class="caption">Tras cerrar sesión, vuelve a aparecer el formulario de login. La sesión autenticada se elimina del navegador.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<h2 id="seguridad">Seguridad y permisos</h2>
+<p>El módulo implementa distintos niveles de acceso:</p>
+
+<table>
+<tr><th>Endpoint</th><th>Método</th><th>Acceso</th></tr>
+<tr><td><code>/api/registro-vehiculos/colectivos</code></td><td>POST</td><td><span class="publico">Público</span> — registrar</td></tr>
+<tr><td><code>/api/registro-vehiculos/especializados</code></td><td>POST</td><td><span class="publico">Público</span> — registrar</td></tr>
+<tr><td><code>/api/registro-vehiculos/colectivos</code></td><td>GET</td><td><span class="publico">Público</span> — listar</td></tr>
+<tr><td><code>/api/registro-vehiculos/especializados</code></td><td>GET</td><td><span class="publico">Público</span> — listar</td></tr>
+<tr><td><code>/api/registro-vehiculos/config</code></td><td>GET</td><td><span class="publico">Público</span> — estado del módulo</td></tr>
+<tr><td><code>/api/registro-vehiculos/colectivos/:id</code></td><td>DELETE</td><td><span class="privado">Solo admin</span></td></tr>
+<tr><td><code>/api/registro-vehiculos/especializados/:id</code></td><td>DELETE</td><td><span class="privado">Solo admin</span></td></tr>
+<tr><td><code>/api/registro-vehiculos/admins</code></td><td>GET/POST/DELETE</td><td><span class="privado">Solo admin</span></td></tr>
+<tr><td><code>/api/registro-vehiculos/auth/login</code></td><td>POST</td><td><span class="publico">Público</span> — login</td></tr>
+</table>
+
+<p>La autenticación de administradores se realiza mediante header HTTP <code>Authorization: Bearer &lt;usuario&gt;:&lt;hash&gt;</code>, donde el hash se calcula con la función <code>simpleHash</code> sobre la contraseña. El navegador guarda la sesión en <code>localStorage</code> con un TTL de 8 horas.</p>
+
+<h2 id="contacto">Contacto y soporte</h2>
+<p>Para reportar errores o solicitar nuevas funcionalidades, contactar al <strong>Departamento de Desarrollo Tecnológico</strong> de la Municipalidad de Eldorado.</p>
+
+<hr style="margin: 3rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+<p style="text-align: center; color: #94a3b8; font-size: 0.85rem;">
+Documentación generada el 10 de agosto de 2026 &nbsp;•&nbsp; Municipalidad de la Ciudad de Eldorado
+</p>
+
+</div>
+</body>
+</html>
