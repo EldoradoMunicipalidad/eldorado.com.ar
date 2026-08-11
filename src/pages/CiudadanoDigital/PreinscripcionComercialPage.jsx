@@ -21,6 +21,7 @@ import {
   Info,
 } from 'lucide-react';
 import { loadFieldsConfig, getVisibleFieldsForStep } from '../../data/preinscripcionFieldsConfig';
+import { validarDNI, validarCUIT, validarEmail, validarTelefono } from '../../utils/validators';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const ALLOWED_EXTENSIONS = /\.(pdf|jpg|jpeg|png|gif|webp)$/i;
@@ -257,10 +258,33 @@ export default function PreinscripcionComercialPage() {
       if (field.type === 'file') return;
       if (field.key === 'tipo_persona') return;
 
+      const value = formData[field.key];
+
+      // Required check
       if (field.required) {
-        const value = formData[field.key];
         if (!value || (typeof value === 'string' && !value.trim())) {
           errs[field.key] = `${field.label} es obligatorio`;
+          return;
+        }
+      }
+
+      // Si el campo esta vacio y no es required, no validar formato
+      if (!value || (typeof value === 'string' && !value.trim())) return;
+
+      // Validaciones de formato segun step y nombre del campo
+      if (step === 1) {
+        if (field.key === 'dni') {
+          const r = validarDNI(value);
+          if (!r.ok) errs.dni = r.error;
+        } else if (field.key === 'cuit_cuil') {
+          const r = validarCUIT(value);
+          if (!r.ok) errs.cuit_cuil = r.error;
+        } else if (field.key === 'email') {
+          const r = validarEmail(value);
+          if (!r.ok) errs.email = r.error;
+        } else if (field.key === 'telefono') {
+          const r = validarTelefono(value);
+          if (!r.ok) errs.telefono = r.error;
         }
       }
     });

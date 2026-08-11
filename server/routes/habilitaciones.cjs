@@ -1,4 +1,7 @@
 const express = require('express')
+// Cargamos validators.js (es JS puro, compatible con Node)
+const validatorsPath = require('path').join(__dirname, '..', '..', 'src', 'utils', 'validators.js')
+const { validarDNI, validarCUIT, validarEmail, validarTelefono } = require(validatorsPath)
 const router = express.Router()
 const pool = require('../db.cjs')
 const multer = require('multer')
@@ -234,9 +237,46 @@ router.get('/', requireAdmin, async (req, res) => {
 })
 
 // ─── 2. POST /api/habilitaciones ─ Crear nueva solicitud ────────────────
+// Publico: cualquier persona puede registrar. Pero validamos servidor-side
+// que los datos sensibles (DNI, CUIT, email, telefono) tengan formato valido.
 router.post('/', async (req, res) => {
   try {
     const body = req.body
+
+    // Validaciones de formato servidor-side (no confiar en frontend)
+    const fieldErrors = []
+
+    // DNI (solo si es persona fisica)
+    if (body.tipo_persona === 'fisica' && body.dni) {
+      const r = validarDNI(body.dni)
+      if (!r.ok) fieldErrors.push(`DNI: ${r.error}`)
+    }
+
+    // CUIT (siempre, es obligatorio)
+    if (body.cuit) {
+      const r = validarCUIT(body.cuit)
+      if (!r.ok) fieldErrors.push(`CUIT: ${r.error}`)
+    }
+
+    // Email (siempre)
+    if (body.email) {
+      const r = validarEmail(body.email)
+      if (!r.ok) fieldErrors.push(`Email: ${r.error}`)
+    }
+
+    // Telefono (siempre)
+    if (body.telefono) {
+      const r = validarTelefono(body.telefono)
+      if (!r.ok) fieldErrors.push(`Telefono: ${r.error}`)
+    }
+
+    if (fieldErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Datos invalidos',
+        detalles: fieldErrors,
+      })
+    }
+
     const { rows } = await pool.query(
       `INSERT INTO habilitaciones (
         tipo_persona, dni, cuit, apellido, nombre, domicilio, email, telefono,
@@ -308,6 +348,32 @@ router.get('/:id', requireAdmin, async (req, res) => {
 router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const body = req.body
+
+    // Validaciones de formato en patch
+    const fieldErrors = []
+    if (body.dni !== undefined) {
+      const r = validarDNI(body.dni)
+      if (!r.ok) fieldErrors.push(`DNI: ${r.error}`)
+    }
+    if (body.cuit !== undefined) {
+      const r = validarCUIT(body.cuit)
+      if (!r.ok) fieldErrors.push(`CUIT: ${r.error}`)
+    }
+    if (body.email !== undefined) {
+      const r = validarEmail(body.email)
+      if (!r.ok) fieldErrors.push(`Email: ${r.error}`)
+    }
+    if (body.telefono !== undefined) {
+      const r = validarTelefono(body.telefono)
+      if (!r.ok) fieldErrors.push(`Telefono: ${r.error}`)
+    }
+    if (fieldErrors.length > 0) {
+      return res.status(400).json({
+        error: 'Datos invalidos',
+        detalles: fieldErrors,
+      })
+    }
+
     const fields = [
       'tipo_persona','dni','cuit','apellido','nombre','domicilio','email','telefono',
       'seccion','manzana','parcela','direccion','local_oficina','barrio',

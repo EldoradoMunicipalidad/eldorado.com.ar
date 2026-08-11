@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { DEFAULT_FIELDS_CONFIG, loadFieldsConfig, saveFieldsConfig } from '../../data/preinscripcionFieldsConfig';
 import { exportListadoPDF, exportSolicitudPDF } from '../../utils/pdfExporter';
+import { validarDNI, validarCUIT, validarEmail, validarTelefono } from '../../utils/validators';
 
 const STATUS_OPTIONS = [
   { value: 'pendiente', label: 'Pendiente', color: 'bg-amber-100 text-amber-700' },
@@ -462,6 +463,30 @@ export default function PreinscripcionComercialAdminPage() {
 
   const handleSaveDetail = async () => {
     if (!selectedItem) return;
+
+    // Validar datos sensibles antes de enviar
+    const fieldErrors = []
+    if (editForm.dni) {
+      const r = validarDNI(editForm.dni)
+      if (!r.ok) fieldErrors.push(`DNI: ${r.error}`)
+    }
+    if (editForm.cuit) {
+      const r = validarCUIT(editForm.cuit)
+      if (!r.ok) fieldErrors.push(`CUIT: ${r.error}`)
+    }
+    if (editForm.email) {
+      const r = validarEmail(editForm.email)
+      if (!r.ok) fieldErrors.push(`Email: ${r.error}`)
+    }
+    if (editForm.telefono) {
+      const r = validarTelefono(editForm.telefono)
+      if (!r.ok) fieldErrors.push(`Telefono: ${r.error}`)
+    }
+    if (fieldErrors.length > 0) {
+      showToast(fieldErrors.join(' | '), 'error')
+      return
+    }
+
     setSaving(true);
     try {
       const res = await fetch(`/api/habilitaciones/${selectedItem.id}`, {
