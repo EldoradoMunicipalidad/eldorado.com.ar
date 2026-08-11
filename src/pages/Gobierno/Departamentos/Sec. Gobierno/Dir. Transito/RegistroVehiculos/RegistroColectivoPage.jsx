@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SectionLayout from '../../../../../../assets/components/SectionLayout'
 import { Section } from '../../../../../../assets/components/Section'
+import RequireAuth from './RequireAuth'
 import {
   createColectivo,
   getConfig,
@@ -128,7 +129,8 @@ export default function RegistroColectivoPage() {
       />
 
       <Section>
-        <div className="max-w-4xl mx-auto">
+        <RequireAuth title="El registro de colectivos está disponible solo para usuarios autorizados.">
+          <div className="max-w-4xl mx-auto">
           {success && (
             <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
@@ -381,7 +383,8 @@ export default function RegistroColectivoPage() {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        </RequireAuth>
       </Section>
     </>
   )

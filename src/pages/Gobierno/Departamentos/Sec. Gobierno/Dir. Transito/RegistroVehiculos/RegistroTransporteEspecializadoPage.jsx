@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SectionLayout from '../../../../../../assets/components/SectionLayout'
 import { Section } from '../../../../../../assets/components/Section'
+import RequireAuth from './RequireAuth'
 import {
   createEspecializado,
   getConfig,
@@ -120,7 +121,8 @@ export default function RegistroTransporteEspecializadoPage() {
       />
 
       <Section>
-        <div className="max-w-5xl mx-auto">
+        <RequireAuth title="El registro de transporte especializado está disponible solo para usuarios autorizados.">
+          <div className="max-w-5xl mx-auto">
           {success && (
             <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl p-6 flex items-start gap-4">
               <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shrink-0">
@@ -282,7 +284,8 @@ export default function RegistroTransporteEspecializadoPage() {
               </button>
             </div>
           </form>
-        </div>
+          </div>
+        </RequireAuth>
       </Section>
     </>
   )

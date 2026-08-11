@@ -31,7 +31,7 @@ export async function getColectivos() {
 export async function createColectivo(data) {
   const res = await fetch(`${API}/colectivos`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(data),
   })
   const result = await res.json().catch(() => ({}))
@@ -64,7 +64,7 @@ export async function getEspecializados() {
 export async function createEspecializado(data) {
   const res = await fetch(`${API}/especializados`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(data),
   })
   const result = await res.json().catch(() => ({}))

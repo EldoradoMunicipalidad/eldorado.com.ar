@@ -90,7 +90,7 @@ router.get('/colectivos', async (req, res) => {
   }
 })
 
-router.post('/colectivos', async (req, res) => {
+router.post('/colectivos', requireAdmin, async (req, res) => {
   try {
     const data = req.body
     const required = ['tipo_vehiculo', 'marca', 'modelo', 'patente', 'titular']
@@ -139,7 +139,7 @@ router.get('/especializados', async (req, res) => {
   }
 })
 
-router.post('/especializados', async (req, res) => {
+router.post('/especializados', requireAdmin, async (req, res) => {
   try {
     const data = req.body
     const required = ['apellido', 'dni', 'dominio', 'marca', 'modelo', 'licencia', 'resolucion',
