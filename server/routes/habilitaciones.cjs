@@ -1,7 +1,17 @@
 const express = require('express')
-// Cargamos validators.js (es JS puro, compatible con Node)
-const validatorsPath = require('path').join(__dirname, '..', '..', 'src', 'utils', 'validators.js')
-const { validarDNI, validarCUIT, validarEmail, validarTelefono } = require(validatorsPath)
+// Leemos validators.js manualmente (es ESM con 'export', no se puede require()).
+// Lo parseamos a CJS en runtime.
+const validatorsSrc = require('fs').readFileSync(
+  require('path').join(__dirname, '..', '..', 'src', 'utils', 'validators.js'),
+  'utf8'
+)
+const validatorsModule = new Function(
+  'exports',
+  validatorsSrc.replace(/export\s+function\s+(\w+)/g, 'exports.$1 = function')
+)
+const vExports = {}
+validatorsModule(vExports)
+const { validarDNI, validarCUIT, validarEmail, validarTelefono } = vExports
 const router = express.Router()
 const pool = require('../db.cjs')
 const multer = require('multer')
