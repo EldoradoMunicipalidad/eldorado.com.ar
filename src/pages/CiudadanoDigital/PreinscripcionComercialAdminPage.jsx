@@ -153,6 +153,14 @@ export default function PreinscripcionComercialAdminPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  // Helper: arma header Authorization Bearer para llamadas a endpoints protegidos.
+  const getAuthHeaders = () => {
+    const user = sessionStorage.getItem('habilitaciones_admin_user');
+    const pass = sessionStorage.getItem('habilitaciones_admin_pass');
+    if (!user || !pass) return {};
+    return { Authorization: `Bearer ${user}:${pass}` };
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoginError('');
@@ -166,24 +174,28 @@ export default function PreinscripcionComercialAdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: loginUser.trim(), password: loginPass }),
       });
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.authenticated) {
+        // Guardamos username + password en sessionStorage para usarlo como Bearer
+        // en cada llamada a endpoint protegido. Se borra en logout / cerrar pestaña.
         sessionStorage.setItem('habilitaciones_admin_auth', 'true');
+        sessionStorage.setItem('habilitaciones_admin_user', loginUser.trim());
+        sessionStorage.setItem('habilitaciones_admin_pass', loginPass);
         setIsAuthenticated(true);
+      } else if (res.status === 429) {
+        setLoginError('Demasiados intentos. Esperá 15 minutos e intentá de nuevo.');
       } else {
-        setLoginError('Usuario o contraseña incorrectos');
+        setLoginError(data.error || 'Usuario o contraseña incorrectos');
       }
-    } catch {
-      if (loginUser === 'admin' && loginPass === 'admin') {
-        sessionStorage.setItem('habilitaciones_admin_auth', 'true');
-        setIsAuthenticated(true);
-      } else {
-        setLoginError('Usuario o contraseña incorrectos');
-      }
+    } catch (err) {
+      setLoginError('No se pudo conectar al servidor. Intentá más tarde.');
     }
   };
 
   const handleLogout = () => {
     sessionStorage.removeItem('habilitaciones_admin_auth');
+    sessionStorage.removeItem('habilitaciones_admin_user');
+    sessionStorage.removeItem('habilitaciones_admin_pass');
     setIsAuthenticated(false);
     setLoginUser('');
     setLoginPass('');
@@ -194,13 +206,22 @@ export default function PreinscripcionComercialAdminPage() {
     if (!isAuthenticated) return;
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/habilitaciones');
+        const res = await fetch('/api/habilitaciones', {
+          headers: getAuthHeaders(),
+        });
         if (res.ok) {
           const data = await res.json();
           setSolicitudes(data.entries || data);
           setBackendAvailable(true);
+        } else if (res.status === 401) {
+          // Sesion expirada o invalida — forzar re-login
+          setIsAuthenticated(false);
+          sessionStorage.removeItem('habilitaciones_admin_auth');
+          sessionStorage.removeItem('habilitaciones_admin_user');
+          sessionStorage.removeItem('habilitaciones_admin_pass');
+          setSolicitudes([]);
+          setLoginError('Tu sesión expiró. Volvé a iniciar sesión.');
         } else {
-          // Server responded but returned error — show empty state, not demo
           setSolicitudes([]);
           setBackendAvailable(false);
         }
@@ -445,7 +466,7 @@ export default function PreinscripcionComercialAdminPage() {
     try {
       const res = await fetch(`/api/habilitaciones/${selectedItem.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(editForm),
       });
       if (res.ok) {
@@ -485,7 +506,7 @@ export default function PreinscripcionComercialAdminPage() {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`/api/habilitaciones/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/habilitaciones/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (res.ok || true) {
         setSolicitudes((prev) => prev.filter((s) => s.id !== id));
         showToast('Solicitud eliminada');
@@ -516,7 +537,7 @@ export default function PreinscripcionComercialAdminPage() {
   const loadAdmins = async () => {
     setLoadingAdmins(true);
     try {
-      const res = await fetch('/api/habilitaciones/admins');
+      const res = await fetch('/api/habilitaciones/admins', { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setAdmins(data);
@@ -536,7 +557,7 @@ export default function PreinscripcionComercialAdminPage() {
     try {
       const res = await fetch('/api/habilitaciones/admins', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ username: newAdminUser.trim(), password: newAdminPass }),
       });
       if (res.ok) {
@@ -555,7 +576,7 @@ export default function PreinscripcionComercialAdminPage() {
 
   const handleDeleteAdmin = async (username) => {
     try {
-      const res = await fetch(`/api/habilitaciones/admins/${encodeURIComponent(username)}`, { method: 'DELETE' });
+      const res = await fetch(`/api/habilitaciones/admins/${encodeURIComponent(username)}`, { method: 'DELETE', headers: getAuthHeaders() });
       if (res.ok) {
         showToast(`Admin "${username}" eliminado`);
         setShowDeleteAdminConfirm(null);
@@ -749,7 +770,7 @@ export default function PreinscripcionComercialAdminPage() {
                     value={loginUser}
                     onChange={(e) => setLoginUser(e.target.value)}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
-                    placeholder="admin"
+                    placeholder="Ingresá tu usuario"
                     autoFocus
                   />
                 </div>

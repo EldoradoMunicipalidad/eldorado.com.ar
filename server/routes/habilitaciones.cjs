@@ -16,7 +16,9 @@ const emailTransporter = nodemailer.createTransport({
   secure: false, // STARTTLS
   auth: {
     user: EMAIL_FROM,
-    pass: '*5OXyfP@',
+    // Tomamos la password de la variable de entorno EMAIL_PASSWORD
+    // (configurada en Dokploy). NO commitear al repo.
+    pass: process.env.EMAIL_PASSWORD || '',  // caera en fallback vacio si no se setea
   },
   tls: { rejectUnauthorized: false },
 })
@@ -111,15 +113,42 @@ async function sendNotificationEmail(data, id) {
   }
 }
 
-// ─── Simple hash function (mirrors frontend & server/index.cjs) ──────
-function simpleHash(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
+// ─── bcrypt para passwords (mirrors frontend helper) ───────────────────
+const bcrypt = require('bcrypt')
+
+// ─── Rate limiting: 5 intentos cada 15 minutos por IP ─────────────────
+const rateLimit = require('express-rate-limit')
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Demasiados intentos. Esperá 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+// ─── Auth middleware ──────────────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  const auth = req.headers['authorization'] || ''
+  const m = auth.match(/^Bearer\s+([^:]+):(.+)$/)
+  if (!m) {
+    return res.status(401).json({ error: 'No autorizado: credenciales requeridas' })
   }
-  return hash.toString(36)
+  const [, username, password] = m
+  const pool = require('../db.cjs')
+  pool.query(
+    'SELECT username, password_hash FROM admins WHERE username = $1',
+    [username]
+  ).then(({ rows }) => {
+    if (rows.length > 0 && bcrypt.compareSync(password, rows[0].password_hash)) {
+      req.admin = { username: rows[0].username }
+      next()
+    } else {
+      res.status(401).json({ error: 'No autorizado: credenciales inválidas' })
+    }
+  }).catch((err) => {
+    console.error('requireAdmin error:', err)
+    res.status(500).json({ error: 'Error de autenticación' })
+  })
 }
 
 // ─── Ensure uploads directory exists ────────────────────────────────
@@ -155,7 +184,8 @@ const upload = multer({
 })
 
 // ─── 1. GET /api/habilitaciones ─ Lista paginada con search y status filter ─
-router.get('/', async (req, res) => {
+// Protegido: solo admins autenticados pueden listar datos personales (DNI, CUIT, email).
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 10))
@@ -257,7 +287,8 @@ router.post('/', async (req, res) => {
 })
 
 // ─── 3. GET /api/habilitaciones/:id ─ Obtener detalle ───────────────────
-router.get('/:id', async (req, res) => {
+// Protegido: solo admins autenticados pueden ver detalle de una solicitud.
+router.get('/:id', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       'SELECT * FROM habilitaciones WHERE id = $1',
@@ -274,7 +305,7 @@ router.get('/:id', async (req, res) => {
 })
 
 // ─── 4. PATCH /api/habilitaciones/:id ─ Actualizar cualquier campo ──────
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const body = req.body
     const fields = [
@@ -323,7 +354,7 @@ router.patch('/:id', async (req, res) => {
 })
 
 // ─── 5. DELETE /api/habilitaciones/:id ─ Eliminar ──────────────────────
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const { rowCount } = await pool.query(
       'DELETE FROM habilitaciones WHERE id = $1',
@@ -359,16 +390,29 @@ router.post('/upload', (req, res) => {
 })
 
 // ─── 7. POST /api/habilitaciones/auth/login ─ Login simple ─────────────
-router.post('/auth/login', async (req, res) => {
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body
-    const hash = simpleHash(password)
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
+    }
     const { rows } = await pool.query(
-      'SELECT username FROM admins WHERE username = $1 AND password_hash = $2',
-      [username, hash]
+      'SELECT username, password_hash FROM admins WHERE username = $1',
+      [username]
     )
-    if (rows.length > 0) {
-      res.json({ authenticated: true, username: rows[0].username })
+    if (rows.length === 0) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    const ok = bcrypt.compareSync(password, rows[0].password_hash)
+    if (ok) {
+      // Actualizar last_login sin bloquear la respuesta
+      pool.query('UPDATE admins SET last_login = NOW() WHERE username = $1', [username])
+        .catch((err) => console.error('Error actualizando last_login:', err.message))
+      res.json({
+        authenticated: true,
+        username: rows[0].username,
+        token: `${username}:${password}`,  // El cliente lo envia como Bearer en futuras requests
+      })
     } else {
       res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
     }
@@ -379,7 +423,7 @@ router.post('/auth/login', async (req, res) => {
 })
 
 // ─── 8. GET /api/habilitaciones/admins ─ Listar admins ──────────────────
-router.get('/admins', async (req, res) => {
+router.get('/admins', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       'SELECT username, rol, nombre, email, last_login FROM admins ORDER BY username'
@@ -392,7 +436,7 @@ router.get('/admins', async (req, res) => {
 })
 
 // ─── 9. POST /api/habilitaciones/admins ─ Crear admin ───────────────────
-router.post('/admins', async (req, res) => {
+router.post('/admins', requireAdmin, async (req, res) => {
   try {
     const { username, password, nombre, email } = req.body
     if (!username || !password) {
@@ -401,7 +445,7 @@ router.post('/admins', async (req, res) => {
     if (username.length < 3 || password.length < 4) {
       return res.status(400).json({ error: 'El usuario debe tener al menos 3 caracteres y la contraseña al menos 4' })
     }
-    const hash = simpleHash(password)
+    const hash = bcrypt.hashSync(password, 12)
     const { rows } = await pool.query(
       `INSERT INTO admins (username, password_hash, rol, nombre, email)
        VALUES ($1, $2, 'admin', $3, $4)
@@ -420,7 +464,7 @@ router.post('/admins', async (req, res) => {
 })
 
 // ─── 10. DELETE /api/habilitaciones/admins/:username ─ Eliminar admin ────
-router.delete('/admins/:username', async (req, res) => {
+router.delete('/admins/:username', requireAdmin, async (req, res) => {
   try {
     const { username } = req.params
     if (username === 'admin') {
