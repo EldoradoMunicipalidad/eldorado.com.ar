@@ -59,7 +59,7 @@
 <ol>
 <li><a href="#descripcion">¿Qué es el módulo?</a></li>
 <li><a href="#acceso">Cómo acceder</a></li>
-<li><a href="#publico">Parte 1 — Uso público (registrar vehículos)</a>
+<li><a href="#publico">Parte 1 — Acceso restringido (registrar vehículos)</a>
   <ol>
     <li><a href="#registrar-colectivo">Registrar un colectivo</a></li>
     <li><a href="#registrar-especializado">Registrar transporte especializado</a></li>
@@ -95,8 +95,8 @@
 <table>
 <tr><th>Página</th><th>URL</th><th>Acceso</th></tr>
 <tr><td>Index del módulo</td><td><code>/gobierno/secretaria-gobierno/transito-y-transporte/registro-vehiculos</code></td><td><span class="publico">Público</span></td></tr>
-<tr><td>Registro de Colectivos</td><td><code>/.../registro-vehiculos/colectivo</code></td><td><span class="publico">Público</span></td></tr>
-<tr><td>Registro de Transporte Especializado</td><td><code>/.../registro-vehiculos/transporte-especializado</code></td><td><span class="publico">Público</span></td></tr>
+<tr><td>Registro de Colectivos</td><td><code>/.../registro-vehiculos/colectivo</code></td><td><span class="privado">Solo admin</span></td></tr>
+<tr><td>Registro de Transporte Especializado</td><td><code>/.../registro-vehiculos/transporte-especializado</code></td><td><span class="privado">Solo admin</span></td></tr>
 <tr><td>Panel de Administración</td><td><code>/.../registro-vehiculos/admin</code></td><td><span class="privado">Solo admin</span></td></tr>
 </table>
 
@@ -104,31 +104,31 @@
 <p class="caption">Index del módulo con las 3 secciones disponibles: Colectivos, Transporte Especializado y Panel de Administración.</p>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
-<h2 id="publico">Parte 1 — Uso público (registrar vehículos)</h2>
+<h2 id="publico">Parte 1 — Acceso restringido (registrar vehículos)</h2>
 <div class="success">
-<strong>✅ No requiere login.</strong> Cualquier persona puede registrar un colectivo o vehículo especializado completando los formularios de las secciones siguientes.
+<strong>🔒 Solo usuarios autorizados.</strong> El registro de colectivos y vehículos especializados requiere inicio de sesión. Solo personal con usuario y contraseña puede cargar datos. Si no tenés usuario, contactá al administrador del sistema.
 </div>
 
 <h3 id="registrar-colectivo">Registrar un colectivo</h3>
-<p>Dirigirse a <strong>Registro de Colectivos</strong>. El formulario se divide en 3 secciones:</p>
+<p>Dirigirse a <strong>Registro de Colectivos</strong>. Si no hay sesion iniciada, aparecera una pantalla de <strong>Acceso restringido</strong> con un formulario de login. Tras autenticarse, se mostrara el formulario completo dividido en 3 secciones:</p>
 <ol>
 <li><strong>Información General</strong> — tipo de vehículo, marca, modelo, patente y titular (todos obligatorios).</li>
 <li><strong>Especificaciones Técnicas</strong> — número de asientos, largo del coche, año de fabricación, tipo de motor y tipo de combustible (todos opcionales).</li>
 <li><strong>Documentación y Vencimientos</strong> — vencimiento de VTV, número de póliza de seguro y vencimiento de póliza (opcionales).</li>
 </ol>
 
-<img src="02-colectivo-vacio.png" class="screenshot" alt="Formulario de registro de colectivo vacío">
-<p class="caption">Formulario de Colectivos al ingresar — todos los campos se muestran vacíos con placeholders descriptivos.</p>
+<img src="02-colectivo-login.png" class="screenshot" alt="Formulario de registro de colectivo vacío">
+<p class="caption">Sin sesión iniciada, la página de Colectivos muestra la pantalla "Acceso restringido" con un formulario de login.</p>
 
 <p>A continuación, completar los datos del vehículo:</p>
 
-<img src="03-colectivo-lleno.png" class="screenshot" alt="Formulario de colectivo con datos">
-<p class="caption">Ejemplo de formulario completo: Mercedes-Benz OF 1721, patente AB 123 CD, 42 asientos, etc.</p>
+<img src="03-colectivo-login-lleno.png" class="screenshot" alt="Formulario de colectivo con datos">
+<p class="caption">Tras autenticarse, la pantalla "Acceso restringido" se reemplaza por el formulario con sus 3 secciones.</p>
 
 <p>Una vez completado, hacer clic en <strong>Guardar Registro</strong>:</p>
 
-<img src="04-colectivo-exito.png" class="screenshot" alt="Confirmación de registro exitoso">
-<p class="caption">Confirmación visual de éxito. El mensaje muestra la patente y marca/modelo registrados. Hay un enlace para cargar otro colectivo.</p>
+<img src="04-colectivo-form-vacio.png" class="screenshot" alt="Confirmación de registro exitoso">
+<p class="caption">Formulario de Colectivos completo listo para enviar: Mercedes-Benz OF 1721, patente AB 123 CD, 42 asientos, etc.</p>
 
 <div class="warning">
 <strong>⚠️ Nota:</strong> La patente debe ser única. Si ya existe un colectivo con la misma patente, el sistema mostrará un error "Patente ya registrada".
@@ -142,18 +142,18 @@
 <li><strong>Datos de la Empresa</strong> — empresa, propietario, dirección, móvil asignado y teléfono de contacto.</li>
 </ol>
 
-<img src="05-especializado-vacio.png" class="screenshot" alt="Formulario de transporte especializado vacío">
-<p class="caption">Formulario de Transporte Especializado en blanco — 19 campos en total.</p>
+<img src="05-colectivo-lleno.png" class="screenshot" alt="Formulario de transporte especializado vacío">
+<p class="caption">Confirmación visual de éxito. El mensaje muestra la patente y marca/modelo registrados. Hay un enlace para cargar otro colectivo.</p>
 
 <p>Completar todos los campos obligatorios (marcados con <code>*</code>):</p>
 
-<img src="06-especializado-lleno.png" class="screenshot" alt="Formulario especializado completo">
-<p class="caption">Ejemplo completo: Apellido Gonzalez, DNI 30123456, dominio AA 999 BB, Toyota Corolla, tipo servicio Taxi, Resolución RES-2026-042, etc.</p>
+<img src="06-colectivo-exito.png" class="screenshot" alt="Formulario especializado completo">
+<p class="caption">Sin sesión, la página de Transporte Especializado también requiere login. Misma pantalla de "Acceso restringido" con el mismo formulario.</p>
 
 <p>Hacer clic en <strong>Guardar Registro</strong>:</p>
 
-<img src="07-especializado-exito.png" class="screenshot" alt="Éxito en registro especializado">
-<p class="caption">Confirmación: "Vehículo registrado con éxito — Dominio AA 999 BB — Toyota Corolla (taxi)".</p>
+<img src="07-especializado-login.png" class="screenshot" alt="Éxito en registro especializado">
+<p class="caption">Ejemplo completo: Apellido Gonzalez, DNI 30123456, dominio AA 999 BB, Toyota Corolla, tipo servicio Taxi, Resolución RES-2026-042, etc.</p>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <h2 id="admin">Parte 2 — Panel de administración</h2>
@@ -164,32 +164,31 @@
 <h3 id="login">Iniciar sesión</h3>
 <p>Ir a <strong>Panel de Administración</strong>. La pantalla de login se muestra automáticamente:</p>
 
-<img src="08-admin-login.png" class="screenshot" alt="Pantalla de login del panel admin">
-<p class="caption">Login — fondo blanco con un panel central con campos Usuario y Contraseña.</p>
+<img src="08-especializado-lleno.png" class="screenshot" alt="Pantalla de login del panel admin">
+<p class="caption">Confirmación: "Vehículo registrado con éxito — Dominio AA 999 BB — Toyota Corolla (taxi)".</p>
 
 <p>Ingresar las credenciales provistas por el administrador del sistema:</p>
 
-<img src="09-admin-login-lleno.png" class="screenshot" alt="Login con credenciales">
-<p class="caption">Credenciales completadas — Usuario1 / unoUsuario.</p>
+<img src="09-especializado-exito.png" class="screenshot" alt="Login con credenciales">
+<p class="caption">Panel de Administración — Tab "Colectivos" activo. Muestra la tabla con todos los colectivos registrados ordenados por fecha. Cada fila tiene su botón "Eliminar".</p>
 
 <p>Tras hacer clic en <strong>Ingresar</strong>, se accede al panel principal con 4 pestañas:</p>
 
-<img src="10-admin-panel-colectivos.png" class="screenshot" alt="Panel admin tab Colectivos">
-<p class="caption">Panel de Administración — Tab "Colectivos" activo. Muestra la tabla con todos los colectivos registrados, ordenados por fecha de registro (más reciente primero). Cada fila tiene un botón "Eliminar" rojo.</p>
+<img src="10-admin-panel.png" class="screenshot" alt="Panel admin tab Colectivos">
+<p class="caption">Tab "Administradores" — permite ver, crear y eliminar admins. Solo el admin principal (Usuario1) no puede ser eliminado.</p>
 
-<h3 id="gestion-colectivos">Ver y eliminar colectivos</h3>
-<p>En la pestaña <strong>Colectivos</strong>:</p>
+<h3 id="gestion-colectivos">Ver y eliminar registros</h3>
+<p>En la pestaña <strong>Colectivos</strong> y <strong>Transporte Especializado</strong> podés:</p>
 <ul>
-<li>Ver todos los registros cargados con su información completa: patente, marca/modelo, tipo, titular, asientos, fechas de VTV y póliza.</li>
+<li>Ver todos los registros cargados con su información completa.</li>
 <li>Para eliminar un registro, hacer clic en <strong>Eliminar</strong> (rojo) en la fila correspondiente.</li>
 <li>El sistema pedirá confirmación antes de borrar.</li>
 </ul>
 
-<h3 id="gestion-especializados">Ver transporte especializado</h3>
 <p>Cambiar a la pestaña <strong>Transporte Especializado</strong>:</p>
 
-<img src="11-admin-especializados.png" class="screenshot" alt="Tab Transporte Especializado">
-<p class="caption">Listado de vehículos especializados. Se muestran: dominio, apellido y DNI del titular, marca/modelo, tipo de servicio, empresa y número de resolución con su fecha.</p>
+<img src="11-admin-admins.png" class="screenshot" alt="Tab Transporte Especializado">
+<p class="caption">Tras cerrar sesión, vuelve a aparecer el formulario de login. La sesión autenticada se elimina del navegador.</p>
 
 <h3 id="gestion-admins">Gestionar administradores</h3>
 <p>La pestaña <strong>Administradores</strong> permite:</p>
@@ -199,39 +198,34 @@
 <li>Eliminar administradores secundarios (no se puede eliminar al admin principal <code>Usuario1</code>).</li>
 </ol>
 
-<img src="12-admin-admins.png" class="screenshot" alt="Tab Administradores">
-<p class="caption">Listado de administradores actuales y formulario para agregar uno nuevo.</p>
+
 
 <p>Completar los datos del nuevo admin:</p>
 
-<img src="13-admin-crear-admin-form.png" class="screenshot" alt="Form crear admin">
-<p class="caption">Formulario completo: supervisor1 / Sup3rvisor2026! / Maria Lopez / maria.lopez@eldorado.gob.ar</p>
+<p>Para crear un nuevo admin, completar los 4 campos (usuario, contraseña, nombre y email opcional) en el formulario superior y hacer clic en <strong>Crear admin</strong>. El nuevo usuario aparecerá inmediatamente en la lista inferior y ya podrá iniciar sesión.</p>
 
 <p>Al hacer clic en <strong>Crear admin</strong>, el sistema valida los datos y crea el nuevo usuario:</p>
 
-<img src="14-admin-creado.png" class="screenshot" alt="Admin creado exitosamente">
-<p class="caption">Mensaje "Administrador creado con éxito" y el nuevo admin ya aparece en la lista inferior.</p>
+<p>Para salir del panel, hacer clic en <strong>Cerrar sesión</strong> arriba a la derecha. El sistema vuelve a la pantalla de login y la sesión se elimina del navegador.</p>
 
 <h3 id="config">Configuración del módulo</h3>
 <p>La pestaña <strong>Configuración</strong> muestra el estado actual del módulo en formato JSON:</p>
 
-<img src="15-admin-config.png" class="screenshot" alt="Tab Configuración">
-<p class="caption">Estado del módulo: <code>modulo_pausado: false</code>, <code>permitir_publico: true</code>. La configuración detallada se gestiona desde la base de datos.</p>
+<p>El estado del módulo se muestra en formato JSON: <code>modulo_pausado</code>, <code>permitir_publico</code> y <code>notas</code>. La configuración detallada se gestiona desde la base de datos.</p>
 
 <h3>Cerrar sesión</h3>
 <p>Para salir del panel, hacer clic en <strong>Cerrar sesión</strong> arriba a la derecha. El sistema vuelve a la pantalla de login:</p>
 
-<img src="16-admin-logout.png" class="screenshot" alt="Logout exitoso">
-<p class="caption">Tras cerrar sesión, vuelve a aparecer el formulario de login. La sesión autenticada se elimina del navegador.</p>
+<p>Para salir del panel, hacer clic en <strong>Cerrar sesión</strong> arriba a la derecha. El sistema vuelve a la pantalla de login y la sesión se elimina del navegador.</p>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <h2 id="seguridad">Seguridad y permisos</h2>
-<p>El módulo implementa distintos niveles de acceso:</p>
+<p>El módulo es de <strong>uso exclusivamente interno</strong>: solo personal autorizado con usuario y contraseña puede acceder a cualquier funcionalidad (registrar, listar, eliminar, gestionar admins).</p>
 
 <table>
 <tr><th>Endpoint</th><th>Método</th><th>Acceso</th></tr>
-<tr><td><code>/api/registro-vehiculos/colectivos</code></td><td>POST</td><td><span class="publico">Público</span> — registrar</td></tr>
-<tr><td><code>/api/registro-vehiculos/especializados</code></td><td>POST</td><td><span class="publico">Público</span> — registrar</td></tr>
+<tr><td><code>/api/registro-vehiculos/colectivos</code></td><td>POST</td><td><span class="privado">Solo admin</span> — registrar</td></tr>
+<tr><td><code>/api/registro-vehiculos/especializados</code></td><td>POST</td><td><span class="privado">Solo admin</span> — registrar</td></tr>
 <tr><td><code>/api/registro-vehiculos/colectivos</code></td><td>GET</td><td><span class="publico">Público</span> — listar</td></tr>
 <tr><td><code>/api/registro-vehiculos/especializados</code></td><td>GET</td><td><span class="publico">Público</span> — listar</td></tr>
 <tr><td><code>/api/registro-vehiculos/config</code></td><td>GET</td><td><span class="publico">Público</span> — estado del módulo</td></tr>
@@ -242,6 +236,8 @@
 </table>
 
 <p>La autenticación de administradores se realiza mediante header HTTP <code>Authorization: Bearer &lt;usuario&gt;:&lt;hash&gt;</code>, donde el hash se calcula con la función <code>simpleHash</code> sobre la contraseña. El navegador guarda la sesión en <code>localStorage</code> con un TTL de 8 horas.</p>
+
+<p>Para la gestión de usuarios, solo el administrador principal (<code>Usuario1</code>) puede crear nuevos admins desde el panel, y la creación de un nuevo admin requiere estar autenticado.</p>
 
 <h2 id="contacto">Contacto y soporte</h2>
 <p>Para reportar errores o solicitar nuevas funcionalidades, contactar al <strong>Departamento de Desarrollo Tecnológico</strong> de la Municipalidad de Eldorado.</p>
