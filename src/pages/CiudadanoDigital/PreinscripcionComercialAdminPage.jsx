@@ -38,6 +38,7 @@ import {
   GripVertical,
 } from 'lucide-react';
 import { DEFAULT_FIELDS_CONFIG, loadFieldsConfig, saveFieldsConfig } from '../../data/preinscripcionFieldsConfig';
+import { exportListadoPDF, exportSolicitudPDF } from '../../utils/pdfExporter';
 
 const STATUS_OPTIONS = [
   { value: 'pendiente', label: 'Pendiente', color: 'bg-amber-100 text-amber-700' },
@@ -910,6 +911,19 @@ export default function PreinscripcionComercialAdminPage() {
               </div>
               <button
                 onClick={() => {
+                  exportListadoPDF(filteredData, {
+                    status: statusFilter,
+                    search: searchTerm,
+                    dateFrom: filterDateFrom,
+                    dateTo: filterDateTo,
+                  });
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 transition-colors"
+              >
+                <FileText className="w-4 h-4" />Exportar PDF
+              </button>
+              <button
+                onClick={() => {
                   const headers = ['Estado,Tipo,DNI/CUIT,Apellido/Razón Social,Email,Teléfono,Categoría,Trámite,Dirección,Barrio,Fecha'];
                   const rows = filteredData.map(item =>
                     `"${item.status}","${item.tipo_persona}","${item.dni || item.cuit}","${item.apellido || ''}","${item.email || ''}","${item.telefono || ''}","${item.categoria || ''}","${item.sub_categoria || ''}","${item.direccion || ''}","${item.barrio || ''}","${item.created_at || item.fecha || ''}"`
@@ -1049,6 +1063,10 @@ export default function PreinscripcionComercialAdminPage() {
                     </button>
                   </div>
                 )}
+                <button onClick={() => exportSolicitudPDF(selectedItem)}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-red-500 text-white rounded-xl font-semibold text-sm hover:bg-red-600 transition-colors">
+                  <FileText className="w-4 h-4" />Descargar PDF
+                </button>
                 <button onClick={() => { setShowDetailModal(false); setSelectedItem(null); setEditMode(false); setConfirmSave(false); }}
                   className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors">
                   <X className="w-6 h-6" />
