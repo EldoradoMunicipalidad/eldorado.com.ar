@@ -49,6 +49,10 @@ export function EmblaCarousel({ slides: propSlides }) {
                   src={slide.img}
                   alt={`Slide ${slide.id}`}
                   className="absolute inset-0 w-full h-full object-cover object-center"
+                  onError={(e) => {
+                    e.target.onerror = null
+                    e.target.src = '/slider-2.jpg'
+                  }}
                 />
               </div>
             ))}
