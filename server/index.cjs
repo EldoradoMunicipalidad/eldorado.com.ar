@@ -3,27 +3,21 @@ const path = require('path')
 const cors = require('cors')
 const pool = require('./db.cjs')
 const { askUru } = require('./uruService.cjs')
+const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('./authMiddleware.cjs')
 
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '50mb' }))
 
+const ADMIN_TABLE = 'admins'
+const requireAdmin = requireAdminFor(pool, ADMIN_TABLE)
+const loginLimiter = makeLoginLimiter()
+
 // Serve static files in production
 const distPath = path.join(__dirname, '..', 'dist')
 app.use(express.static(distPath))
 
-// ─── Simple hash function (mirrors frontend) ─────────────────────────────
-function simpleHash(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
-  }
-  return hash.toString(36)
-}
-
-// ─── CONFIG ─────────────────────────────────────────────────────────────
+// ─── CONFIG (lectura PUBLICA) ─────────────────────────────────────────────
 app.get('/api/config', async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT * FROM config WHERE id = 'default'")
@@ -40,7 +34,7 @@ app.get('/api/config', async (req, res) => {
   }
 })
 
-app.put('/api/config', async (req, res) => {
+app.put('/api/config', requireAdmin, async (req, res) => {
   try {
     const { max_per_day, turnero_paused } = req.body
     const { rows } = await pool.query(
@@ -50,11 +44,13 @@ app.put('/api/config', async (req, res) => {
     )
     res.json(rows[0])
   } catch (err) {
+    console.error('PUT /api/config error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
 
 // ─── AREAS ──────────────────────────────────────────────────────────────
+// Lectura PUBLICA (la home / ciudadano digital necesita ver nombres de areas)
 app.get('/api/areas', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM areas ORDER BY id')
@@ -64,7 +60,8 @@ app.get('/api/areas', async (req, res) => {
   }
 })
 
-app.post('/api/areas', async (req, res) => {
+// Escritura: ADMIN
+app.post('/api/areas', requireAdmin, async (req, res) => {
   try {
     const area = req.body
     const { rows } = await pool.query(
@@ -86,9 +83,8 @@ app.post('/api/areas', async (req, res) => {
   }
 })
 
-app.delete('/api/areas/:id', async (req, res) => {
+app.delete('/api/areas/:id', requireAdmin, async (req, res) => {
   try {
-    // Delete related appointments first
     await pool.query('DELETE FROM appointments WHERE area_id = $1', [req.params.id])
     await pool.query('DELETE FROM areas WHERE id = $1', [req.params.id])
     res.json({ success: true })
@@ -97,8 +93,9 @@ app.delete('/api/areas/:id', async (req, res) => {
   }
 })
 
-// ─── APPOINTMENTS (paginated) ────────────────────────────────────────
-app.get('/api/appointments', async (req, res) => {
+// ─── APPOINTMENTS ────────────────────────────────────────────────────
+// Lista: ADMIN (datos personales sensibles: nombre, apellido, dni, telefono, email, direccion)
+app.get('/api/appointments', requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 200))
@@ -143,6 +140,7 @@ app.get('/api/appointments', async (req, res) => {
   }
 })
 
+// Crear: PUBLICO (un ciudadano saca un turno)
 app.post('/api/appointments', async (req, res) => {
   try {
     const a = req.body
@@ -158,7 +156,8 @@ app.post('/api/appointments', async (req, res) => {
   }
 })
 
-app.patch('/api/appointments/:id/status', async (req, res) => {
+// Cambiar status: ADMIN
+app.patch('/api/appointments/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body
     await pool.query('UPDATE appointments SET status = $1 WHERE id = $2', [status, req.params.id])
@@ -169,26 +168,32 @@ app.patch('/api/appointments/:id/status', async (req, res) => {
 })
 
 // ─── AUTH ──────────────────────────────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+// Login: password contra admins. Devuelve token = "username:password" para Bearer en futuras requests.
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body
-    const hash = simpleHash(password)
-    const { rows } = await pool.query(
-      'SELECT username FROM admins WHERE username = $1 AND password_hash = $2',
-      [username, hash]
-    )
-    if (rows.length > 0) {
-      res.json({ authenticated: true, username: rows[0].username })
-    } else {
-      res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    if (!username || !password) {
+      return res.status(400).json({ authenticated: false, error: 'Usuario y contraseña requeridos' })
     }
+    const result = await verifyAdmin(pool, ADMIN_TABLE, username, password)
+    if (!result.ok) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    pool.query('UPDATE admins SET last_login = NOW() WHERE username = $1', [username])
+      .catch(() => {})
+    res.json({
+      authenticated: true,
+      username: result.username,
+      token: `${username}:${password}`,
+    })
   } catch (err) {
+    console.error('POST /api/auth/login error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── SEED (only if empty) ──────────────────────────────────────────────
-app.post('/api/seed', async (req, res) => {
+// ─── SEED (solo si NO hay datos; admin only por seguridad) ─────────────
+app.post('/api/seed', requireAdmin, async (req, res) => {
   try {
     const { rows: existing } = await pool.query('SELECT COUNT(*) as cnt FROM areas')
     if (parseInt(existing[0].cnt) > 0) {
@@ -212,34 +217,39 @@ app.post('/api/seed', async (req, res) => {
       )
     }
     await pool.query("INSERT INTO config (id, max_per_day, turnero_paused) VALUES ('default', 3, true) ON CONFLICT (id) DO NOTHING")
-        // NOTA: NO se siembra admin 'admin'/'admin' — riesgo de seguridad.
-        // El operador debe crear el primer admin manualmente (ver server/init.sql).
+    // NOTA: NO se siembra admin 'admin'/'admin' — riesgo de seguridad.
+    // El operador debe crear el primer admin manualmente (ver server/init.sql).
     res.json({ seeded: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── ADMINS MANAGEMENT ──────────────────────────────────────────
-app.get('/api/admins', async (req, res) => {
+// ─── ADMINS MANAGEMENT (admin only) ────────────────────────────
+app.get('/api/admins', requireAdmin, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT username FROM admins ORDER BY username')
+    const { rows } = await pool.query('SELECT username, rol FROM admins ORDER BY username')
     res.json(rows)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-app.post('/api/admins', async (req, res) => {
+app.post('/api/admins', requireAdmin, async (req, res) => {
   try {
-    const { username, password } = req.body
+    const { username, password, nombre, email } = req.body
     if (!username || !password) {
       return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
     }
-    const hash = simpleHash(password)
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(password, 12)
     await pool.query(
-      'INSERT INTO admins (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash',
-      [username, hash]
+      `INSERT INTO admins (username, password_hash, rol, nombre, email)
+       VALUES ($1, $2, 'admin', $3, $4)
+       ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
+      [username, hash, nombre || '', email || '']
     )
     res.json({ success: true, username })
   } catch (err) {
@@ -247,7 +257,7 @@ app.post('/api/admins', async (req, res) => {
   }
 })
 
-app.delete('/api/admins/:username', async (req, res) => {
+app.delete('/api/admins/:username', requireAdmin, async (req, res) => {
   try {
     if (req.params.username === 'admin') {
       return res.status(400).json({ error: 'No se puede eliminar el admin principal' })
@@ -259,22 +269,40 @@ app.delete('/api/admins/:username', async (req, res) => {
   }
 })
 
-// ─── URU CHATBOT ─────────────────────────────────────────────────────
-app.post('/api/chat', async (req, res) => {
-  const { question, context } = req.body;
-  if (!question) {
-    return res.status(400).json({ error: 'Falta pregunta' });
-  }
+app.post('/api/admins/change-password', requireAdmin, async (req, res) => {
   try {
-    const answer = await askUru(question, context || '');
-    res.json({ answer });
+    const { username, newPassword } = req.body
+    if (!username || !newPassword) {
+      return res.status(400).json({ error: 'Datos requeridos' })
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(newPassword, 12)
+    const { rowCount } = await pool.query(
+      'UPDATE admins SET password_hash = $1 WHERE username = $2',
+      [hash, username]
+    )
+    if (rowCount === 0) return res.status(404).json({ error: 'No encontrado' })
+    res.json({ success: true })
   } catch (err) {
-    console.error('[URU] Error:', err.message);
-    res.status(500).json({ error: 'Error al procesar la pregunta' });
+    res.status(500).json({ error: err.message })
   }
-});
+})
 
-// ─── HABILITACIONES COMMERCIALES ───────────────────────────────────
+// ─── CHAT (proxy a Uru) ─────────────────────────────────────────────
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages, system } = req.body
+    const response = await askUru({ messages, system })
+    res.json({ response })
+  } catch (err) {
+    console.error('POST /api/chat error:', err.message)
+    res.status(500).json({ error: 'Chat error' })
+  }
+})
+
+// ─── HABILITACIONES COMMERCIALES + OTROS MÓDULOS (routers externos) ────────
 const habilitacionesRoutes = require('./routes/habilitaciones.cjs')
 const reclamosRoutes = require('./routes/reclamos.cjs')
 const pagesRoutes = require('./routes/pages.cjs')

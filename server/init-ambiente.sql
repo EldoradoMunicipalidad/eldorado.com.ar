@@ -54,10 +54,11 @@ INSERT INTO config_ambiente (id, max_per_day, turnero_paused)
 VALUES ('default', 3, true)
 ON CONFLICT (id) DO NOTHING;
 
--- Seed admin (user: admin / password: ambiente2025 → hash: simpleHash('ambiente2025'))
-INSERT INTO admins_ambiente (username, password_hash)
-VALUES ('admin', 'alwd3i')
-ON CONFLICT (username) DO NOTHING;
+-- NOTA: NO se siembra ningún admin por defecto.
+-- El primer admin debe crearse manualmente (idealmente con bcrypt hash).
+-- user/pass: ninguno por default — usar createAdmin via API una vez logueado
+-- como primer admin creado por SQL manual. Ver server/init.sql para más detalle.
+-- Mantener 'admin'/'ambiente2025' era un riesgo crítico de seguridad.
 
 -- Seed default areas de Ambiente
 INSERT INTO areas_ambiente (id, name, description, color, icon, active, days, interval, slots_per_day, start_time, end_time) VALUES

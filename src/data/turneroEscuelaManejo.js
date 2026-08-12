@@ -1,9 +1,28 @@
 // Turnero Escuela de Manejo - PostgreSQL data layer
 // Independiente de Planeamiento y Ambiente - usa /api/escuela-manejo/*
-// Single-area: Autódromo km 4. La función getAreas() devuelve siempre
-// una sola área, por eso el frontend puede asumir área fija sin paso de selección.
+// Single-area: Autódromo km 4.
 
 const API = '/api/escuela-manejo'
+const TOKEN_KEY = 'turnero_escuela_manejo_admin_token'
+
+// ─── Token persistente en sessionStorage ──────────────────────────────────────
+export function getStoredToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY) || null } catch { return null }
+}
+export function setStoredToken(t) {
+  try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY) } catch {}
+}
+export function clearStoredToken() {
+  try { sessionStorage.removeItem(TOKEN_KEY) } catch {}
+}
+
+// ─── Auth headers para llamadas admin (Bearer) ───────────────────────
+function getAuthHeaders(json = true) {
+  const headers = json ? { 'Content-Type': 'application/json' } : {}
+  const t = getStoredToken()
+  if (t) headers['Authorization'] = `Bearer ${t}`
+  return headers
+}
 
 // ─── HELPERS ──────────────────────────────────────────
 export function generateId() {
@@ -87,7 +106,6 @@ export function meetsMinAge(birthDateStr) {
   if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) ageYears--
   if (ageYears > 16) return true
   if (ageYears < 16) return false
-  // 16 años cumplidos: verificar que pasaron al menos 6 meses desde el cumple
   const sixMonthsAfterBirth = new Date(birth)
   sixMonthsAfterBirth.setMonth(sixMonthsAfterBirth.getMonth() + 6)
   return today >= sixMonthsAfterBirth
@@ -152,16 +170,18 @@ export async function getConfig() {
 
 export async function saveConfig(config) {
   try {
-    await fetch(`${API}/config`, {
+    const res = await fetch(`${API}/config`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         max_per_day: config.maxPerDay,
         turnero_paused: config.turneroPaused,
       }),
     })
+    return res.ok
   } catch (e) {
     console.warn('saveConfig error:', e.message)
+    return false
   }
 }
 
@@ -179,9 +199,9 @@ export async function getAreas() {
 
 export async function saveArea(area) {
   try {
-    await fetch(`${API}/areas`, {
+    const res = await fetch(`${API}/areas`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         id: area.id,
         name: area.name,
@@ -196,16 +216,23 @@ export async function saveArea(area) {
         end_time: area.endTime,
       }),
     })
+    return res.ok
   } catch (e) {
     console.warn('saveArea error:', e.message)
+    return false
   }
 }
 
 export async function deleteArea(areaId) {
   try {
-    await fetch(`${API}/areas/${areaId}`, { method: 'DELETE' })
+    const res = await fetch(`${API}/areas/${areaId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(false),
+    })
+    return res.ok
   } catch (e) {
     console.warn('deleteArea error:', e.message)
+    return false
   }
 }
 
@@ -219,7 +246,8 @@ export async function getAppointments(page = 1, limit = 200, filters = {}) {
     if (filters.areaId) params.set('area_id', filters.areaId)
     if (filters.date) params.set('date', filters.date)
 
-    const res = await fetch(`${API}/appointments?${params}`)
+    const res = await fetch(`${API}/appointments?${params}`, { headers: getAuthHeaders(false) })
+    if (res.status === 401) return { appointments: [], total: 0, page, limit, unauthorized: true }
     const data = await res.json()
 
     if (data && data.entries && Array.isArray(data.entries)) {
@@ -238,12 +266,11 @@ export async function getAppointments(page = 1, limit = 200, filters = {}) {
     return { appointments: [], total: 0, page: 1, limit }
   } catch (e) {
     console.warn('getAppointments error:', e.message)
-    return { appointments: [], total: 0, page: 1, limit }
+    return { appointments: [], total: 0, page, limit }
   }
 }
 
 // ─── UPLOAD: helper para subir un archivo al backend ──────────────────
-// Devuelve { url } o null si falla. Valida tamaño (10MB) y tipo.
 export async function uploadArchivo(file) {
   if (!file) return null
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']
@@ -265,8 +292,6 @@ export async function uploadArchivo(file) {
 }
 
 // ─── CREATE APPOINTMENT ──────────────────────────────────────────────
-// Si se pasa `archivoFile`, se sube primero y luego se crea el turno.
-// Si falla la subida, no se crea el turno.
 export async function createAppointment(data, archivoFile = null) {
   try {
     let archivoUrl = data.archivoUrl || ''
@@ -274,7 +299,6 @@ export async function createAppointment(data, archivoFile = null) {
       archivoUrl = await uploadArchivo(archivoFile)
     }
 
-    // Enviar como multipart para soportar tanto archivo como JSON
     const fd = new FormData()
     fd.append('areaId', data.areaId)
     fd.append('areaName', data.areaName)
@@ -291,7 +315,6 @@ export async function createAppointment(data, archivoFile = null) {
     if (archivoFile) {
       fd.append('archivo', archivoFile)
     } else if (archivoUrl) {
-      // Subir por separado como fallback
       fd.append('archivoUrl', archivoUrl)
     }
 
@@ -310,13 +333,15 @@ export async function createAppointment(data, archivoFile = null) {
 
 export async function updateAppointmentStatus(apptId, status) {
   try {
-    await fetch(`${API}/appointments/${apptId}/status`, {
+    const res = await fetch(`${API}/appointments/${apptId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     })
+    return res.ok
   } catch (e) {
     console.warn('updateAppointmentStatus error:', e.message)
+    return false
   }
 }
 
@@ -338,10 +363,12 @@ function startPolling() {
     }
     if (subscribers.appointments.size > 0) {
       try {
-        const res = await fetch(`${API}/appointments?limit=500`)
-        const data = await res.json()
-        const appts = (data && data.entries) ? data.entries.map(normalizeAppointment) : (Array.isArray(data) ? data.map(normalizeAppointment) : [])
-        subscribers.appointments.forEach((cb) => cb(appts))
+        const res = await fetch(`${API}/appointments?limit=500`, { headers: getAuthHeaders(false) })
+        if (res.ok) {
+          const data = await res.json()
+          const appts = (data && data.entries) ? data.entries.map(normalizeAppointment) : (Array.isArray(data) ? data.map(normalizeAppointment) : [])
+          subscribers.appointments.forEach((cb) => cb(appts))
+        }
       } catch (_) {}
     }
   }, POLL_INTERVAL)
@@ -389,6 +416,9 @@ export async function authenticateAdmin(username, password) {
       body: JSON.stringify({ username, password }),
     })
     const data = await res.json()
+    if (data.authenticated === true && data.token) {
+      setStoredToken(data.token)
+    }
     return data.authenticated === true
   } catch (e) {
     console.warn('authenticateAdmin error:', e.message)

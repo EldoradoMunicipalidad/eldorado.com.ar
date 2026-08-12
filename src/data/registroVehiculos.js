@@ -1,10 +1,30 @@
 // Registro de Vehículos — Data layer
 // Endpoints: /api/registro-vehiculos/* (Colectivos + Transporte Especializado)
-// Auth independiente: admins_registro_vehiculos (Usuario1 / unoUsuario)
+// Auth: bearer user:pass en sessionStorage (devuelto por /auth/login)
 
 const API = '/api/registro-vehiculos'
+const TOKEN_KEY = 'registro_vehiculos_admin_token'
 
-// ─── CONFIG ────────────────────────────────────────────────────────
+// ─── Token persistente en sessionStorage ──────────────────────────────────────
+export function getStoredToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY) || null } catch { return null }
+}
+export function setStoredToken(t) {
+  try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY) } catch {}
+}
+export function clearStoredToken() {
+  try { sessionStorage.removeItem(TOKEN_KEY) } catch {}
+}
+
+// ─── Auth headers para llamadas admin (Bearer) ───────────────────────
+function getAuthHeaders(json = true) {
+  const headers = json ? { 'Content-Type': 'application/json' } : {}
+  const t = getStoredToken()
+  if (t) headers['Authorization'] = `Bearer ${t}`
+  return headers
+}
+
+// ─── CONFIG (PUBLICO) ──────────────────────────────────────────────
 export async function getConfig() {
   try {
     const res = await fetch(`${API}/config`)
@@ -16,7 +36,7 @@ export async function getConfig() {
   }
 }
 
-// ─── COLECTIVOS ────────────────────────────────────────────────────
+// ─── COLECTIVOS (lectura PUBLICA) ──────────────────────────────────
 export async function getColectivos() {
   try {
     const res = await fetch(`${API}/colectivos`)
@@ -28,10 +48,11 @@ export async function getColectivos() {
   }
 }
 
+// ADMIN
 export async function createColectivo(data) {
   const res = await fetch(`${API}/colectivos`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(false) },
     body: JSON.stringify(data),
   })
   const result = await res.json().catch(() => ({}))
@@ -39,17 +60,18 @@ export async function createColectivo(data) {
   return result
 }
 
+// ADMIN
 export async function deleteColectivo(id) {
   const res = await fetch(`${API}/colectivos/${id}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
+    headers: getAuthHeaders(false),
   })
   const result = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(result.error || 'Error al eliminar')
   return result
 }
 
-// ─── TRANSPORTE ESPECIALIZADO ─────────────────────────────────────
+// ─── TRANSPORTE ESPECIALIZADO (lectura PUBLICA) ──────────────────────
 export async function getEspecializados() {
   try {
     const res = await fetch(`${API}/especializados`)
@@ -61,10 +83,11 @@ export async function getEspecializados() {
   }
 }
 
+// ADMIN
 export async function createEspecializado(data) {
   const res = await fetch(`${API}/especializados`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(false) },
     body: JSON.stringify(data),
   })
   const result = await res.json().catch(() => ({}))
@@ -72,58 +95,19 @@ export async function createEspecializado(data) {
   return result
 }
 
+// ADMIN
 export async function deleteEspecializado(id) {
   const res = await fetch(`${API}/especializados/${id}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
+    headers: getAuthHeaders(false),
   })
   const result = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(result.error || 'Error al eliminar')
   return result
 }
 
-// Helper: arma header Authorization para endpoints protegidos.
-// El cliente debe haber pasado por authenticateAdmin antes,
-// que guarda username + password en localStorage.
-function getAuthHeaders() {
-  const auth = getStoredAuth()
-  if (!auth || !auth.username || !auth.passwordHash) {
-    return {}
-  }
-  return {
-    Authorization: `Bearer ${auth.username}:${auth.passwordHash}`,
-  }
-}
-
 // ─── AUTH ──────────────────────────────────────────────────────────
-const AUTH_KEY = 'registroVehiculosAuth'
-
-export function getStoredAuth() {
-  try {
-    const raw = localStorage.getItem(AUTH_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    // Expiración a las 8 horas
-    if (parsed.expiresAt && Date.now() > parsed.expiresAt) {
-      localStorage.removeItem(AUTH_KEY)
-      return null
-    }
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-export function setStoredAuth(auth) {
-  const data = { ...auth, expiresAt: Date.now() + 8 * 60 * 60 * 1000 }
-  localStorage.setItem(AUTH_KEY, JSON.stringify(data))
-  return data
-}
-
-export function clearStoredAuth() {
-  localStorage.removeItem(AUTH_KEY)
-}
-
+// Guarda token en sessionStorage tras login exitoso.
 export async function authenticateAdmin(username, password) {
   const res = await fetch(`${API}/auth/login`, {
     method: 'POST',
@@ -134,33 +118,14 @@ export async function authenticateAdmin(username, password) {
   if (!res.ok || !data.authenticated) {
     throw new Error(data.error || 'Credenciales inválidas')
   }
-  // Guardamos también passwordHash para reenviar en Authorization Bearer.
-  // El frontend recalcula el hash con la misma función simpleHash del backend.
-  return setStoredAuth({
-    username: data.username,
-    nombre: data.nombre,
-    rol: data.rol,
-    passwordHash: simpleHashClient(password),
-  })
+  if (data.token) setStoredToken(data.token)
+  return data
 }
 
-// Misma función simpleHash que server/routes/registroVehiculos.cjs
-// Se usa solo del lado cliente para generar el header Authorization.
-function simpleHashClient(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i)
-    hash |= 0
-  }
-  return hash.toString(36)
-}
-
-// ─── ADMINS management ─────────────────────────────────────────────
+// ─── ADMINS management (requiere admin auth) ───────────────────────
 export async function getAdmins() {
   try {
-    const res = await fetch(`${API}/admins`, {
-      headers: getAuthHeaders(),
-    })
+    const res = await fetch(`${API}/admins`, { headers: getAuthHeaders(false) })
     if (!res.ok) throw new Error('HTTP ' + res.status)
     return await res.json()
   } catch (e) {
@@ -171,7 +136,7 @@ export async function getAdmins() {
 export async function createAdmin(data) {
   const res = await fetch(`${API}/admins`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders(false) },
     body: JSON.stringify(data),
   })
   const result = await res.json().catch(() => ({}))
@@ -180,9 +145,9 @@ export async function createAdmin(data) {
 }
 
 export async function deleteAdmin(username) {
-  const res = await fetch(`${API}/admins/${username}`, {
+  const res = await fetch(`${API}/admins/${encodeURIComponent(username)}`, {
     method: 'DELETE',
-    headers: getAuthHeaders(),
+    headers: getAuthHeaders(false),
   })
   const result = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(result.error || 'Error al eliminar admin')

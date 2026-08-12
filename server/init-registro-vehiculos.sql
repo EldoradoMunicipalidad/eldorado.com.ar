@@ -57,10 +57,9 @@ CREATE TABLE IF NOT EXISTS admins_registro_vehiculos (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Seed admin principal: Usuario1 / unoUsuario (hash: -hi7kq0)
-INSERT INTO admins_registro_vehiculos (username, password_hash, nombre, rol)
-VALUES ('Usuario1', '-hi7kq0', 'Administrador Registro de Vehículos', 'admin')
-ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash;
+-- NOTA: NO se siembra ningún admin por defecto.
+-- El primer admin debe crearse manualmente (idealmente con bcrypt hash).
+-- Mantener 'Usuario1'/'unoUsuario' era un riesgo crítico de seguridad.
 
 -- ─── CONFIG GENERAL ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS config_registro_vehiculos (

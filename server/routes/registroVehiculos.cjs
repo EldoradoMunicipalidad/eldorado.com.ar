@@ -1,52 +1,17 @@
 // Registro de Vehículos — Dirección de Tránsito y Transporte
 // Endpoints para Colectivos y Transporte Especializado.
-// Auth independiente: tabla admins_registro_vehiculos con hash simpleHash.
+// Auth: tabla admins_registro_vehiculos con bcrypt (factor 12).
 
 const express = require('express')
 const router = express.Router()
 const pool = require('../db.cjs')
+const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('../authMiddleware.cjs')
 
-// ─── Helpers ───────────────────────────────────────────────────────
-function simpleHash(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
-  }
-  return hash.toString(36)
-}
+const ADMIN_TABLE = 'admins_registro_vehiculos'
+const requireAdmin = requireAdminFor(pool, ADMIN_TABLE)
+const loginLimiter = makeLoginLimiter()
 
-// ─── Auth middleware ──────────────────────────────────────────────
-// Verifica header Authorization: Bearer <username>:<hash>
-// El frontend guarda el hash de la contraseña del admin en localStorage
-// (es la misma función simpleHash que se usa en el login) y lo envía
-// directamente. El backend compara contra password_hash en la DB.
-function requireAdmin(req, res, next) {
-  const auth = req.headers['authorization'] || ''
-  const m = auth.match(/^Bearer\s+([^:]+):(.+)$/)
-  if (!m) {
-    return res.status(401).json({ error: 'No autorizado: credenciales requeridas' })
-  }
-  const [, username, hash] = m
-  // Comparamos directamente contra la DB (hash ya viene hasheado del cliente).
-  pool.query(
-    'SELECT username FROM admins_registro_vehiculos WHERE username = $1 AND password_hash = $2',
-    [username, hash]
-  ).then(({ rows }) => {
-    if (rows.length > 0) {
-      req.admin = { username: rows[0].username }
-      next()
-    } else {
-      res.status(401).json({ error: 'No autorizado: credenciales inválidas' })
-    }
-  }).catch((err) => {
-    console.error('requireAdmin error:', err)
-    res.status(500).json({ error: 'Error de autenticación' })
-  })
-}
-
-// ─── CONFIG ────────────────────────────────────────────────────────
+// ─── CONFIG (lectura PUBLICA — indica si el módulo está pausado) ──────────
 router.get('/config', async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT * FROM config_registro_vehiculos WHERE id = 'default'")
@@ -62,7 +27,7 @@ router.get('/config', async (req, res) => {
   }
 })
 
-router.put('/config', async (req, res) => {
+router.put('/config', requireAdmin, async (req, res) => {
   try {
     const { modulo_pausado, permitir_publico, notas } = req.body
     const { rows } = await pool.query(
@@ -79,7 +44,8 @@ router.put('/config', async (req, res) => {
   }
 })
 
-// ─── COLECTIVOS ────────────────────────────────────────────────────
+// ─── COLECTIVOS ─────────────────────────────────────────────────────
+// Lectura PUBLICA (la lista de colectivos registrados es de interes publico)
 router.get('/colectivos', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM vehiculos_colectivos ORDER BY fecha_registro DESC')
@@ -90,6 +56,7 @@ router.get('/colectivos', async (req, res) => {
   }
 })
 
+// Crear / Borrar: ADMIN
 router.post('/colectivos', requireAdmin, async (req, res) => {
   try {
     const data = req.body
@@ -129,6 +96,7 @@ router.delete('/colectivos/:id', requireAdmin, async (req, res) => {
 })
 
 // ─── TRANSPORTE ESPECIALIZADO ─────────────────────────────────────
+// Lectura PUBLICA
 router.get('/especializados', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM vehiculos_especializados ORDER BY fecha_registro DESC')
@@ -139,6 +107,7 @@ router.get('/especializados', async (req, res) => {
   }
 })
 
+// Crear / Borrar: ADMIN
 router.post('/especializados', requireAdmin, async (req, res) => {
   try {
     const data = req.body
@@ -182,30 +151,35 @@ router.delete('/especializados/:id', requireAdmin, async (req, res) => {
 })
 
 // ─── AUTH ──────────────────────────────────────────────────────────
-router.post('/auth/login', async (req, res) => {
+// Login ADMIN (bcrypt + fallback djb2 legacy para hashes viejos)
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body
-    if (!username || !password) return res.status(400).json({ error: 'Faltan credenciales' })
-    const hash = simpleHash(password)
-    const { rows } = await pool.query(
-      'SELECT username, nombre, rol FROM admins_registro_vehiculos WHERE username = $1 AND password_hash = $2',
-      [username, hash]
-    )
-    if (rows.length > 0) {
-      res.json({ authenticated: true, username: rows[0].username, nombre: rows[0].nombre, rol: rows[0].rol })
-    } else {
-      res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    if (!username || !password) {
+      return res.status(400).json({ authenticated: false, error: 'Faltan credenciales' })
     }
+    const result = await verifyAdmin(pool, ADMIN_TABLE, username, password)
+    if (!result.ok) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    pool.query(`UPDATE ${ADMIN_TABLE} SET last_login = NOW() WHERE username = $1`, [username])
+      .catch(() => {})
+    res.json({
+      authenticated: true,
+      username: result.username,
+      token: `${username}:${password}`,
+    })
   } catch (err) {
+    console.error('POST /api/registro-vehiculos/auth/login:', err)
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── ADMINS management ─────────────────────────────────────────────
+// ─── ADMINS management (admin only) ─────────────────────────────────
 router.get('/admins', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT username, nombre, rol, email, created_at FROM admins_registro_vehiculos ORDER BY username'
+      `SELECT username, nombre, rol, email, created_at FROM ${ADMIN_TABLE} ORDER BY username`
     )
     res.json(rows)
   } catch (err) {
@@ -217,9 +191,10 @@ router.post('/admins', requireAdmin, async (req, res) => {
   try {
     const { username, password, nombre, email, rol } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
-    const hash = simpleHash(password)
+    if (password.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    const hash = bcrypt.hashSync(password, 12)
     await pool.query(
-      `INSERT INTO admins_registro_vehiculos (username, password_hash, nombre, email, rol)
+      `INSERT INTO ${ADMIN_TABLE} (username, password_hash, nombre, email, rol)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (username) DO UPDATE SET
          password_hash = EXCLUDED.password_hash,
@@ -236,10 +211,29 @@ router.post('/admins', requireAdmin, async (req, res) => {
 
 router.delete('/admins/:username', requireAdmin, async (req, res) => {
   try {
+    // No permitir borrar el primer admin sembrado. Si en el futuro se cambia el
+    // username principal, actualizar este check.
     if (req.params.username === 'Usuario1') {
       return res.status(400).json({ error: 'No se puede eliminar el admin principal' })
     }
-    const { rowCount } = await pool.query('DELETE FROM admins_registro_vehiculos WHERE username = $1', [req.params.username])
+    const { rowCount } = await pool.query(`DELETE FROM ${ADMIN_TABLE} WHERE username = $1`, [req.params.username])
+    if (!rowCount) return res.status(404).json({ error: 'No encontrado' })
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.post('/admins/change-password', requireAdmin, async (req, res) => {
+  try {
+    const { username, newPassword } = req.body
+    if (!username || !newPassword) return res.status(400).json({ error: 'Datos requeridos' })
+    if (newPassword.length < 8) return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    const hash = bcrypt.hashSync(newPassword, 12)
+    const { rowCount } = await pool.query(
+      `UPDATE ${ADMIN_TABLE} SET password_hash = $1 WHERE username = $2`,
+      [hash, username]
+    )
     if (!rowCount) return res.status(404).json({ error: 'No encontrado' })
     res.json({ ok: true })
   } catch (err) {

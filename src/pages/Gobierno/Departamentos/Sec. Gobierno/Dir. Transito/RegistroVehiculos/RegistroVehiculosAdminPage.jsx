@@ -3,8 +3,8 @@ import SectionLayout from '../../../../../../assets/components/SectionLayout'
 import { Section } from '../../../../../../assets/components/Section'
 import {
   authenticateAdmin,
-  clearStoredAuth,
-  getStoredAuth,
+  clearStoredToken,
+  getStoredToken,
   getColectivos,
   getEspecializados,
   deleteColectivo,
@@ -35,7 +35,7 @@ const inputClass =
 const labelClass = 'block text-sm font-semibold text-slate-700 mb-1.5'
 
 export default function RegistroVehiculosAdminPage() {
-  const [auth, setAuth] = useState(getStoredAuth())
+  const [auth, setAuth] = useState(getStoredToken())
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
   const [loginError, setLoginError] = useState('')
   const [loggingIn, setLoggingIn] = useState(false)
@@ -88,9 +88,9 @@ export default function RegistroVehiculosAdminPage() {
   }
 
   const handleLogout = () => {
-    clearStoredAuth()
-    setAuth(null)
-  }
+      clearStoredToken()
+      setAuth(null)
+    }
 
   const handleDeleteColectivo = async (id, patente) => {
     if (!confirm(`¿Eliminar el colectivo con patente ${patente}?`)) return

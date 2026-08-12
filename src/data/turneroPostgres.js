@@ -3,6 +3,26 @@
 // Same exports as turneroFirebase.js for drop-in replacement
 
 const API = '/api'
+const TOKEN_KEY = 'turnero_planeamiento_admin_token'
+
+// ─── Token persistente en sessionStorage ──────────────────────────────────────
+export function getStoredToken() {
+  try { return sessionStorage.getItem(TOKEN_KEY) || null } catch { return null }
+}
+export function setStoredToken(t) {
+  try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY) } catch {}
+}
+export function clearStoredToken() {
+  try { sessionStorage.removeItem(TOKEN_KEY) } catch {}
+}
+
+// ─── Auth headers para llamadas admin (Bearer) ───────────────────────
+function getAuthHeaders(json = true) {
+  const headers = json ? { 'Content-Type': 'application/json' } : {}
+  const t = getStoredToken()
+  if (t) headers['Authorization'] = `Bearer ${t}`
+  return headers
+}
 
 // ─── HELPERS ──────────────────────────────────────────
 export function generateId() {
@@ -132,16 +152,18 @@ export async function getConfig() {
 
 export async function saveConfig(config) {
   try {
-    await fetch(`${API}/config`, {
+    const res = await fetch(`${API}/config`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         max_per_day: config.maxPerDay,
         turnero_paused: config.turneroPaused,
       }),
     })
+    return res.ok
   } catch (e) {
     console.warn('saveConfig error:', e.message)
+    return false
   }
 }
 
@@ -172,21 +194,28 @@ export async function saveArea(area) {
       start_time: area.startTime,
       end_time: area.endTime,
     }
-    await fetch(`${API}/areas`, {
+    const res = await fetch(`${API}/areas`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(body),
     })
+    return res.ok
   } catch (e) {
     console.warn('saveArea error:', e.message)
+    return false
   }
 }
 
 export async function deleteArea(areaId) {
   try {
-    await fetch(`${API}/areas/${areaId}`, { method: 'DELETE' })
+    const res = await fetch(`${API}/areas/${areaId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(false),
+    })
+    return res.ok
   } catch (e) {
     console.warn('deleteArea error:', e.message)
+    return false
   }
 }
 
@@ -200,10 +229,10 @@ export async function getAppointments(page = 1, limit = 200, filters = {}) {
     if (filters.areaId) params.set('area_id', filters.areaId)
     if (filters.date) params.set('date', filters.date)
 
-    const res = await fetch(`${API}/appointments?${params}`)
+    const res = await fetch(`${API}/appointments?${params}`, { headers: getAuthHeaders(false) })
+    if (res.status === 401) return { appointments: [], total: 0, page, limit, unauthorized: true }
     const data = await res.json()
 
-    // New paginated format: { entries: [...], total, page, limit }
     if (data && data.entries && Array.isArray(data.entries)) {
       return {
         appointments: data.entries.map(normalizeAppointment),
@@ -213,7 +242,6 @@ export async function getAppointments(page = 1, limit = 200, filters = {}) {
       }
     }
 
-    // Fallback: raw array (old format, should not happen with new backend)
     if (Array.isArray(data)) {
       return { appointments: data.map(normalizeAppointment), total: data.length, page: 1, limit: data.length }
     }
@@ -221,7 +249,7 @@ export async function getAppointments(page = 1, limit = 200, filters = {}) {
     return { appointments: [], total: 0, page: 1, limit }
   } catch (e) {
     console.warn('getAppointments error:', e.message)
-    return { appointments: [], total: 0, page: 1, limit }
+    return { appointments: [], total: 0, page, limit }
   }
 }
 
@@ -253,19 +281,19 @@ export async function createAppointment(data) {
 
 export async function updateAppointmentStatus(apptId, status) {
   try {
-    await fetch(`${API}/appointments/${apptId}/status`, {
+    const res = await fetch(`${API}/appointments/${apptId}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     })
+    return res.ok
   } catch (e) {
     console.warn('updateAppointmentStatus error:', e.message)
+    return false
   }
 }
 
 // ─── SUBSCRIPTIONS (polling-based, replaces Firestore onSnapshot) ──────
-// Components call subscribeAreas(callback) and get back an unsubscribe function
-// Polls every 3 seconds for simplicity
 const POLL_INTERVAL = 3000
 const subscribers = { areas: new Set(), appointments: new Set() }
 let pollTimer = null
@@ -283,10 +311,12 @@ function startPolling() {
     }
     if (subscribers.appointments.size > 0) {
       try {
-        const res = await fetch(`${API}/appointments?limit=500`)
-        const data = await res.json()
-        const appts = (data && data.entries) ? data.entries.map(normalizeAppointment) : (Array.isArray(data) ? data.map(normalizeAppointment) : [])
-        subscribers.appointments.forEach((cb) => cb(appts))
+        const res = await fetch(`${API}/appointments?limit=500`, { headers: getAuthHeaders(false) })
+        if (res.ok) {
+          const data = await res.json()
+          const appts = (data && data.entries) ? data.entries.map(normalizeAppointment) : (Array.isArray(data) ? data.map(normalizeAppointment) : [])
+          subscribers.appointments.forEach((cb) => cb(appts))
+        }
       } catch (_) {}
     }
   }, POLL_INTERVAL)
@@ -301,7 +331,6 @@ function stopPollingIfIdle() {
 
 export function subscribeAreas(callback) {
   subscribers.areas.add(callback)
-  // Immediate fetch
   getAreas().then((data) => callback(data))
   startPolling()
   return () => {
@@ -312,7 +341,6 @@ export function subscribeAreas(callback) {
 
 export function subscribeAppointments(callback) {
   subscribers.appointments.add(callback)
-  // Immediate fetch — pass the array to callbacks (backward compat)
   getAppointments(1, 500).then((result) => {
     if (Array.isArray(result)) {
       callback(result)
@@ -336,6 +364,9 @@ export async function authenticateAdmin(username, password) {
       body: JSON.stringify({ username, password }),
     })
     const data = await res.json()
+    if (data.authenticated === true && data.token) {
+      setStoredToken(data.token)
+    }
     return data.authenticated === true
   } catch (e) {
     console.warn('authenticateAdmin error:', e.message)
@@ -344,8 +375,6 @@ export async function authenticateAdmin(username, password) {
 }
 
 export async function changeAdminPassword(username, currentPassword, newPassword) {
-  // For now, password change is handled via DB directly
-  // You could add an endpoint for this later
   console.warn('changeAdminPassword not implemented via API yet')
   return false
 }

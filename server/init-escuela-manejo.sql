@@ -61,10 +61,9 @@ INSERT INTO config_escuela_manejo (id, max_per_day, turnero_paused)
 VALUES ('default', 1, true)
 ON CONFLICT (id) DO NOTHING;
 
--- Seed admin (user: admin / password: admin → hash: simpleHash('admin') = '1j67nz')
-INSERT INTO admins_escuela_manejo (username, password_hash)
-VALUES ('admin', '1j67nz')
-ON CONFLICT (username) DO NOTHING;
+-- NOTA: NO se siembra ningún admin por defecto.
+-- El primer admin debe crearse manualmente (idealmente con bcrypt hash).
+-- Mantener 'admin'/'admin' era un riesgo crítico de seguridad.
 
 -- Seed área única: Autódromo km 4
 INSERT INTO areas_escuela_manejo

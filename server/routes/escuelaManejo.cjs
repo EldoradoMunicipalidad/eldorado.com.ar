@@ -13,6 +13,11 @@ const pool = require('../db.cjs')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('../authMiddleware.cjs')
+
+const ADMIN_TABLE = 'admins_escuela_manejo'
+const requireAdmin = requireAdminFor(pool, ADMIN_TABLE)
+const loginLimiter = makeLoginLimiter()
 
 // ─── Multer config (para adjuntos de documentación) ──────────────────────
 const uploadsDir = path.join(__dirname, '..', 'uploads')
@@ -33,17 +38,6 @@ const fileFilter = (_, file, cb) => {
 }
 const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } })
 
-// ─── Simple hash (mismo algoritmo que index.cjs y ambiente.cjs) ─────────
-function simpleHash(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
-  }
-  return hash.toString(36)
-}
-
 // ─── CONFIG ────────────────────────────────────────────────────────────
 router.get('/config', async (req, res) => {
   try {
@@ -61,7 +55,7 @@ router.get('/config', async (req, res) => {
   }
 })
 
-router.put('/config', async (req, res) => {
+router.put('/config', requireAdmin, async (req, res) => {
   try {
     const { max_per_day, turnero_paused } = req.body
     const { rows } = await pool.query(
@@ -75,8 +69,7 @@ router.put('/config', async (req, res) => {
   }
 })
 
-// ─── AREAS ─────────────────────────────────────────────────────────────
-// Single-area: Autódromo km 4. Mantenemos la tabla por si a futuro se agregan más.
+// ─── AREAS (lectura PUBLICA; escritura ADMIN) ──────────────────────────
 router.get('/areas', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM areas_escuela_manejo ORDER BY id')
@@ -86,7 +79,7 @@ router.get('/areas', async (req, res) => {
   }
 })
 
-router.post('/areas', async (req, res) => {
+router.post('/areas', requireAdmin, async (req, res) => {
   try {
     const area = req.body
     const { rows } = await pool.query(
@@ -108,7 +101,7 @@ router.post('/areas', async (req, res) => {
   }
 })
 
-router.delete('/areas/:id', async (req, res) => {
+router.delete('/areas/:id', requireAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM appointments_escuela_manejo WHERE area_id = $1', [req.params.id])
     await pool.query('DELETE FROM areas_escuela_manejo WHERE id = $1', [req.params.id])
@@ -118,8 +111,8 @@ router.delete('/areas/:id', async (req, res) => {
   }
 })
 
-// ─── APPOINTMENTS (paginated) ──────────────────────────────────────────
-router.get('/appointments', async (req, res) => {
+// ─── APPOINTMENTS (lista ADMIN, crear PUBLICO) ─────────────────────────
+router.get('/appointments', requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 200))
@@ -164,15 +157,12 @@ router.get('/appointments', async (req, res) => {
   }
 })
 
-// ─── POST appointment ──────────────────────────────────────────────────
-// Recibe todos los datos del formulario + archivo opcional (campo "archivo")
-// Valida que la cantidad de clases esté entre 1 y 6.
+// ─── POST appointment (PUBLICO: alumno saca turno) ─────────────────────
 router.post('/appointments', upload.single('archivo'), async (req, res) => {
   try {
     const a = req.body
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 
-    // Aceptar tanto camelCase como snake_case para flexibilidad
     const vehiculoPropio = (a.vehiculoPropio === true || a.vehiculoPropio === 'true' || a.vehiculo_propio === true || a.vehiculo_propio === 'true')
     const cantidadClases = parseInt(a.cantidadClases || a.cantidad_clases, 10)
 
@@ -249,7 +239,8 @@ router.post('/appointments-json', async (req, res) => {
   }
 })
 
-router.patch('/appointments/:id/status', async (req, res) => {
+// Cambiar status: ADMIN
+router.patch('/appointments/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body
     await pool.query('UPDATE appointments_escuela_manejo SET status = $1 WHERE id = $2', [status, req.params.id])
@@ -259,7 +250,7 @@ router.patch('/appointments/:id/status', async (req, res) => {
   }
 })
 
-// ─── UPLOAD genérico (por si el front prefiere subir primero y luego enviar la URL) ──
+// ─── UPLOAD generico PUBLICO ──────────────────────────────────────
 router.post('/upload', upload.single('archivo'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se envió ningún archivo' })
@@ -269,44 +260,57 @@ router.post('/upload', upload.single('archivo'), (req, res) => {
 })
 
 // ─── AUTH ──────────────────────────────────────────────────────────────
-router.post('/auth/login', async (req, res) => {
+// Login ADMIN (bcrypt con fallback a djb2 legacy)
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body
-    const hash = simpleHash(password)
-    const { rows } = await pool.query(
-      'SELECT username FROM admins_escuela_manejo WHERE username = $1 AND password_hash = $2',
-      [username, hash]
-    )
-    if (rows.length > 0) {
-      res.json({ authenticated: true, username: rows[0].username })
-    } else {
-      res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    if (!username || !password) {
+      return res.status(400).json({ authenticated: false, error: 'Usuario y contraseña requeridos' })
     }
+    const result = await verifyAdmin(pool, ADMIN_TABLE, username, password)
+    if (!result.ok) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    pool.query(`UPDATE ${ADMIN_TABLE} SET last_login = NOW() WHERE username = $1`, [username])
+      .catch(() => {})
+    res.json({
+      authenticated: true,
+      username: result.username,
+      token: `${username}:${password}`,
+    })
   } catch (err) {
+    console.error('POST /api/escuela-manejo/auth/login error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── ADMINS management ────────────────────────────────────────────────
-router.get('/admins', async (req, res) => {
+// ─── ADMINS management (admin only) ────────────────────────────────
+router.get('/admins', requireAdmin, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT username FROM admins_escuela_manejo ORDER BY username')
+    const { rows } = await pool.query(
+      `SELECT username, rol FROM ${ADMIN_TABLE} ORDER BY username`
+    )
     res.json(rows)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-router.post('/admins', async (req, res) => {
+router.post('/admins', requireAdmin, async (req, res) => {
   try {
-    const { username, password } = req.body
+    const { username, password, nombre, email } = req.body
     if (!username || !password) {
       return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
     }
-    const hash = simpleHash(password)
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(password, 12)
     await pool.query(
-      'INSERT INTO admins_escuela_manejo (username, password_hash) VALUES ($1, $2) ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash',
-      [username, hash]
+      `INSERT INTO ${ADMIN_TABLE} (username, password_hash, rol, nombre, email)
+       VALUES ($1, $2, 'admin', $3, $4)
+       ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
+      [username, hash, nombre || '', email || '']
     )
     res.json({ success: true, username })
   } catch (err) {
@@ -314,19 +318,40 @@ router.post('/admins', async (req, res) => {
   }
 })
 
-router.delete('/admins/:username', async (req, res) => {
+router.delete('/admins/:username', requireAdmin, async (req, res) => {
   try {
     if (req.params.username === 'admin') {
       return res.status(400).json({ error: 'No se puede eliminar el admin principal' })
     }
-    await pool.query('DELETE FROM admins_escuela_manejo WHERE username = $1', [req.params.username])
+    await pool.query(`DELETE FROM ${ADMIN_TABLE} WHERE username = $1`, [req.params.username])
     res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── SEED (solo si vacío) ──────────────────────────────────────────────
+router.post('/admins/change-password', requireAdmin, async (req, res) => {
+  try {
+    const { username, newPassword } = req.body
+    if (!username || !newPassword) {
+      return res.status(400).json({ error: 'Datos requeridos' })
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(newPassword, 12)
+    const { rowCount } = await pool.query(
+      `UPDATE ${ADMIN_TABLE} SET password_hash = $1 WHERE username = $2`,
+      [hash, username]
+    )
+    if (rowCount === 0) return res.status(404).json({ error: 'No encontrado' })
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SEED (solo si vacío, PUBLICO por compat con bootstrap inicial) ────
 router.post('/seed', async (req, res) => {
   try {
     const { rows: existing } = await pool.query('SELECT COUNT(*) as cnt FROM areas_escuela_manejo')
@@ -360,9 +385,7 @@ router.post('/seed', async (req, res) => {
     await pool.query(
       "INSERT INTO config_escuela_manejo (id, max_per_day, turnero_paused) VALUES ('default', 1, true) ON CONFLICT (id) DO NOTHING"
     )
-    await pool.query(
-      "INSERT INTO admins_escuela_manejo (username, password_hash) VALUES ('admin', '1j67nz') ON CONFLICT (username) DO NOTHING"
-    )
+    // NOTA: NO se siembra admin 'admin'/'admin'. Riesgo de seguridad.
     res.json({ seeded: true })
   } catch (err) {
     res.status(500).json({ error: err.message })

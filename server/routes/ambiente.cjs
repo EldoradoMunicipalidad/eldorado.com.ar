@@ -5,19 +5,13 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db.cjs')
+const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('../authMiddleware.cjs')
 
-// ─── Simple hash function (mismo algoritmo que index.cjs) ─────────────
-function simpleHash(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
-  }
-  return hash.toString(36)
-}
+const ADMIN_TABLE = 'admins_ambiente'
+const requireAdmin = requireAdminFor(pool, ADMIN_TABLE)
+const loginLimiter = makeLoginLimiter()
 
-// ─── CONFIG ───────────────────────────────────────────────────────────
+// ─── CONFIG (lectura PUBLICA para que la UI sepa si está pausado) ───────
 router.get('/config', async (req, res) => {
   try {
     const { rows } = await pool.query("SELECT * FROM config_ambiente WHERE id = 'default'")
@@ -34,7 +28,7 @@ router.get('/config', async (req, res) => {
   }
 })
 
-router.put('/config', async (req, res) => {
+router.put('/config', requireAdmin, async (req, res) => {
   try {
     const { max_per_day, turnero_paused } = req.body
     const { rows } = await pool.query(
@@ -49,6 +43,7 @@ router.put('/config', async (req, res) => {
 })
 
 // ─── AREAS ────────────────────────────────────────────────────────────
+// Lectura PUBLICA
 router.get('/areas', async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM areas_ambiente ORDER BY id')
@@ -58,7 +53,8 @@ router.get('/areas', async (req, res) => {
   }
 })
 
-router.post('/areas', async (req, res) => {
+// Escritura ADMIN
+router.post('/areas', requireAdmin, async (req, res) => {
   try {
     const area = req.body
     const { rows } = await pool.query(
@@ -80,7 +76,7 @@ router.post('/areas', async (req, res) => {
   }
 })
 
-router.delete('/areas/:id', async (req, res) => {
+router.delete('/areas/:id', requireAdmin, async (req, res) => {
   try {
     await pool.query('DELETE FROM appointments_ambiente WHERE area_id = $1', [req.params.id])
     await pool.query('DELETE FROM areas_ambiente WHERE id = $1', [req.params.id])
@@ -90,8 +86,9 @@ router.delete('/areas/:id', async (req, res) => {
   }
 })
 
-// ─── APPOINTMENTS (paginated) ─────────────────────────────────────────
-router.get('/appointments', async (req, res) => {
+// ─── APPOINTMENTS ─────────────────────────────────────────────────────
+// Lista ADMIN (datos personales)
+router.get('/appointments', requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(500, Math.max(1, parseInt(req.query.limit) || 200))
@@ -136,6 +133,7 @@ router.get('/appointments', async (req, res) => {
   }
 })
 
+// Crear PUBLICO (ciudadano saca turno)
 router.post('/appointments', async (req, res) => {
   try {
     const a = req.body
@@ -151,7 +149,8 @@ router.post('/appointments', async (req, res) => {
   }
 })
 
-router.patch('/appointments/:id/status', async (req, res) => {
+// Cambiar status ADMIN
+router.patch('/appointments/:id/status', requireAdmin, async (req, res) => {
   try {
     const { status } = req.body
     await pool.query('UPDATE appointments_ambiente SET status = $1 WHERE id = $2', [status, req.params.id])
@@ -162,25 +161,102 @@ router.patch('/appointments/:id/status', async (req, res) => {
 })
 
 // ─── AUTH ─────────────────────────────────────────────────────────────
-router.post('/auth/login', async (req, res) => {
+// Login ADMIN. Verifica pass contra admins_ambiente (bcrypt o legacy djb2).
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body
-    const hash = simpleHash(password)
-    const { rows } = await pool.query(
-      'SELECT username FROM admins_ambiente WHERE username = $1 AND password_hash = $2',
-      [username, hash]
-    )
-    if (rows.length > 0) {
-      res.json({ authenticated: true, username: rows[0].username })
-    } else {
-      res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    if (!username || !password) {
+      return res.status(400).json({ authenticated: false, error: 'Usuario y contraseña requeridos' })
     }
+    const result = await verifyAdmin(pool, ADMIN_TABLE, username, password)
+    if (!result.ok) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    pool.query(`UPDATE ${ADMIN_TABLE} SET last_login = NOW() WHERE username = $1`, [username])
+      .catch(() => {})
+    res.json({
+      authenticated: true,
+      username: result.username,
+      token: `${username}:${password}`,
+    })
+  } catch (err) {
+    console.error('POST /api/ambiente/auth/login error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── ADMINS management (admin only) ────────────────────────────────────
+router.get('/admins', requireAdmin, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT username, rol FROM ${ADMIN_TABLE} ORDER BY username`
+    )
+    res.json(rows)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-// ─── SEED (only if empty) ─────────────────────────────────────────────
+router.post('/admins', requireAdmin, async (req, res) => {
+  try {
+    const { username, password, nombre, email } = req.body
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(password, 12)
+    await pool.query(
+      `INSERT INTO ${ADMIN_TABLE} (username, password_hash, rol, nombre, email)
+       VALUES ($1, $2, 'admin', $3, $4)
+       ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash`,
+      [username, hash, nombre || '', email || '']
+    )
+    res.json({ success: true, username })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.delete('/admins/:username', requireAdmin, async (req, res) => {
+  try {
+    if (req.params.username === 'admin') {
+      return res.status(400).json({ error: 'No se puede eliminar el admin principal' })
+    }
+    await pool.query(`DELETE FROM ${ADMIN_TABLE} WHERE username = $1`, [req.params.username])
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.post('/admins/change-password', requireAdmin, async (req, res) => {
+  try {
+    const { username, newPassword } = req.body
+    if (!username || !newPassword) {
+      return res.status(400).json({ error: 'Datos requeridos' })
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(newPassword, 12)
+    const { rowCount } = await pool.query(
+      `UPDATE ${ADMIN_TABLE} SET password_hash = $1 WHERE username = $2`,
+      [hash, username]
+    )
+    if (rowCount === 0) return res.status(404).json({ error: 'No encontrado' })
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ─── SEED (solo si NO hay datos) ─────────────────────────────────────
+// Endpoint PUBLICO en esta implementación porque solo crea areas/seed; ya hay
+// un comentario en init-ambiente.sql señalando que NO se siembran admins aqui.
+// Se conserva público por compatibilidad con flujos de bootstrap. Si querés
+// blindarlo: agregar requireAdmin.
 router.post('/seed', async (req, res) => {
   try {
     const { rows: existing } = await pool.query('SELECT COUNT(*) as cnt FROM areas_ambiente')
@@ -204,7 +280,7 @@ router.post('/seed', async (req, res) => {
       )
     }
     await pool.query("INSERT INTO config_ambiente (id, max_per_day, turnero_paused) VALUES ('default', 3, true) ON CONFLICT (id) DO NOTHING")
-    await pool.query("INSERT INTO admins_ambiente (username, password_hash) VALUES ('admin', 'alwd3i') ON CONFLICT (username) DO NOTHING")
+    // NOTA: NO se siembra admin 'admin'/'ambiente2025'. Riesgo de seguridad.
     res.json({ seeded: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
