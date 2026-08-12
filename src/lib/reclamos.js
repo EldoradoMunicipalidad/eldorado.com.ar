@@ -3,6 +3,38 @@
 
 const API = '/api/reclamos'
 
+// ─── Token persistente en sessionStorage ──────────────────────────────────────
+const TOKEN_KEY = 'reclamos_admin_token'
+
+export function getStoredToken() {
+  try {
+    return sessionStorage.getItem(TOKEN_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+export function setStoredToken(token) {
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token)
+    else sessionStorage.removeItem(TOKEN_KEY)
+  } catch {}
+}
+
+export function clearStoredToken() {
+  try {
+    sessionStorage.removeItem(TOKEN_KEY)
+  } catch {}
+}
+
+// ─── Helper: arma header Authorization Bearer para endpoints protegidos ────────
+function getAuthHeaders(json = true) {
+  const headers = json ? { 'Content-Type': 'application/json' } : {}
+  const token = getStoredToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 // ─── Generate unique code ────────────────────────────
 export function generarCodigo() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -81,7 +113,7 @@ export async function buscarReclamo(codigo) {
   }
 }
 
-// ─── Obtener reclamos (paginado) ─────────────────────
+// ─── Obtener reclamos (paginado, requiere admin auth) ────────────────────
 export async function getReclamos(page = 1, limit = 15, filters = {}) {
   try {
     const params = new URLSearchParams()
@@ -93,7 +125,8 @@ export async function getReclamos(page = 1, limit = 15, filters = {}) {
     if (filters.sort) params.set('sort', filters.sort)
     if (filters.order) params.set('order', filters.order)
 
-    const res = await fetch(`${API}?${params}`)
+    const res = await fetch(`${API}?${params}`, { headers: getAuthHeaders(false) })
+    if (res.status === 401) return { entries: [], total: 0, page, limit, unauthorized: true }
     const data = await res.json()
     return {
       entries: data.entries || [],
@@ -103,14 +136,17 @@ export async function getReclamos(page = 1, limit = 15, filters = {}) {
     }
   } catch (e) {
     console.warn('getReclamos error:', e.message)
-    return { entries: [], total: 0, page: 1, limit }
+    return { entries: [], total: 0, page, limit }
   }
 }
 
-// ─── Obtener stats ───────────────────────────────────
+// ─── Obtener stats (requiere admin auth) ───────────────────────────
 export async function getReclamosStats() {
   try {
-    const res = await fetch(`${API}/stats`)
+    const res = await fetch(`${API}/stats`, { headers: getAuthHeaders(false) })
+    if (res.status === 401) {
+      return { total: 0, pendientes: 0, en_revision: 0, asignados: 0, en_proceso: 0, resueltos: 0, rechazados: 0, unauthorized: true }
+    }
     return await res.json()
   } catch (e) {
     console.warn('getReclamosStats error:', e.message)
@@ -118,14 +154,15 @@ export async function getReclamosStats() {
   }
 }
 
-// ─── Actualizar reclamo ──────────────────────────────
+// ─── Actualizar reclamo (requiere admin auth) ──────────────────────
 export async function updateReclamo(id, data) {
   try {
     const res = await fetch(`${API}/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     })
+    if (res.status === 401) return null
     if (!res.ok) throw new Error('Error al actualizar')
     return await res.json()
   } catch (e) {
@@ -134,10 +171,13 @@ export async function updateReclamo(id, data) {
   }
 }
 
-// ─── Eliminar reclamo ────────────────────────────────
+// ─── Eliminar reclamo (requiere admin auth) ──────────────────────────
 export async function deleteReclamo(id) {
   try {
-    const res = await fetch(`${API}/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API}/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(false),
+    })
     return res.ok
   } catch (e) {
     console.warn('deleteReclamo error:', e.message)
@@ -149,7 +189,7 @@ export async function deleteReclamo(id) {
 export async function crearCategoria(data) {
   const res = await fetch(`${API}/categorias`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   })
   return await res.json()
@@ -158,14 +198,17 @@ export async function crearCategoria(data) {
 export async function actualizarCategoria(id, data) {
   const res = await fetch(`${API}/categorias/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   })
   return await res.json()
 }
 
 export async function eliminarCategoria(id) {
-  const res = await fetch(`${API}/categorias/${id}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/categorias/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(false),
+  })
   return res.ok
 }
 
@@ -178,6 +221,9 @@ export async function authenticateAdmin(username, password) {
       body: JSON.stringify({ username, password }),
     })
     const data = await res.json()
+    if (data.authenticated === true && data.token) {
+      setStoredToken(data.token)
+    }
     return data.authenticated === true
   } catch (e) {
     console.warn('authenticateAdmin error:', e.message)
@@ -200,7 +246,8 @@ export async function authenticateWithGoogle() {
     })
     const data = await res.json()
 
-    if (data.authenticated === true) {
+    if (data.authenticated === true && data.token) {
+      setStoredToken(data.token)
       return {
         success: true,
         username: data.username,
@@ -221,10 +268,11 @@ export async function authenticateWithGoogle() {
   }
 }
 
-// ─── Admins CRUD ─────────────────────────────────────
+// ─── Admins CRUD (admin only) ────────────────────────
 export async function getAdmins() {
   try {
-    const res = await fetch(`${API}/admins`)
+    const res = await fetch(`${API}/admins`, { headers: getAuthHeaders(false) })
+    if (res.status === 401) return []
     return await res.json()
   } catch (e) {
     console.warn('getAdmins error:', e.message)
@@ -235,7 +283,7 @@ export async function getAdmins() {
 export async function createAdmin(username, password, nombre, email) {
   const res = await fetch(`${API}/admins`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ username, password, nombre, email }),
   })
   if (!res.ok) {
@@ -246,7 +294,10 @@ export async function createAdmin(username, password, nombre, email) {
 }
 
 export async function deleteAdmin(username) {
-  const res = await fetch(`${API}/admins/${encodeURIComponent(username)}`, { method: 'DELETE' })
+  const res = await fetch(`${API}/admins/${encodeURIComponent(username)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(false),
+  })
   return res.ok
 }
 

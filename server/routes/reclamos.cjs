@@ -4,16 +4,66 @@ const pool = require('../db.cjs')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const bcrypt = require('bcrypt')
+const rateLimit = require('express-rate-limit')
 
-// ─── Simple hash (mirrors server/index.cjs) ────────────────────────────
-function simpleHash(str) {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
+// ─── Rate limit: 5 intentos cada 15 min por IP ─────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { authenticated: false, error: 'Demasiados intentos. Esperá 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+// ─── Auth middleware ───────────────────────────────────────────────────
+// Formato del Authorization: Bearer <username>:<secret>
+//   - secret = password en claro (para logins con user/pass)
+//   - secret = email (para logins con Google @eldorado.gob.ar)
+// Si el admin existe y la verificación es válida (bcrypt para password, o
+// coincidencia email para cuentas Google-only), pasa la request.
+async function verifyAdminCredential(username, secret) {
+  const { rows } = await pool.query(
+    'SELECT username, password_hash, email FROM admins WHERE username = $1',
+    [username]
+  )
+  if (rows.length === 0) return false
+  const admin = rows[0]
+  // Caso 1: tiene password_hash bcrypt -> validar con bcrypt
+  if (admin.password_hash && admin.password_hash.startsWith('$2')) {
+    try {
+      return bcrypt.compareSync(secret, admin.password_hash)
+    } catch {
+      return false
+    }
   }
-  return hash.toString(36)
+  // Caso 2: cuenta Google-only (sin password) -> validar por email (case-insensitive)
+  if (admin.email && secret && admin.email.toLowerCase() === secret.toLowerCase()) {
+    return true
+  }
+  return false
+}
+
+function requireAdmin(req, res, next) {
+  const auth = req.headers['authorization'] || ''
+  const m = auth.match(/^Bearer\s+([^:]+):(.+)$/)
+  if (!m) {
+    return res.status(401).json({ error: 'No autorizado: credenciales requeridas' })
+  }
+  const [, username, secret] = m
+  verifyAdminCredential(username, secret)
+    .then((ok) => {
+      if (ok) {
+        req.admin = { username }
+        next()
+      } else {
+        res.status(401).json({ error: 'No autorizado: credenciales inválidas' })
+      }
+    })
+    .catch((err) => {
+      console.error('requireAdmin error:', err.message)
+      res.status(500).json({ error: 'Error de autenticación' })
+    })
 }
 
 // ─── Generate unique code ─────────────────────────────────────────────
@@ -54,24 +104,44 @@ const upload = multer({
   },
 })
 
-// ─── AUTH ─────────────────────────────────────────────────────────────
+// ─── AUTH ───────────────────────────────────────────────────────────────
 const firebaseAdmin = require('../firebase-admin.cjs')
 
-// Password-based login (legacy)
-router.post('/auth/login', async (req, res) => {
+// Password-based login (bcrypt contra password_hash)
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body
-    const hash = simpleHash(password)
-    const { rows } = await pool.query(
-      'SELECT username FROM admins WHERE username = $1 AND password_hash = $2',
-      [username, hash]
-    )
-    if (rows.length > 0) {
-      res.json({ authenticated: true, username: rows[0].username })
-    } else {
-      res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    if (!username || !password) {
+      return res.status(400).json({ authenticated: false, error: 'Usuario y contraseña requeridos' })
     }
+    const { rows } = await pool.query(
+      'SELECT username, password_hash FROM admins WHERE username = $1',
+      [username]
+    )
+    if (rows.length === 0) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    let ok = false
+    try {
+      ok = bcrypt.compareSync(password, rows[0].password_hash)
+    } catch {
+      ok = false
+    }
+    if (!ok) {
+      return res.status(401).json({ authenticated: false, error: 'Credenciales inválidas' })
+    }
+    // Actualizar last_login sin bloquear la respuesta
+    pool.query('UPDATE admins SET last_login = NOW() WHERE username = $1', [username])
+      .catch(() => {})
+    res.json({
+      authenticated: true,
+      username: rows[0].username,
+      // Token Bearer para futuras requests: "username:password"
+      // (mismo patrón que /api/habilitaciones/auth/login)
+      token: `${username}:${password}`,
+    })
   } catch (err) {
+    console.error('POST /api/reclamos/auth/login error:', err.message)
     res.status(500).json({ error: err.message })
   }
 })
@@ -95,7 +165,7 @@ router.post('/auth/google', async (req, res) => {
       return res.status(401).json({ authenticated: false, error: 'Token inválido o expirado' })
     }
 
-    const { email, email_verified, hd } = decodedToken
+    const { email, email_verified } = decodedToken
 
     if (!email) {
       return res.status(401).json({ authenticated: false, error: 'Email no disponible en la cuenta' })
@@ -138,6 +208,9 @@ router.post('/auth/google', async (req, res) => {
       username: email.split('@')[0],
       email,
       displayName: decodedToken.name || email.split('@')[0],
+      // Token Bearer para futuras requests: "username:email"
+      // (verifyAdminCredential valida contra admin.email para cuentas Google-only)
+      token: `${email.split('@')[0]}:${email}`,
     })
   } catch (err) {
     console.error('POST /api/reclamos/auth/google error:', err.message)
@@ -145,8 +218,9 @@ router.post('/auth/google', async (req, res) => {
   }
 })
 
-// ─── LIST /api/reclamos ?page &limit &estado &categoria &sort &order &search ─
-router.get('/', async (req, res) => {
+// ─── LIST /api/reclamos?page&limit&estado&categoria&sort&order&search ──
+// ADMIN: solo admins autenticados pueden ver datos personales (email, telefono, nombre, direccion)
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 15))
@@ -200,13 +274,17 @@ router.get('/', async (req, res) => {
 })
 
 // ─── SEARCH by code ──────────────────────────────────────────────────
+// PUBLICO: un ciudadano busca el estado de su propio reclamo por codigo
+// (no expone datos sensibles si el caller solo conoce el codigo)
 router.get('/search', async (req, res) => {
   try {
     const codigo = (req.query.codigo || '').trim().toUpperCase()
     if (!codigo) return res.status(400).json({ error: 'Código requerido' })
 
     const { rows } = await pool.query(
-      'SELECT * FROM reclamos WHERE codigo = $1 LIMIT 1',
+      `SELECT id, codigo, categoria, titulo, descripcion, direccion, lat, lng, estado,
+              created_at, updated_at, respuesta_ciudadano, respuesta_fecha
+       FROM reclamos WHERE codigo = $1 LIMIT 1`,
       [codigo]
     )
     if (rows.length === 0) return res.json(null)
@@ -218,7 +296,8 @@ router.get('/search', async (req, res) => {
 })
 
 // ─── STATS ────────────────────────────────────────────────────────────
-router.get('/stats', async (req, res) => {
+// ADMIN: estadisticas administrativas (cuantos pendientes, resueltos, etc)
+router.get('/stats', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT
@@ -239,6 +318,7 @@ router.get('/stats', async (req, res) => {
 })
 
 // ─── CREATE ──────────────────────────────────────────────────────────
+// PUBLICO: cualquier ciudadano puede crear un reclamo
 router.post('/', async (req, res) => {
   try {
     const body = req.body
@@ -278,6 +358,7 @@ router.post('/', async (req, res) => {
 })
 
 // ─── UPLOAD photo ─────────────────────────────────────────────────────
+// PUBLICO: subir foto para un reclamo
 router.post('/upload', upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' })
@@ -290,7 +371,8 @@ router.post('/upload', upload.single('file'), (req, res) => {
 })
 
 // ─── UPDATE by ID ────────────────────────────────────────────────────
-router.patch('/:id', async (req, res) => {
+// ADMIN: cambiar estado, agregar notas internas, asignar, responder
+router.patch('/:id', requireAdmin, async (req, res) => {
   try {
     const { estado, notas_internas, respuesta_ciudadano, asignado_a } = req.body
     const id = parseInt(req.params.id)
@@ -336,7 +418,8 @@ router.patch('/:id', async (req, res) => {
 })
 
 // ─── DELETE by ID ────────────────────────────────────────────────────
-router.delete('/:id', async (req, res) => {
+// ADMIN: borrar reclamo (operacion destructiva)
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id)
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' })
@@ -350,7 +433,7 @@ router.delete('/:id', async (req, res) => {
 })
 
 // ═══════════════════════════════════════════════════════════════════════
-// CATEGORÍAS
+// CATEGORÍAS (lectura PUBLICA para que los ciudadanos vean categorías)
 // ═══════════════════════════════════════════════════════════════════════
 
 router.get('/categorias', async (req, res) => {
@@ -366,7 +449,8 @@ router.get('/categorias', async (req, res) => {
   }
 })
 
-router.post('/categorias', async (req, res) => {
+// ADMIN: crear/modificar/borrar categorías
+router.post('/categorias', requireAdmin, async (req, res) => {
   try {
     const { nombre, icono, color, activa, orden } = req.body
     const { rows } = await pool.query(
@@ -380,7 +464,7 @@ router.post('/categorias', async (req, res) => {
   }
 })
 
-router.put('/categorias/:id', async (req, res) => {
+router.put('/categorias/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id)
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' })
@@ -402,7 +486,7 @@ router.put('/categorias/:id', async (req, res) => {
   }
 })
 
-router.delete('/categorias/:id', async (req, res) => {
+router.delete('/categorias/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id)
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' })
@@ -416,9 +500,10 @@ router.delete('/categorias/:id', async (req, res) => {
 
 // ═══════════════════════════════════════════════════════════════════════
 // ADMINS (gestión propia — reusa tabla admins)
+// ADMIN: solo admins pueden listar, crear o borrar otros admins
 // ═══════════════════════════════════════════════════════════════════════
 
-router.get('/admins', async (req, res) => {
+router.get('/admins', requireAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT username, rol, nombre, email FROM admins ORDER BY username`
@@ -429,11 +514,14 @@ router.get('/admins', async (req, res) => {
   }
 })
 
-router.post('/admins', async (req, res) => {
+router.post('/admins', requireAdmin, async (req, res) => {
   try {
     const { username, password, nombre, email } = req.body
     if (!username || !password) return res.status(400).json({ error: 'Usuario y contraseña requeridos' })
-    const hash = simpleHash(password)
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' })
+    }
+    const hash = bcrypt.hashSync(password, 12)
     const { rows } = await pool.query(
       `INSERT INTO admins (username, password_hash, rol, nombre, email)
        VALUES ($1, $2, 'admin', $3, $4)
@@ -447,7 +535,7 @@ router.post('/admins', async (req, res) => {
   }
 })
 
-router.delete('/admins/:username', async (req, res) => {
+router.delete('/admins/:username', requireAdmin, async (req, res) => {
   try {
     if (req.params.username === 'admin') return res.status(400).json({ error: 'No se puede eliminar el admin principal' })
     const { rowCount } = await pool.query('DELETE FROM admins WHERE username = $1', [req.params.username])
