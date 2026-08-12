@@ -1,7 +1,15 @@
 const { Pool } = require('pg')
 
+// Se exige DATABASE_URL. Si no está configurada (en Dokploy → Environment), el
+// servidor debe fallar al iniciar — NO caer a un fallback con credenciales.
+const connectionString = process.env.DATABASE_URL
+if (!connectionString) {
+  console.error('[db] Falta la variable de entorno DATABASE_URL. Configurala en Dokploy → Environment y redeploy.')
+  process.exit(1)
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_3KXGx5UgBmrO@ep-nameless-heart-aplwptdo.c-7.us-east-1.aws.neon.tech/neondb?sslmode=require',
+  connectionString,
   ssl: { rejectUnauthorized: false },
   max: 5,
 })

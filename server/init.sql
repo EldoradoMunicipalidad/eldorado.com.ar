@@ -63,10 +63,12 @@ INSERT INTO config (id, max_per_day, turnero_paused)
 VALUES ('default', 3, true)
 ON CONFLICT (id) DO NOTHING;
 
--- Seed default admin (password: 'admin' → hash: '1j67nz')
-INSERT INTO admins (username, password_hash)
-VALUES ('admin', '1j67nz')
-ON CONFLICT (username) DO NOTHING;
+-- NOTA: NO se siembra ningún admin por defecto.
+-- El primer admin debe crearse manualmente desde la UI de Preinscripción Comercial
+-- (/ciudadano-digital/preinscripcion-comercial/admin) usando el endpoint protegido
+-- POST /api/habilitaciones/admins (con Authorization: usuario:contraseña) una vez que
+-- haya al menos un admin creado por otra vía (ej: SQL directo en Neon).
+-- Mantener 'admin'/'admin' sembrado era un riesgo crítico de seguridad.
 
 -- Seed default areas (7 áreas de Planeamiento)
 INSERT INTO areas (id, name, description, color, icon, active, days, interval, slots_per_day, start_time, end_time) VALUES

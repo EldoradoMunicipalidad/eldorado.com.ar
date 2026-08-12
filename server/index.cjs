@@ -212,7 +212,8 @@ app.post('/api/seed', async (req, res) => {
       )
     }
     await pool.query("INSERT INTO config (id, max_per_day, turnero_paused) VALUES ('default', 3, true) ON CONFLICT (id) DO NOTHING")
-    await pool.query("INSERT INTO admins (username, password_hash) VALUES ('admin', '1j67nz') ON CONFLICT (username) DO NOTHING")
+        // NOTA: NO se siembra admin 'admin'/'admin' — riesgo de seguridad.
+        // El operador debe crear el primer admin manualmente (ver server/init.sql).
     res.json({ seeded: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
