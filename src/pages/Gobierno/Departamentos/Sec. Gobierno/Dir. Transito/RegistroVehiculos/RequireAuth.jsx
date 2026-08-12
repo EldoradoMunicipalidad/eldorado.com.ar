@@ -2,14 +2,14 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   authenticateAdmin,
-  getStoredAuth,
+  getStoredToken,
 } from '../../../../../../data/registroVehiculos'
 
 // Wrapper que protege páginas restringidas a usuarios con login.
 // Muestra un mini-form de login si no hay sesión, en lugar del contenido.
 // Al autenticarse correctamente, recarga la página padre para mostrar el contenido.
 export default function RequireAuth({ children, title }) {
-    const [auth, setAuth] = useState(getStoredAuth())
+    const [auth, setAuth] = useState(getStoredToken())
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
