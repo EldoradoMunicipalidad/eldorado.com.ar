@@ -4,6 +4,7 @@ const cors = require('cors')
 const pool = require('./db.cjs')
 const { askUru } = require('./uruService.cjs')
 const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('./authMiddleware.cjs')
+// Last deploy: 2026-08-12 - bcrypt + requireAdmin migration for all admin endpoints
 
 const app = express()
 app.use(cors())
