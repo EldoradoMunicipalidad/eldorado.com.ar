@@ -13,6 +13,16 @@ const pool = require('../db.cjs')
 const multer = require('multer')
 const path = require('path')
 const fs = require('fs')
+const rateLimit = require('express-rate-limit')
+
+// Upload limiter: 30 uploads por hora por IP
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: { error: 'Demasiados uploads. Esperá una hora e intentá de nuevo.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
 const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('../authMiddleware.cjs')
 
 const ADMIN_TABLE = 'admins_escuela_manejo'
@@ -251,7 +261,7 @@ router.patch('/appointments/:id/status', requireAdmin, async (req, res) => {
 })
 
 // ─── UPLOAD generico PUBLICO ──────────────────────────────────────
-router.post('/upload', upload.single('archivo'), (req, res) => {
+router.post('/upload', uploadLimiter, upload.single('archivo'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se envió ningún archivo' })
   }

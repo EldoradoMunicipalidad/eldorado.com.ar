@@ -127,6 +127,16 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 })
 
+// Upload limiter: 30 uploads por hora por IP.
+// Un ciudadano sube 1-3 archivos por sesion, un bot/spam llega a cientos.
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: { error: 'Demasiados uploads. Esperá una hora e intentá de nuevo.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
 // ─── Auth middleware ──────────────────────────────────────────────────
 function requireAdmin(req, res, next) {
   const auth = req.headers['authorization'] || ''
@@ -435,7 +445,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 })
 
 // ─── 6. POST /api/habilitaciones/upload ─ Subir archivo ────────────────
-router.post('/upload', (req, res) => {
+router.post('/upload', uploadLimiter, (req, res) => {
   upload.single('file')(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {

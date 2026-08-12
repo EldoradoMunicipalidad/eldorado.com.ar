@@ -16,6 +16,15 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
 })
 
+// Upload limiter: 30 uploads por hora por IP (ciudadano sube 1-3, spam bots cientos)
+const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: { error: 'Demasiados uploads. Esperá una hora e intentá de nuevo.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
 // ─── Auth middleware ───────────────────────────────────────────────────
 // Formato del Authorization: Bearer <username>:<secret>
 //   - secret = password en claro (para logins con user/pass)
@@ -359,7 +368,7 @@ router.post('/', async (req, res) => {
 
 // ─── UPLOAD photo ─────────────────────────────────────────────────────
 // PUBLICO: subir foto para un reclamo
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', uploadLimiter, upload.single('file'), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No se subió ningún archivo' })
     const url = `/uploads/${req.file.filename}`
