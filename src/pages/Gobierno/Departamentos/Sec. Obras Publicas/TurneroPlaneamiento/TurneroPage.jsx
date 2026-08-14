@@ -176,8 +176,9 @@ export default function TurneroPage() {
     }
 
     const results = []
+    const errors = []
     for (const area of selectedAreas) {
-      const apptId = await createAppointment({
+      const { id: apptId, error: apptErr } = await createAppointment({
         areaId: area.id,
         areaName: area.name,
         date: selectedDate,
@@ -195,12 +196,15 @@ export default function TurneroPage() {
           status: 'pending',
         })
       } else {
-        setError(`Error al guardar el turno para "${area.name}". Los turnos anteriores se guardaron correctamente.`)
-        break
+        errors.push(`${area.name}: ${apptErr || 'error desconocido'}`)
       }
     }
 
     setSubmitting(false)
+    if (errors.length > 0) {
+      // Mostrar mensaje específico del primer error (típicamente slot ocupado / cupos llenos)
+      setError(errors.join(' | '))
+    }
     if (results.length > 0) {
       setConfirmedAppts(results)
     }

@@ -271,11 +271,16 @@ export async function createAppointment(data) {
         direccion: data.direccion,
       }),
     })
-    const result = await res.json()
-    return result.id
+    const result = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      // Devuelve { id: null, error } para que la UI muestre mensaje específico
+      // (409 slot ocupado / 503 pausado / 400 validación / etc.)
+      return { id: null, error: result.error || `Error ${res.status}` }
+    }
+    return { id: result.id, error: null }
   } catch (e) {
     console.warn('createAppointment error:', e.message)
-    return null
+    return { id: null, error: 'Sin conexión con el servidor' }
   }
 }
 
