@@ -158,10 +158,11 @@ app.post('/api/appointments', async (req, res) => {
     }
 
     // 1) Turnero pausado?
-    const { rows: cfgRows } = await pool.query("SELECT turnero_paused FROM config WHERE id='default'")
+    const { rows: cfgRows } = await pool.query("SELECT turnero_paused, max_per_day FROM config WHERE id='default'")
     if (cfgRows[0]?.turnero_paused) {
       return res.status(503).json({ error: 'El turnero está pausado. Volvé a intentar más tarde.' })
     }
+    const maxPerDay = cfgRows[0]?.max_per_day ?? 3
 
     // 2) Área activa + ventana horaria
     const { rows: areaRows } = await pool.query(
@@ -189,6 +190,18 @@ app.post('/api/appointments', async (req, res) => {
     )
     if (capRows[0].n >= area.slots_per_day) {
       return res.status(409).json({ error: `No hay más cupos para ${area.name} ese día (${area.slots_per_day} slots)` })
+    }
+
+    // 3b) max_per_day por DNI: cada usuario puede sacar hasta N turnos por día.
+    const { rows: userRows } = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM appointments WHERE dni=$1 AND date=$2 AND status != 'cancelled'`,
+      [a.dni, a.date]
+    )
+    if (userRows[0].n >= maxPerDay) {
+      return res.status(409).json({
+        error: `Ya tenés ${userRows[0].n} turno(s) reservado(s) para este día. El máximo permitido es ${maxPerDay}.`,
+        code: 'MAX_PER_DAY',
+      })
     }
 
     // 4) Slot específico libre (defensa lógica, no atómica)
