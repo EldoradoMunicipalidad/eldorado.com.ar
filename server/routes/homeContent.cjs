@@ -1,31 +1,28 @@
 // Home Content CMS — editable content for the homepage
 // GET/PUT /api/home-content — single JSONB row keyed as 'home'
-// POST /api/home-content/upload — upload image to /uploads (public)
+// POST /api/home-content/upload — convierte la imagen a data URL base64
+//   y la devuelve lista para guardarse dentro del JSONB de page_content.
+//   Esto evita la dependencia de storage persistente en Dokploy (uploads/
+//   se borra en cada redeploy).
 
 const express = require('express')
 const router = express.Router()
 const pool = require('../db.cjs')
 const multer = require('multer')
-const path = require('path')
-const fs = require('fs')
 
-// ─── Multer config (mirrors habilitaciones.cjs) ────────────────────
-const uploadsDir = path.join(__dirname, '..', 'uploads')
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
-
-const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, uploadsDir),
-  filename: (_, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    cb(null, uniqueSuffix + path.extname(file.originalname))
-  },
-})
+// ─── Multer config (en memoria — no escribimos a disco) ──────────────
+// El tope de 5MB es porque base64 infla 33% el tamaño original,
+// y queremos que el JSONB de page_content no se vuelva gigante.
 const fileFilter = (_, file, cb) => {
   const allowed = /\.(jpg|jpeg|png|gif|webp|svg)$/i
-  if (allowed.test(path.extname(file.originalname))) cb(null, true)
+  if (allowed.test(file.originalname)) cb(null, true)
   else cb(new Error('Solo JPG, PNG, GIF, WebP o SVG'), false)
 }
-const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } })
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+})
 
 // ─── GET home content ────────────────────────────────────────────────
 router.get('/', async (req, res) => {
@@ -76,14 +73,22 @@ router.put('/', async (req, res) => {
   }
 })
 
-// ─── POST upload image ─────────────────────────────────────────────────
-router.post('/upload', upload.single('image'), async (req, res) => {
+// ─── POST upload image → devuelve data URL base64 ────────────────────
+// El frontend guarda este string en el JSONB de page_content y lo usa
+// directo en el <img src="...">. Sobrevive redeploys porque vive en la DB.
+router.post('/upload', upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No se envió ninguna imagen' })
   }
-  const url = `/uploads/${req.file.filename}`
-  console.log(`📷 Image uploaded: ${url}`)
-  res.json({ url })
+  const { buffer, mimetype, originalname, size } = req.file
+  const dataUrl = `data:${mimetype};base64,${buffer.toString('base64')}`
+  console.log(`📷 Image uploaded as data URL: ${originalname} (${size} bytes, ${mimetype})`)
+  res.json({
+    url: dataUrl,
+    size,
+    mimeType: mimetype,
+    filename: originalname,
+  })
 })
 
 module.exports = router
