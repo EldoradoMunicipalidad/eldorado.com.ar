@@ -6,4 +6,15 @@ services:
     container_name: municipalidad_page
     ports:
       - "80:80"
+    volumes:
+      - uploads_data:/app/server/uploads
     restart: unless-stopped
+
+# Volumen nombrado para persistir uploads/ entre redeploys.
+# Sin esto, server/uploads/ se recrea vacío en cada rebuild → bug del slider
+# del Home (las imágenes que el admin sube desaparecen después del redeploy).
+# Crear la primera vez via Dokploy: Volumes → Create Volume con nombre
+# "uploads_data" y mount path "/app/server/uploads". En redeploys siguientes
+# el volumen persiste.
+volumes:
+  uploads_data:
