@@ -51,36 +51,24 @@ async function signR2UrlsInContent(content) {
   // Bucket privado: firmar cada URL de R2 detectada
   const urlsToSign = new Set()
 
-  function walk(obj, path = '') {
+  function walk(obj) {
     if (!obj || typeof obj !== 'object') return
-    if (Array.isArray(obj)) {
-      obj.forEach((item, i) => walk(item, `${path}[${i}]`))
-      return
-    }
+    if (Array.isArray(obj)) { obj.forEach(walk); return }
     for (const k of Object.keys(obj)) {
       const v = obj[k]
-      const p = `${path}.${k}`
       if (typeof v === 'string') {
         const m = v.match(R2_URL_RE)
         if (m) {
-          const key = m[1] || m[2]
-          urlsToSign.add(key)
-          console.log(`[signR2] match url at ${p}: key=${key}`)
+          urlsToSign.add(m[1] || m[2])
         } else if (/^home\//.test(v) && !v.startsWith('http')) {
           urlsToSign.add(v)
-          console.log(`[signR2] match key at ${p}: ${v}`)
-        } else if (v.length > 0 && v.length < 100) {
-          console.log(`[signR2] skip ${p}: ${v.substring(0, 50)}`)
         }
       } else if (typeof v === 'object') {
-        walk(v, p)
+        walk(v)
       }
     }
   }
   walk(content)
-
-  console.log(`[signR2UrlsInContent] urlsToSign.size = ${urlsToSign.size}`)
-  console.log(`[signR2UrlsInContent] R2_PUBLIC_BASE_URL = ${R2_PUBLIC_BASE_URL}`)
 
   if (urlsToSign.size === 0) return content
 
@@ -92,13 +80,14 @@ async function signR2UrlsInContent(content) {
         const url = await getSignedUrl(key)
         signedMap.set(key, url)
       } catch (e) {
-        console.warn('signR2UrlsInContent: error firmando', key, e.message)
-        signedMap.set(key, key)
+        console.error('signR2UrlsInContent: error firmando', key, e.message)
+        // Si la firma falla (ej: expiration > 7d), no la firmamos.
+        // La entrada queda fuera del signedMap y el replace() deja el valor
+        // original intacto (URL completa). El frontend va a mostrar fallback
+        // /slider-2.jpg via el onError del <img>.
       }
     })
   )
-  console.log(`[signR2UrlsInContent] signedMap.size = ${signedMap.size}`)
-
   // Reemplazar URLs por firmadas
   function replace(obj) {
     if (!obj || typeof obj !== 'object') return
@@ -239,76 +228,6 @@ router.get('/r2-ping', async (req, res) => {
   } catch (err) {
     res.status(502).json({ ok: false, error: err.message })
   }
-})
-
-// ─── DEBUG endpoint: signR2UrlsInContent (TEMPORAL) ──────────────────
-router.get('/debug-sign', async (req, res) => {
-  try {
-    const { rows } = await c.query ? null : null  // dummy, evita error
-  } catch {}
-
-  const { Client } = require('pg')
-  const pool = require('../db.cjs')
-  const { getSignedUrl } = require('../lib/r2.cjs')
-
-  let info = {
-    r2PublicBaseUrl: R2_PUBLIC_BASE_URL,
-    r2Bucket: R2_BUCKET,
-    envVars: {
-      R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID ? '***' + process.env.R2_ACCOUNT_ID.slice(-4) : null,
-      R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID ? '***' + process.env.R2_ACCESS_KEY_ID.slice(-4) : null,
-      R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY ? '***' + process.env.R2_SECRET_ACCESS_KEY.slice(-4) : null,
-      R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || null,
-      R2_ENDPOINT: process.env.R2_ENDPOINT || null,
-    },
-  }
-
-  // Probar firma de URL con una key conocida
-  try {
-    const testKey = 'home/migrated/1787144571575-5kfjll-migrated-042fee75.jpeg'
-    const signedUrl = await getSignedUrl(testKey, 300)
-    info.testSignedUrl = signedUrl.substring(0, 200) + '...'
-    info.testSignedUrlOk = signedUrl.includes('X-Amz-Signature')
-  } catch (e) {
-    info.signError = e.message
-  }
-
-  // Verificar que las dependencias estan instaladas
-  try {
-    const path = require('path')
-    info.resolvedPaths = {
-      's3-request-presigner': require.resolve('@aws-sdk/s3-request-presigner'),
-      'client-s3': require.resolve('@aws-sdk/client-s3'),
-    }
-  } catch (e) {
-    info.resolveError = e.message
-  }
-
-  // Version de Node
-  info.nodeVersion = process.version
-
-  // Working dir
-  info.cwd = process.cwd()
-
-  // Verificar que signR2UrlsInContent esta en el codigo cargado
-  const fs = require('fs')
-  const pathMod = require('path')
-  try {
-    const codePath = pathMod.join(__dirname, 'homeContent.cjs')
-    const codeSrc = fs.readFileSync(codePath, 'utf-8')
-    info.codeVersion = {
-      hasSignR2: codeSrc.includes('async function signR2UrlsInContent'),
-      hasDebugLogs: codeSrc.includes('[signR2]'),
-      hasDebugSign: codeSrc.includes('/debug-sign'),
-      lines: codeSrc.split('\n').length,
-    }
-    // Mostrar primeras lineas del archivo cargado
-    info.firstLines = codeSrc.split('\n').slice(0, 10).join('\n')
-  } catch (e) {
-    info.codeError = e.message
-  }
-
-  res.json(info)
 })
 
 module.exports = router

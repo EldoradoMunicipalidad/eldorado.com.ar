@@ -63,10 +63,11 @@ function sanitizeFilename(name) {
     .substring(0, 80) || 'file'
 }
 
-// Default expiration: 30 dias. Las URLs se renuevan cada vez que el backend
-// serializa el JSONB (porque el bucket no es publico -> no podemos servir
-// URLs publicas estaticas).
-const DEFAULT_EXPIRES_IN = 30 * 24 * 60 * 60 // 30 dias en segundos
+// Default expiration: 6 dias (maximo permitido por AWS Signature V4 es 7 dias).
+// Cloudflare R2 usa AWS Signature V4, que rechaza expiraciones > 7 dias.
+// Las URLs se renuevan cada vez que el backend serializa el JSONB (porque
+// el bucket no es publico -> no podemos servir URLs publicas estaticas).
+const DEFAULT_EXPIRES_IN = 6 * 24 * 60 * 60 // 6 dias en segundos
 
 async function getSignedUrl(key, expiresIn = DEFAULT_EXPIRES_IN) {
   if (!key) throw new Error('getSignedUrl: key requerido')
