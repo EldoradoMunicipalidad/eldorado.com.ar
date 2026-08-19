@@ -51,24 +51,29 @@ async function signR2UrlsInContent(content) {
   // Bucket privado: firmar cada URL de R2 detectada
   const urlsToSign = new Set()
 
-  function walk(obj) {
+  function walk(obj, path = '') {
     if (!obj || typeof obj !== 'object') return
     if (Array.isArray(obj)) {
-      obj.forEach(walk)
+      obj.forEach((item, i) => walk(item, `${path}[${i}]`))
       return
     }
     for (const k of Object.keys(obj)) {
       const v = obj[k]
+      const p = `${path}.${k}`
       if (typeof v === 'string') {
         const m = v.match(R2_URL_RE)
         if (m) {
           const key = m[1] || m[2]
           urlsToSign.add(key)
+          console.log(`[signR2] match url at ${p}: key=${key}`)
         } else if (/^home\//.test(v) && !v.startsWith('http')) {
           urlsToSign.add(v)
+          console.log(`[signR2] match key at ${p}: ${v}`)
+        } else if (v.length > 0 && v.length < 100) {
+          console.log(`[signR2] skip ${p}: ${v.substring(0, 50)}`)
         }
       } else if (typeof v === 'object') {
-        walk(v)
+        walk(v, p)
       }
     }
   }
@@ -267,6 +272,23 @@ router.get('/debug-sign', async (req, res) => {
   } catch (e) {
     info.signError = e.message
   }
+
+  // Verificar que las dependencias estan instaladas
+  try {
+    const path = require('path')
+    info.resolvedPaths = {
+      's3-request-presigner': require.resolve('@aws-sdk/s3-request-presigner'),
+      'client-s3': require.resolve('@aws-sdk/client-s3'),
+    }
+  } catch (e) {
+    info.resolveError = e.message
+  }
+
+  // Version de Node
+  info.nodeVersion = process.version
+
+  // Working dir
+  info.cwd = process.cwd()
 
   res.json(info)
 })
