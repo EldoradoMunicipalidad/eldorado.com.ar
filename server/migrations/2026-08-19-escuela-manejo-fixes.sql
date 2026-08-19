@@ -1,6 +1,11 @@
 -- Escuela de Manejo: agregar columna fecha_nacimiento + UNIQUE INDEX por slot
 -- Fecha: 2026-08-19
 -- BLOQUE 2: bug fixes end-to-end
+--
+-- EJECUTADO EN PROD: 2026-08-19 contra Neon (ep-round-bar-…neon.tech/neondb)
+--   * columna 'fecha_nacimiento' creada
+--   * 0 duplicados cancelados (tabla vacía al correr)
+--   * idx_appointments_escuela_manejo_slot UNIQUE INDEX creado
 --   1) Persistir fecha_nacimiento (hoy se pide en el form pero se descartaba)
 --   2) Lock de slot por (area_id, date, time) — un solo turno activo por slot
 --      (cancelled se excluye para permitir re-reserva tras cancelación)
