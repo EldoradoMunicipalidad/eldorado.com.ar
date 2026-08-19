@@ -197,8 +197,12 @@ router.post('/appointments', async (req, res) => {
       return res.status(409).json({ error: `Ya tenés ${countRows[0].n} turno(s) reservado(s) para ese día. Máximo permitido: ${maxPerDay}.` })
     }
 
-    // 4) INSERT (el UNIQUE INDEX idx_appointments_escuela_manejo_slot protege
-    //    contra race conditions — captura 23505 y lo convierte en 409)
+    // 4) INSERT (los UNIQUE INDEX existentes protegen contra race conditions
+    //    - idx_appointments_escuela_manejo_slot: evita que 2 DNIs distintos
+    //      se solapen en el mismo (area_id, date, time)
+    //    - idx_appointments_escuela_manejo_dni_day: evita que el mismo DNI
+    //      tenga 2+ turnos activos en el mismo día
+    //    Capturamos 23505 y lo convertimos en 409 con mensaje específico)
     let rows
     try {
       const insert = await pool.query(
@@ -226,52 +230,29 @@ router.post('/appointments', async (req, res) => {
     } catch (dbErr) {
       // 23505 = unique_violation
       if (dbErr.code === '23505') {
-        return res.status(409).json({ error: 'Ese horario ya fue reservado por otra persona. Elegí otra fecha u horario.' })
+        const constraint = dbErr.constraint || ''
+        if (constraint === 'idx_appointments_escuela_manejo_dni_day') {
+          return res.status(409).json({
+            error: 'Ya tenés un turno reservado para ese día. Si necesitás otro, primero cancelá el anterior.',
+            code: 'dni_day_conflict',
+          })
+        }
+        if (constraint === 'idx_appointments_escuela_manejo_slot') {
+          return res.status(409).json({
+            error: 'Ese horario ya fue reservado por otra persona. Elegí otra fecha u horario.',
+            code: 'slot_conflict',
+          })
+        }
+        return res.status(409).json({
+          error: 'Conflicto al guardar el turno. Intentá con otro horario.',
+          code: 'unique_conflict',
+        })
       }
       throw dbErr
     }
     res.json({ id: rows[0].id })
   } catch (err) {
     console.error('POST /api/escuela-manejo/appointments error:', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// POST sin archivo (legacy / fallback JSON)
-router.post('/appointments-json', async (req, res) => {
-  try {
-    const a = req.body
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-    const vehiculoPropio = (a.vehiculoPropio === true || a.vehiculoPropio === 'true')
-    const cantidadClases = parseInt(a.cantidadClases, 10)
-
-    if (!cantidadClases || cantidadClases < 1 || cantidadClases > 6) {
-      return res.status(400).json({ error: 'La cantidad de clases debe estar entre 1 y 6' })
-    }
-
-    const { rows } = await pool.query(
-      `INSERT INTO appointments_escuela_manejo
-         (id, area_id, area_name, date, time, nombre, apellido, dni, telefono, email, direccion, vehiculo_propio, cantidad_clases, archivo_url, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending') RETURNING id`,
-      [
-        id,
-        a.areaId || 'autodromo-km4',
-        a.areaName || 'Escuela de Manejo — Autódromo km 4',
-        a.date,
-        a.time,
-        a.nombre,
-        a.apellido || '',
-        a.dni,
-        a.telefono,
-        a.email,
-        a.direccion || '',
-        vehiculoPropio,
-        cantidadClases,
-        a.archivoUrl || '',
-      ]
-    )
-    res.json({ id: rows[0].id })
-  } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })

@@ -293,7 +293,12 @@ export async function createAppointment(data) {
     }),
   })
   const result = await res.json()
-  if (!res.ok) throw new Error(result.error || 'Error al guardar el turno')
+  if (!res.ok) {
+    const e = new Error(result.error || 'Error al guardar el turno')
+    e.code = result.code || (res.status === 409 ? 'conflict' : 'http_error')
+    e.status = res.status
+    throw e
+  }
   return { id: result.id }
 }
 
