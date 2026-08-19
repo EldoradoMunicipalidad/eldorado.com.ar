@@ -6,10 +6,13 @@
 //   R2_SECRET_ACCESS_KEY
 //   R2_BUCKET_NAME           (default: 'sitiomunicipal')
 //   R2_ENDPOINT              (default: https://{ACCOUNT_ID}.r2.cloudflarestorage.com)
-//   R2_PUBLIC_BASE_URL       (OPCIONAL — default: URL publica directa del bucket
-//                            R2. Si en el futuro se agrega un dominio custom
-//                            como cdn.eldorado.gob.ar, setear esta var para
-//                            que las URLs queden más lindas).
+//   R2_PUBLIC_BASE_URL       (OPCIONAL — default: URL publica de DESARROLLO
+//                            de Cloudflare R2, formato https://pub-*.r2.dev/{BUCKET}.
+//                            Funciona apenas el bucket tenga habilitada la opcion
+//                            "Public Development URL" en Cloudflare Dashboard.
+//                            Si en algun momento se configura un dominio custom
+//                            (assets.eldorado.gob.ar), setear R2_PUBLIC_BASE_URL
+//                            en Dokploy y este codigo lo respetara).
 //
 // API expuesta:
 //   uploadToR2({ buffer, contentType, keyPrefix, originalName })
@@ -25,13 +28,15 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/cl
 
 const R2_ENDPOINT = process.env.R2_ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'sitiomunicipal'
-// Default: URL publica directa del bucket R2 (formato:
-// https://{ACCOUNT_ID}.r2.cloudflarestorage.com/{BUCKET}). Funciona apenas
-// creadas las credenciales, sin requerir DNS adicional.
-// Si en algun momento se configura un custom domain (cdn.eldorado.gob.ar),
-// setear R2_PUBLIC_BASE_URL en Dokploy y este codigo lo respetara.
+// Default: URL publica de DESARROLLO de R2 (formato: https://pub-*.r2.dev/{BUCKET}).
+// Funciona apenas el bucket tenga habilitada la opcion "Public Development URL"
+// en Cloudflare Dashboard (es un toggle, no requiere custom domain ni DNS).
+// Esta URL es rate-limited (no para produccion de alto volumen), pero sirve para
+// volumen bajo/medio. Es la unica URL publica sin credenciales.
+// Si se configura un dominio custom (assets.eldorado.gob.ar), setear
+// R2_PUBLIC_BASE_URL en Dokploy y este codigo lo respetara.
 const R2_PUBLIC_BASE_URL = (process.env.R2_PUBLIC_BASE_URL
-  || `https://${process.env.R2_ACCOUNT_ID || 'r2-cloudflarestorage'}.r2.cloudflarestorage.com/${R2_BUCKET}`)
+  || `https://pub-8ee00443a7304320af03eb5c196650ce.r2.dev/${R2_BUCKET}`)
   .replace(/\/+$/, '')
 
 let _client = null
