@@ -1,12 +1,18 @@
 // Home Content CMS — editable content for the homepage
 // GET/PUT /api/home-content — single JSONB row keyed as 'home'
 //
-// POST /api/home-content/upload — sube la imagen a Cloudflare R2 y
-//   devuelve la URL PÚBLICA lista para guardarse en el JSONB.
-//   (v1: data URL base64; v2 actual: R2 con CDN edge-cache)
+// POST /api/home-content/upload — recibe la imagen via multipart/form-data
+//   (campo 'image'), la sube a Cloudflare R2 con multer.memoryStorage
+//   y devuelve la URL FIRMADA con 6 dias de expiracion.
+//   El frontend guarda esa URL en el JSONB de page_content.home.
+//   Las URLs se renuevan automaticamente en cada GET del JSONB.
 //
-// GET /api/home-content/r2-ping — healthcheck de la conexión R2
-//   (uso: diagnóstico durante deploy o smoke test).
+// GET /api/home-content/r2-ping — healthcheck de la conexion R2
+//   (uso: diagnostico durante deploy o smoke test).
+//
+// Imagenes:
+//   v1 (legacy): data URL base64 embebido en JSONB (7 MB por home)
+//   v2 (actual): URLs firmadas de R2 (~4 KB JSONB + imagenes en CDN)
 
 const express = require('express')
 const router = express.Router()
@@ -17,6 +23,10 @@ const { uploadToR2, getSignedUrl, R2_BUCKET, R2_PUBLIC_BASE_URL } = require('../
 // ─── Multer config (en memoria — no escribimos a disco) ──────────────
 // El tope de 5MB es porque base64 infla 33% el tamaño original,
 // y queremos que el JSONB de page_content no se vuelva gigante.
+// Multer en memoria: no escribimos a disco (Dokploy no tiene storage
+// persistente; las imagenes van directo a R2). 25 MB es suficiente para
+// imagenes de carousel (tipicamente <2 MB). R2 aguanta hasta 5 GB por
+// archivo si mas adelante necesitamos subir cosas mas pesadas.
 const fileFilter = (_, file, cb) => {
   const allowed = /\.(jpg|jpeg|png|gif|webp|svg)$/i
   if (allowed.test(file.originalname)) cb(null, true)
@@ -25,7 +35,7 @@ const fileFilter = (_, file, cb) => {
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25 MB
 })
 
 // ─── Helper: firmar URLs R2 dentro de un objeto recursivamente ─────
@@ -164,10 +174,11 @@ router.put('/', async (req, res) => {
   }
 })
 
-// ─── POST upload image → sube a R2 y devuelve URL PÚBLICA ──────────
+// ─── POST upload image → sube a R2 y devuelve URL firmada ──────────
 // El frontend guarda SOLO la URL en el JSONB de page_content.
-// No hay data URL base64 (eso quedaba en Neon, ejemplo: 7 MB por home).
-// Ahora la imagen vive en R2 con CDN edge-cache de Cloudflare.
+// La URL es una presigned URL con 6 dias de expiracion (maximo permitido
+// por AWS Signature V4). El backend renueva la firma en cada GET del
+// JSONB, asi que el frontend no necesita preocuparse.
 router.post('/upload', upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
