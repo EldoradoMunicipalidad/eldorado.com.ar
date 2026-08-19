@@ -290,6 +290,24 @@ router.get('/debug-sign', async (req, res) => {
   // Working dir
   info.cwd = process.cwd()
 
+  // Verificar que signR2UrlsInContent esta en el codigo cargado
+  const fs = require('fs')
+  const pathMod = require('path')
+  try {
+    const codePath = pathMod.join(__dirname, 'homeContent.cjs')
+    const codeSrc = fs.readFileSync(codePath, 'utf-8')
+    info.codeVersion = {
+      hasSignR2: codeSrc.includes('async function signR2UrlsInContent'),
+      hasDebugLogs: codeSrc.includes('[signR2]'),
+      hasDebugSign: codeSrc.includes('/debug-sign'),
+      lines: codeSrc.split('\n').length,
+    }
+    // Mostrar primeras lineas del archivo cargado
+    info.firstLines = codeSrc.split('\n').slice(0, 10).join('\n')
+  } catch (e) {
+    info.codeError = e.message
+  }
+
   res.json(info)
 })
 
