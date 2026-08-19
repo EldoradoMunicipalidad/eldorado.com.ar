@@ -6,8 +6,10 @@
 //   R2_SECRET_ACCESS_KEY
 //   R2_BUCKET_NAME           (default: 'sitiomunicipal')
 //   R2_ENDPOINT              (default: https://{ACCOUNT_ID}.r2.cloudflarestorage.com)
-//   R2_PUBLIC_BASE_URL       (default: https://cdn.eldorado.gob.ar — el dominio
-//                            custom que mapea al bucket público)
+//   R2_PUBLIC_BASE_URL       (OPCIONAL — default: URL publica directa del bucket
+//                            R2. Si en el futuro se agrega un dominio custom
+//                            como cdn.eldorado.gob.ar, setear esta var para
+//                            que las URLs queden más lindas).
 //
 // API expuesta:
 //   uploadToR2({ buffer, contentType, keyPrefix, originalName })
@@ -23,7 +25,14 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/cl
 
 const R2_ENDPOINT = process.env.R2_ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'sitiomunicipal'
-const R2_PUBLIC_BASE_URL = (process.env.R2_PUBLIC_BASE_URL || `https://cdn.eldorado.gob.ar`).replace(/\/+$/, '')
+// Default: URL publica directa del bucket R2 (formato:
+// https://{ACCOUNT_ID}.r2.cloudflarestorage.com/{BUCKET}). Funciona apenas
+// creadas las credenciales, sin requerir DNS adicional.
+// Si en algun momento se configura un custom domain (cdn.eldorado.gob.ar),
+// setear R2_PUBLIC_BASE_URL en Dokploy y este codigo lo respetara.
+const R2_PUBLIC_BASE_URL = (process.env.R2_PUBLIC_BASE_URL
+  || `https://${process.env.R2_ACCOUNT_ID || 'r2-cloudflarestorage'}.r2.cloudflarestorage.com/${R2_BUCKET}`)
+  .replace(/\/+$/, '')
 
 let _client = null
 
