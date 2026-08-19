@@ -53,6 +53,7 @@ import BadgeIcon from "./MaterialIcons/BadgeIcon";
 import AssignmentIcon from "./MaterialIcons/AssignmentIcon";
 import CheckBoxIcon from "./MaterialIcons/CheckBoxIcon";
 import DirectionsBusIcon from "./MaterialIcons/DirectionsBusIcon";
+import DirectionsCarIcon from "./MaterialIcons/DirectionsCarIcon";
 import DomainIcon from "./MaterialIcons/DomainIcon";
 import MenuBookIcon from "./MaterialIcons/MenuBookIcon";
 import VerifiedUserIcon from "./MaterialIcons/VerifiedUserIcon";
@@ -79,6 +80,7 @@ import StadiumIcon from "./MaterialIcons/StadiumIcon";
 import SportsIcon from "./MaterialIcons/SportsIcon";
 import TrophyIcon from "./MaterialIcons/TrophyIcon";
 import FitnessCenterIcon from "./MaterialIcons/FitnessCenterIcon";
+import FormatListNumberedIcon from "./MaterialIcons/FormatListNumberedIcon";
 import ParkIcon from "./MaterialIcons/ParkIcon";
 import PolicyIcon from "./MaterialIcons/PolicyIcon";
 import AmbulanceIcon from "./MaterialIcons/AmbulanceIcon";
@@ -91,6 +93,7 @@ import RequestQuoteIcon from "./MaterialIcons/RequestQuoteIcon";
 import WorkSpacePremiumIcon from "./MaterialIcons/WorkSpacePremiumIcon";
 import RecyclingIcon from "./MaterialIcons/RecyclingIcon";
 import InventoryIcon from "./MaterialIcons/InventoryIcon";
+import InfoIcon from "./MaterialIcons/InfoIcon";
 import HubIcon from "./MaterialIcons/HubIcon";
 import HomeWorkIcon from "./MaterialIcons/HomeWorkIcon";
 import Diversity3Icon from "./MaterialIcons/Diversity3Icon";
@@ -202,6 +205,7 @@ import EditIcon from "./MaterialIcons/EditIcon";
 import StraightenIcon from "./MaterialIcons/StraightenIcon";
 import CheckCircleIcon from "./MaterialIcons/CheckCircleIcon";
 import EventBusyIcon from "./MaterialIcons/EventBusyIcon";
+import EventIcon from "./MaterialIcons/EventIcon";
 
 export const ICONS_MAP = {
     'departamentos': DepartamentosIcon,
@@ -259,6 +263,7 @@ export const ICONS_MAP = {
     'assignmentIcon': AssignmentIcon,
     'checkBoxIcon': CheckBoxIcon,
     'directionsBusIcon': DirectionsBusIcon,
+    'directionsCarIcon': DirectionsCarIcon,
     'domainIcon': DomainIcon,
     'menuBookIcon': MenuBookIcon,
     'verifiedUserIcon': VerifiedUserIcon,
@@ -291,6 +296,7 @@ export const ICONS_MAP = {
     'securityIcon': SecurityIcon,
     'trendingUpIcon': TrendingUpIcon,
     'forumIcon': ForumIcon,
+    'formatListNumberedIcon': FormatListNumberedIcon,
     'modelTrainingIcon': ModelTrainingIcon,
     'paymentIcon': PaymentIcon,
     'requestQuoteIcon': RequestQuoteIcon,
@@ -408,9 +414,11 @@ export const ICONS_MAP = {
     'chevronLeftIcon': ChevronLeftIcon,
     'closeIcon': CloseIcon,
     'inboxIcon': InboxIcon,
+    'infoIcon': InfoIcon,
     'addIcon': AddIcon,
     'editIcon': EditIcon,
     'straightenIcon': StraightenIcon,
     'checkCircleIcon': CheckCircleIcon,
     'eventBusyIcon': EventBusyIcon,
+    'eventIcon': EventIcon,
 }
