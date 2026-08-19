@@ -22,6 +22,7 @@ scratch-*.env
 scratch-*.cjs
 .envrc
 server/backups/
+__env-*.txt
 
 
 # Editor directories and files

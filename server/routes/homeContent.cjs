@@ -74,6 +74,9 @@ async function signR2UrlsInContent(content) {
   }
   walk(content)
 
+  console.log(`[signR2UrlsInContent] urlsToSign.size = ${urlsToSign.size}`)
+  console.log(`[signR2UrlsInContent] R2_PUBLIC_BASE_URL = ${R2_PUBLIC_BASE_URL}`)
+
   if (urlsToSign.size === 0) return content
 
   // Firmar en paralelo
@@ -89,6 +92,7 @@ async function signR2UrlsInContent(content) {
       }
     })
   )
+  console.log(`[signR2UrlsInContent] signedMap.size = ${signedMap.size}`)
 
   // Reemplazar URLs por firmadas
   function replace(obj) {
