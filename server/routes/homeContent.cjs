@@ -236,4 +236,39 @@ router.get('/r2-ping', async (req, res) => {
   }
 })
 
+// ─── DEBUG endpoint: signR2UrlsInContent (TEMPORAL) ──────────────────
+router.get('/debug-sign', async (req, res) => {
+  try {
+    const { rows } = await c.query ? null : null  // dummy, evita error
+  } catch {}
+
+  const { Client } = require('pg')
+  const pool = require('../db.cjs')
+  const { getSignedUrl } = require('../lib/r2.cjs')
+
+  let info = {
+    r2PublicBaseUrl: R2_PUBLIC_BASE_URL,
+    r2Bucket: R2_BUCKET,
+    envVars: {
+      R2_ACCOUNT_ID: process.env.R2_ACCOUNT_ID ? '***' + process.env.R2_ACCOUNT_ID.slice(-4) : null,
+      R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID ? '***' + process.env.R2_ACCESS_KEY_ID.slice(-4) : null,
+      R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY ? '***' + process.env.R2_SECRET_ACCESS_KEY.slice(-4) : null,
+      R2_BUCKET_NAME: process.env.R2_BUCKET_NAME || null,
+      R2_ENDPOINT: process.env.R2_ENDPOINT || null,
+    },
+  }
+
+  // Probar firma de URL con una key conocida
+  try {
+    const testKey = 'home/migrated/1787144571575-5kfjll-migrated-042fee75.jpeg'
+    const signedUrl = await getSignedUrl(testKey, 300)
+    info.testSignedUrl = signedUrl.substring(0, 200) + '...'
+    info.testSignedUrlOk = signedUrl.includes('X-Amz-Signature')
+  } catch (e) {
+    info.signError = e.message
+  }
+
+  res.json(info)
+})
+
 module.exports = router
