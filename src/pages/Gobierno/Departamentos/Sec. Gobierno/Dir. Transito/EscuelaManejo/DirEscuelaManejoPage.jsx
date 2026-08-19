@@ -5,12 +5,11 @@ import { Section } from '../../../../../../assets/components/Section'
 import Icon from '../../../../../../assets/Icons/Icon'
 
 const requisitos = [
-  'DNI original y fotocopia.',
+  'DNI original y fotocopia (presentar el día del turno).',
   'Tener entre 16 años y 6 meses y 21 años (autorización de progenitores para menores de 18).',
   'Certificado de salud (FUT) vigente.',
   'Certificado de Antecedentes Nacionales de Tránsito (CENAT).',
   'Comprobante de pago del CENAT.',
-  'Documentación básica adjunta al momento de inscripción online.',
 ]
 
 const pasos = [
@@ -18,7 +17,7 @@ const pasos = [
     n: 1,
     titulo: 'Inscripción online',
     descripcion:
-      'Completá el formulario con tus datos personales, adjuntá la documentación y elegí el día y horario disponibles en el Autódromo km 4.',
+      'Completá el formulario con tus datos personales y elegí el día y horario disponibles en el Autódromo km 4.',
   },
   {
     n: 2,
@@ -115,7 +114,7 @@ export default function DirEscuelaManejoPage() {
               <li>• Edad mínima: 16 años y 6 meses (validación automática al momento de inscripción).</li>
               <li>• Máximo 6 clases por persona.</li>
               <li>• Indicar si vas a traer vehículo propio.</li>
-              <li>• La documentación adjuntada se almacena en el servidor municipal.</li>
+              <li>• La presentación de la documentación es obligatoria el día del turno.</li>
               <li>• Cancelaciones o cambios: contactarte vía WhatsApp al Centro de Emisión de Licencias.</li>
             </ul>
           </div>

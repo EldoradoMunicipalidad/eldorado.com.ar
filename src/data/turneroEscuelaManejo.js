@@ -140,6 +140,7 @@ function normalizeAppointment(row) {
     telefono: row.telefono,
     email: row.email,
     direccion: row.direccion,
+    fechaNacimiento: row.fecha_nacimiento,
     vehiculoPropio: row.vehiculo_propio,
     cantidadClases: row.cantidad_clases,
     archivoUrl: row.archivo_url,
@@ -270,65 +271,30 @@ export async function getAppointments(page = 1, limit = 200, filters = {}) {
   }
 }
 
-// ─── UPLOAD: helper para subir un archivo al backend ──────────────────
-export async function uploadArchivo(file) {
-  if (!file) return null
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']
-  if (!allowedTypes.includes(file.type)) {
-    throw new Error('Tipo de archivo no permitido. Solo imágenes (JPG, PNG, GIF, WebP) o PDF.')
-  }
-  if (file.size > 10 * 1024 * 1024) {
-    throw new Error('El archivo supera el máximo de 10 MB.')
-  }
-  const fd = new FormData()
-  fd.append('archivo', file)
-  const res = await fetch(`${API}/upload`, { method: 'POST', body: fd })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.error || 'Error al subir el archivo')
-  }
-  const data = await res.json()
-  return data.url
-}
-
 // ─── CREATE APPOINTMENT ──────────────────────────────────────────────
-export async function createAppointment(data, archivoFile = null) {
-  try {
-    let archivoUrl = data.archivoUrl || ''
-    if (archivoFile) {
-      archivoUrl = await uploadArchivo(archivoFile)
-    }
-
-    const fd = new FormData()
-    fd.append('areaId', data.areaId)
-    fd.append('areaName', data.areaName)
-    fd.append('date', data.date)
-    fd.append('time', data.time)
-    fd.append('nombre', data.nombre)
-    fd.append('apellido', data.apellido || '')
-    fd.append('dni', data.dni)
-    fd.append('telefono', data.telefono)
-    fd.append('email', data.email)
-    fd.append('direccion', data.direccion || '')
-    fd.append('vehiculoPropio', data.vehiculoPropio ? 'true' : 'false')
-    fd.append('cantidadClases', String(data.cantidadClases))
-    if (archivoFile) {
-      fd.append('archivo', archivoFile)
-    } else if (archivoUrl) {
-      fd.append('archivoUrl', archivoUrl)
-    }
-
-    const res = await fetch(`${API}/appointments`, {
-      method: 'POST',
-      body: fd,
-    })
-    const result = await res.json()
-    if (!res.ok) throw new Error(result.error || 'Error al guardar el turno')
-    return { id: result.id, archivoUrl: result.archivoUrl || archivoUrl }
-  } catch (e) {
-    console.warn('createAppointment error:', e.message)
-    throw e
-  }
+export async function createAppointment(data) {
+  const res = await fetch(`${API}/appointments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      areaId: data.areaId,
+      areaName: data.areaName,
+      date: data.date,
+      time: data.time,
+      nombre: data.nombre,
+      apellido: data.apellido || '',
+      dni: data.dni,
+      telefono: data.telefono,
+      email: data.email,
+      direccion: data.direccion || '',
+      fechaNacimiento: data.fechaNacimiento || '',
+      vehiculoPropio: data.vehiculoPropio ? true : false,
+      cantidadClases: data.cantidadClases,
+    }),
+  })
+  const result = await res.json()
+  if (!res.ok) throw new Error(result.error || 'Error al guardar el turno')
+  return { id: result.id }
 }
 
 export async function updateAppointmentStatus(apptId, status) {

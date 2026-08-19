@@ -3,50 +3,17 @@
 // config_escuela_manejo, admins_escuela_manejo
 // Área única: Autódromo km 4 (14 a 18 hs, 2 alumnos/hora)
 // Diferencias con otros turneros:
-//   - Adjuntos (documentación) con multer → server/uploads/
-//   - Campos extra: vehiculo_propio (bool), cantidad_clases (int 1..6), archivo_url
+//   - Campos extra: vehiculo_propio (bool), cantidad_clases (int 1..6)
 //   - Validación de edad mínima (16 años y 6 meses) se hace en frontend
 
 const express = require('express')
 const router = express.Router()
 const pool = require('../db.cjs')
-const multer = require('multer')
-const path = require('path')
-const fs = require('fs')
-const rateLimit = require('express-rate-limit')
-
-// Upload limiter: 30 uploads por hora por IP
-const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 30,
-  message: { error: 'Demasiados uploads. Esperá una hora e intentá de nuevo.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-})
 const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('../authMiddleware.cjs')
 
 const ADMIN_TABLE = 'admins_escuela_manejo'
 const requireAdmin = requireAdminFor(pool, ADMIN_TABLE)
 const loginLimiter = makeLoginLimiter()
-
-// ─── Multer config (para adjuntos de documentación) ──────────────────────
-const uploadsDir = path.join(__dirname, '..', 'uploads')
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
-
-const storage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, uploadsDir),
-  filename: (_, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    cb(null, 'escuela-' + uniqueSuffix + path.extname(file.originalname))
-  },
-})
-const fileFilter = (_, file, cb) => {
-  // Aceptar imágenes y PDFs (documentación del alumno)
-  const allowed = /\.(jpg|jpeg|png|gif|webp|pdf)$/i
-  if (allowed.test(path.extname(file.originalname))) cb(null, true)
-  else cb(new Error('Solo JPG, PNG, GIF, WebP o PDF'), false)
-}
-const upload = multer({ storage, fileFilter, limits: { fileSize: 10 * 1024 * 1024 } })
 
 // ─── CONFIG ────────────────────────────────────────────────────────────
 router.get('/config', async (req, res) => {
@@ -167,43 +134,103 @@ router.get('/appointments', requireAdmin, async (req, res) => {
   }
 })
 
+// ─── Helper: edad mínima 16 años y 6 meses (defensa en backend) ──────────────
+function cumpleEdadMinima(birthDateStr) {
+  if (!birthDateStr) return false
+  const birth = new Date(birthDateStr)
+  if (Number.isNaN(birth.getTime())) return false
+  const today = new Date()
+  let ageYears = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) ageYears--
+  if (ageYears > 16) return true
+  if (ageYears < 16) return false
+  const sixMonthsAfter = new Date(birth)
+  sixMonthsAfter.setMonth(sixMonthsAfter.getMonth() + 6)
+  return today >= sixMonthsAfter
+}
+
+// ─── Helper: get config (max_per_day) ────────────────────────────────────────
+async function getMaxPerDay() {
+  const { rows } = await pool.query("SELECT max_per_day FROM config_escuela_manejo WHERE id='default'")
+  return rows[0]?.max_per_day ?? 1
+}
+
 // ─── POST appointment (PUBLICO: alumno saca turno) ─────────────────────
-router.post('/appointments', upload.single('archivo'), async (req, res) => {
+// Validaciones en backend (defensa en profundidad):
+//   1) cantidadClases 1..6
+//   2) fechaNacimiento: edad mínima 16 años y 6 meses
+//   3) max_per_day por DNI/día (lee config)
+//   4) lock de slot (UNIQUE INDEX parcial — integridad DB)
+router.post('/appointments', async (req, res) => {
   try {
     const a = req.body
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
 
     const vehiculoPropio = (a.vehiculoPropio === true || a.vehiculoPropio === 'true' || a.vehiculo_propio === true || a.vehiculo_propio === 'true')
     const cantidadClases = parseInt(a.cantidadClases || a.cantidad_clases, 10)
+    const fechaNacimiento = a.fechaNacimiento || a.fecha_nacimiento || ''
+    const dni = (a.dni || '').trim()
+    const areaId = a.areaId || a.area_id || 'autodromo-km4'
+    const areaName = a.areaName || a.area_name || 'Escuela de Manejo — Autódromo km 4'
+    const date = a.date
+    const time = a.time
 
+    // 1) cantidadClases
     if (!cantidadClases || cantidadClases < 1 || cantidadClases > 6) {
       return res.status(400).json({ error: 'La cantidad de clases debe estar entre 1 y 6' })
     }
 
-    const archivoUrl = req.file ? `/uploads/${req.file.filename}` : (a.archivoUrl || a.archivo_url || '')
+    // 2) edad mínima
+    if (!cumpleEdadMinima(fechaNacimiento)) {
+      return res.status(400).json({ error: 'Necesitás tener al menos 16 años y 6 meses para inscribirte.' })
+    }
 
-    const { rows } = await pool.query(
-      `INSERT INTO appointments_escuela_manejo
-         (id, area_id, area_name, date, time, nombre, apellido, dni, telefono, email, direccion, vehiculo_propio, cantidad_clases, archivo_url, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'pending') RETURNING id`,
-      [
-        id,
-        a.areaId || a.area_id || 'autodromo-km4',
-        a.areaName || a.area_name || 'Escuela de Manejo — Autódromo km 4',
-        a.date,
-        a.time,
-        a.nombre,
-        a.apellido || '',
-        a.dni,
-        a.telefono,
-        a.email,
-        a.direccion || '',
-        vehiculoPropio,
-        cantidadClases,
-        archivoUrl,
-      ]
+    // 3) max_per_day por DNI/día
+    const maxPerDay = await getMaxPerDay()
+    const { rows: countRows } = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM appointments_escuela_manejo
+       WHERE dni = $1 AND date = $2 AND status != 'cancelled'`,
+      [dni, date]
     )
-    res.json({ id: rows[0].id, archivoUrl })
+    if (countRows[0].n >= maxPerDay) {
+      return res.status(409).json({ error: `Ya tenés ${countRows[0].n} turno(s) reservado(s) para ese día. Máximo permitido: ${maxPerDay}.` })
+    }
+
+    // 4) INSERT (el UNIQUE INDEX idx_appointments_escuela_manejo_slot protege
+    //    contra race conditions — captura 23505 y lo convierte en 409)
+    let rows
+    try {
+      const insert = await pool.query(
+        `INSERT INTO appointments_escuela_manejo
+           (id, area_id, area_name, date, time, nombre, apellido, dni, telefono, email, direccion, fecha_nacimiento, vehiculo_propio, cantidad_clases, archivo_url, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, '', 'pending') RETURNING id`,
+        [
+          id,
+          areaId,
+          areaName,
+          date,
+          time,
+          a.nombre,
+          a.apellido || '',
+          dni,
+          a.telefono,
+          a.email,
+          a.direccion || '',
+          fechaNacimiento,
+          vehiculoPropio,
+          cantidadClases,
+        ]
+      )
+      rows = insert.rows
+    } catch (dbErr) {
+      // 23505 = unique_violation
+      if (dbErr.code === '23505') {
+        return res.status(409).json({ error: 'Ese horario ya fue reservado por otra persona. Elegí otra fecha u horario.' })
+      }
+      throw dbErr
+    }
+    res.json({ id: rows[0].id })
   } catch (err) {
     console.error('POST /api/escuela-manejo/appointments error:', err.message)
     res.status(500).json({ error: err.message })
@@ -258,15 +285,6 @@ router.patch('/appointments/:id/status', requireAdmin, async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
-})
-
-// ─── UPLOAD generico PUBLICO ──────────────────────────────────────
-router.post('/upload', uploadLimiter, upload.single('archivo'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No se envió ningún archivo' })
-  }
-  const url = `/uploads/${req.file.filename}`
-  res.json({ url })
 })
 
 // ─── AUTH ──────────────────────────────────────────────────────────────

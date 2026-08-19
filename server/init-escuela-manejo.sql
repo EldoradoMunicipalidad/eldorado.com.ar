@@ -3,7 +3,8 @@
 -- Diferencias con planeamiento/ambiente:
 --   * vehiculo_propio (bool): indica si el alumno tiene vehículo propio
 --   * cantidad_clases (int 1..6): 6 clases por persona según reglamento
---   * archivo_url (text): URL al archivo subido con la documentación del alumno
+--   * fecha_nacimiento (text): edad validada en frontend (16a + 6m) y backend
+--   * archivo_url (text): DEPRECATED — siempre '' (no se guardan adjuntos)
 
 CREATE TABLE IF NOT EXISTS areas_escuela_manejo (
   id TEXT PRIMARY KEY,
@@ -31,12 +32,22 @@ CREATE TABLE IF NOT EXISTS appointments_escuela_manejo (
   telefono TEXT NOT NULL,
   email TEXT NOT NULL,
   direccion TEXT DEFAULT '',
+  fecha_nacimiento TEXT DEFAULT '',
   vehiculo_propio BOOLEAN DEFAULT false,
   cantidad_clases INTEGER DEFAULT 1 CHECK (cantidad_clases >= 1 AND cantidad_clases <= 6),
   archivo_url TEXT DEFAULT '',
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending','attended','cancelled')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migración idempotente: si la tabla ya existía sin fecha_nacimiento, la agregamos
+ALTER TABLE appointments_escuela_manejo ADD COLUMN IF NOT EXISTS fecha_nacimiento TEXT DEFAULT '';
+
+-- Lock de slot: una sola inscripción activa por (area, fecha, hora).
+-- Cancelled se excluye para permitir re-reserva tras cancelación.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_appointments_escuela_manejo_slot
+  ON appointments_escuela_manejo (area_id, date, time)
+  WHERE status != 'cancelled';
 
 CREATE TABLE IF NOT EXISTS config_escuela_manejo (
   id TEXT PRIMARY KEY DEFAULT 'default',

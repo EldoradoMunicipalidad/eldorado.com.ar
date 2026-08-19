@@ -35,7 +35,6 @@ export default function TurneroEscuelaManejoPage() {
   const [area, setArea] = useState(null) // single area (Autódromo km 4)
   const [selectedDate, setSelectedDate] = useState(null)
   const [selectedTime, setSelectedTime] = useState(null)
-  const [archivo, setArchivo] = useState(null) // File object (no se sube hasta confirmar)
   const [error, setError] = useState('')
   const [confirmedAppt, setConfirmedAppt] = useState(null)
   const [appointments, setAppointments] = useState([])
@@ -73,26 +72,6 @@ export default function TurneroEscuelaManejoPage() {
     setError('')
   }
 
-  const handleArchivo = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']
-    if (!allowedTypes.includes(file.type)) {
-      setError('Tipo de archivo no permitido. Solo imágenes (JPG, PNG, GIF, WebP) o PDF.')
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('El archivo supera el máximo de 10 MB.')
-      return
-    }
-    setArchivo(file)
-    setError('')
-  }
-
-  const removeArchivo = () => {
-    setArchivo(null)
-  }
-
   const validatePersonalData = () => {
     if (!form.nombre.trim()) return 'Ingresá tu nombre'
     if (!form.apellido.trim()) return 'Ingresá tu apellido'
@@ -106,7 +85,6 @@ export default function TurneroEscuelaManejoPage() {
     if (!form.cantidadClases || form.cantidadClases < 1 || form.cantidadClases > 6) {
       return 'La cantidad de clases debe estar entre 1 y 6'
     }
-    if (!archivo) return 'Adjuntá la documentación básica'
     return ''
   }
 
@@ -147,8 +125,7 @@ export default function TurneroEscuelaManejoPage() {
           date: selectedDate,
           time: selectedTime,
           ...form,
-        },
-        archivo
+        }
       )
       setSubmitting(false)
       if (result?.id) {
@@ -159,7 +136,6 @@ export default function TurneroEscuelaManejoPage() {
           date: selectedDate,
           time: selectedTime,
           ...form,
-          archivoUrl: result.archivoUrl,
           status: 'pending',
         })
       } else {
@@ -284,7 +260,6 @@ export default function TurneroEscuelaManejoPage() {
                     setForm(initialForm)
                     setSelectedDate(null)
                     setSelectedTime(null)
-                    setArchivo(null)
                     setStep(0)
                   }}
                   className="px-6 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors"
@@ -313,7 +288,7 @@ export default function TurneroEscuelaManejoPage() {
       <SectionLayout
         title="Escuela de"
         highlight="Manejo"
-        description="Reservá tu turno para clases prácticas de manejo en el Autódromo km 4. Edad mínima: 16 años y 6 meses."
+        description="Reservá tu turno para clases prácticas de manejo en el Autódromo km 4. Edad mínima: 16 años y 6 meses. Presentate con la documentación el día del turno."
       >
         <div className="flex items-center gap-2 mt-4">
           {STEPS.map((s, i) => (
@@ -444,30 +419,6 @@ export default function TurneroEscuelaManejoPage() {
                       <div className="text-xs text-slate-500">Marcá esta opción si vas a traer tu vehículo para las prácticas.</div>
                     </div>
                   </label>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Documentación básica *</label>
-                  <input
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.gif,.webp,.pdf"
-                    onChange={handleArchivo}
-                    className="block w-full text-sm text-slate-700 border border-slate-300 rounded-xl cursor-pointer focus:outline-none file:mr-3 file:py-2 file:px-4 file:rounded-l-xl file:border-0 file:bg-rose-500 file:text-white file:font-semibold hover:file:bg-rose-600"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">Imágenes (JPG, PNG, GIF, WebP) o PDF. Máximo 10 MB.</p>
-                  {archivo && (
-                    <div className="mt-2 flex items-center gap-2 p-2 bg-slate-50 rounded-lg text-sm">
-                      <Icon name="descriptionIcon" size={16} className="text-slate-500" />
-                      <span className="flex-1 truncate text-slate-700">{archivo.name}</span>
-                      <button
-                        type="button"
-                        onClick={removeArchivo}
-                        className="text-red-500 hover:text-red-700 text-xs font-medium"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -653,15 +604,6 @@ export default function TurneroEscuelaManejoPage() {
                   </div>
                 </div>
 
-                {archivo && (
-                  <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-2">
-                    <Icon name="descriptionIcon" size={18} className="text-slate-500" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-slate-400 uppercase font-medium">Documentación adjunta</div>
-                      <div className="text-sm text-slate-700 truncate">{archivo.name}</div>
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-between items-center">
@@ -678,7 +620,7 @@ export default function TurneroEscuelaManejoPage() {
                     submitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-emerald-600'
                   }`}
                 >
-                  {submitting ? 'Enviando documentación…' : 'Confirmar Inscripción'}
+                  {submitting ? 'Enviando…' : 'Confirmar Inscripción'}
                 </button>
               </div>
             </div>

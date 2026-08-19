@@ -305,7 +305,6 @@ export default function TurneroEscuelaManejoAdminPage() {
                       <th className="text-left px-4 py-3">Hora</th>
                       <th className="text-left px-4 py-3">Clases</th>
                       <th className="text-left px-4 py-3">Vehículo</th>
-                      <th className="text-left px-4 py-3">Adjunto</th>
                       <th className="text-left px-4 py-3">Estado</th>
                       <th className="text-left px-4 py-3">Acción</th>
                     </tr>
@@ -346,19 +345,8 @@ export default function TurneroEscuelaManejoAdminPage() {
                             <span className="text-slate-400" title="No">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-600">
-                          {appt.archivoUrl ? (
-                            <a
-                              href={appt.archivoUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-rose-600 hover:text-rose-700 underline text-xs"
-                            >
-                              Ver
-                            </a>
-                          ) : (
-                            <span className="text-slate-400 text-xs">—</span>
-                          )}
+                        <td className="px-4 py-3 text-slate-400 text-xs">
+                          —
                         </td>
                         <td className="px-4 py-3">{getStatusBadge(appt.status)}</td>
                         <td className="px-4 py-3">

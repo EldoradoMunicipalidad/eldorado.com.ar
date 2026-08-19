@@ -11,7 +11,7 @@ export const TramitesAndServiciosSection = ({ dynamicItems }) => {
     { id: 4, Icon: Icons.EstacionamientoIcon, title: "Estacionamiento Medido", subtitle: "Gestioná tu estacionamiento y consultá zonas habilitadas", to: "https://sem.eldorado.gob.ar/#/fines" },
     { id: 5, Icon: Icons.LicitacionesIcon, title: "Licitaciones", subtitle: "Accedé a convocatorias y pliegos municipales vigentes", to: "/gobierno-abierto/licitaciones" },
     { id: 6, Icon: Icons.TurnosPlaneamientoIcon, title: "Turnos Planeamiento", subtitle: "Reservá tu turno para trámites de obras y planeamiento", to: "/gobierno/secretaria-obras-publicas/planeamiento/turnero" },
-    { id: 7, Icon: Icons.EscuelaManejoIcon, title: "Escuela de Manejo", subtitle: "Inscribite y preparate para obtener tu licencia", to: "https://floralwhite-alpaca-355258.builder-preview.com/escuela-de-manejo" },
+    { id: 7, Icon: Icons.EscuelaManejoIcon, title: "Escuela de Manejo", subtitle: "Inscribite y preparate para obtener tu licencia", to: "/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero" },
     { id: 8, Icon: Icons.ParqueIndustrialIcon, title: "Parque Industrial", subtitle: "Conocé oportunidades, servicios e información del predio", to: "/gobierno/secretaria-gobierno/parque-industrial" },
     { id: 9, Icon: Icons.ReclamosIcon, title: "Reclamos", subtitle: "Registrá incidencias y seguí el estado de tu solicitud", to: "/ciudadano-digital/reclamos" },
     { id: 10, Icon: Icons.ArboladoIcon, title: "Arbolado Urbano", subtitle: "Solicitá intervenciones y gestiones vinculadas al arbolado", to: "https://docs.google.com/forms/d/e/1FAIpQLSdVyYicbRfgh3iY9vi7R4ZqZsuivRg0q24Ok0M6urSYz6MhNA/viewform" },
