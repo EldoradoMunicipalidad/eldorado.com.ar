@@ -210,7 +210,7 @@ export default function TurneroEscuelaManejoPage() {
               <div className="space-y-4 mb-6 text-left">
                 <div className="bg-slate-50 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <Icon name="directionsCarIcon" size={18} className="text-rose-600" />
+                    <Icon name="directionsCarIcon" size={18} className="text-sky-600" />
                     <span className="font-semibold text-slate-800">Detalles del turno</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -296,7 +296,7 @@ export default function TurneroEscuelaManejoPage() {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
                   i === step
-                    ? 'bg-rose-500 text-white'
+                    ? 'bg-sky-500 text-white'
                     : i < step
                       ? 'bg-emerald-500 text-white'
                       : 'bg-slate-200 text-slate-400'
@@ -304,7 +304,7 @@ export default function TurneroEscuelaManejoPage() {
               >
                 {i < step ? '✓' : i + 1}
               </div>
-              <span className={`text-xs hidden sm:inline ${i === step ? 'text-rose-600 font-semibold' : 'text-slate-400'}`}>
+              <span className={`text-xs hidden sm:inline ${i === step ? 'text-sky-600 font-semibold' : 'text-slate-400'}`}>
                 {s}
               </span>
               {i < STEPS.length - 1 && <div className="w-6 h-px bg-slate-200 mx-1" />}
@@ -334,7 +334,7 @@ export default function TurneroEscuelaManejoPage() {
                     type="text"
                     value={form.nombre}
                     onChange={(e) => handleChange('nombre', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="Juan"
                   />
                 </div>
@@ -344,7 +344,7 @@ export default function TurneroEscuelaManejoPage() {
                     type="text"
                     value={form.apellido}
                     onChange={(e) => handleChange('apellido', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="Pérez"
                   />
                 </div>
@@ -354,7 +354,7 @@ export default function TurneroEscuelaManejoPage() {
                     type="text"
                     value={form.dni}
                     onChange={(e) => handleChange('dni', e.target.value.replace(/\D/g, ''))}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="12345678"
                     maxLength={9}
                   />
@@ -365,7 +365,7 @@ export default function TurneroEscuelaManejoPage() {
                     type="tel"
                     value={form.telefono}
                     onChange={(e) => handleChange('telefono', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="3751-123456"
                   />
                 </div>
@@ -376,7 +376,7 @@ export default function TurneroEscuelaManejoPage() {
                     value={form.fechaNacimiento}
                     onChange={(e) => handleChange('fechaNacimiento', e.target.value)}
                     max={new Date().toISOString().slice(0, 10)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                   />
                   <p className="text-xs text-slate-500 mt-1">Mínimo 16 años y 6 meses</p>
                 </div>
@@ -385,7 +385,7 @@ export default function TurneroEscuelaManejoPage() {
                   <select
                     value={form.cantidadClases}
                     onChange={(e) => handleChange('cantidadClases', parseInt(e.target.value, 10))}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all bg-white"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all bg-white"
                   >
                     {[1, 2, 3, 4, 5, 6].map((n) => (
                       <option key={n} value={n}>
@@ -401,7 +401,7 @@ export default function TurneroEscuelaManejoPage() {
                     type="email"
                     value={form.email}
                     onChange={(e) => handleChange('email', e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="juan@ejemplo.com"
                   />
                 </div>
@@ -412,7 +412,7 @@ export default function TurneroEscuelaManejoPage() {
                       type="checkbox"
                       checked={form.vehiculoPropio}
                       onChange={(e) => handleChange('vehiculoPropio', e.target.checked)}
-                      className="w-5 h-5 text-rose-500 border-slate-300 rounded focus:ring-rose-500"
+                      className="w-5 h-5 text-sky-500 border-slate-300 rounded focus:ring-sky-500"
                     />
                     <div>
                       <div className="font-medium text-slate-800">¿Tenés vehículo propio?</div>
@@ -424,7 +424,7 @@ export default function TurneroEscuelaManejoPage() {
 
               <button
                 onClick={handleStep1Submit}
-                className="mt-6 w-full md:w-auto px-8 py-3 bg-rose-500 text-white rounded-xl font-semibold hover:bg-rose-600 transition-colors"
+                className="mt-6 w-full md:w-auto px-8 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors"
               >
                 Continuar
               </button>
@@ -461,8 +461,8 @@ export default function TurneroEscuelaManejoPage() {
                           }}
                           className={`p-4 rounded-xl border text-center transition-all duration-200 ${
                             selectedDate === dateStr
-                              ? 'border-rose-500 bg-rose-50 ring-2 ring-rose-200'
-                              : 'border-slate-200 bg-white hover:border-rose-300 hover:shadow-sm'
+                              ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-200'
+                              : 'border-slate-200 bg-white hover:border-sky-300 hover:shadow-sm'
                           }`}
                         >
                           <div className="text-xs text-slate-400 uppercase font-medium">{dayName}</div>
@@ -477,9 +477,9 @@ export default function TurneroEscuelaManejoPage() {
 
               {selectedDate && (
                 <div>
-                  <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-center justify-between">
+                  <div className="mb-4 p-4 bg-sky-50 border border-sky-200 rounded-xl flex items-center justify-between">
                     <div>
-                      <div className="text-xs text-rose-600 font-medium uppercase">Fecha elegida</div>
+                      <div className="text-xs text-sky-600 font-medium uppercase">Fecha elegida</div>
                       <div className="font-semibold text-slate-800">
                         {new Date(selectedDate + 'T12:00:00').toLocaleDateString('es-AR', {
                           weekday: 'long',
@@ -491,7 +491,7 @@ export default function TurneroEscuelaManejoPage() {
                     </div>
                     <button
                       onClick={() => setSelectedDate(null)}
-                      className="text-xs text-rose-600 hover:text-rose-700 font-medium"
+                      className="text-xs text-sky-600 hover:text-sky-700 font-medium"
                     >
                       Cambiar
                     </button>
@@ -517,8 +517,8 @@ export default function TurneroEscuelaManejoPage() {
                             !slot.available
                               ? 'border-slate-100 bg-slate-50 text-slate-300 cursor-not-allowed line-through'
                               : selectedTime === slot.time
-                                ? 'border-rose-500 bg-rose-50 text-rose-700 ring-2 ring-rose-200'
-                                : 'border-slate-200 bg-white text-slate-700 hover:border-rose-300 hover:shadow-sm'
+                                ? 'border-sky-500 bg-sky-50 text-sky-700 ring-2 ring-sky-200'
+                                : 'border-slate-200 bg-white text-slate-700 hover:border-sky-300 hover:shadow-sm'
                           }`}
                         >
                           {slot.time}
@@ -549,7 +549,7 @@ export default function TurneroEscuelaManejoPage() {
                     goToStep(2)
                   }}
                   disabled={!selectedDate || !selectedTime}
-                  className="px-6 py-2.5 bg-rose-500 text-white rounded-xl font-semibold hover:bg-rose-600 transition-colors disabled:opacity-50"
+                  className="px-6 py-2.5 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors disabled:opacity-50"
                 >
                   Revisar y confirmar
                 </button>
@@ -565,7 +565,7 @@ export default function TurneroEscuelaManejoPage() {
               <div className="space-y-4 mb-6">
                 <div className="bg-slate-50 rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-3">
-                    <Icon name="directionsCarIcon" size={18} className="text-rose-600" />
+                    <Icon name="directionsCarIcon" size={18} className="text-sky-600" />
                     <span className="font-semibold text-slate-800">{area?.name}</span>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -616,8 +616,8 @@ export default function TurneroEscuelaManejoPage() {
                 <button
                   onClick={handleConfirm}
                   disabled={submitting}
-                  className={`px-8 py-3 bg-emerald-500 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 ${
-                    submitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-emerald-600'
+                  className={`px-8 py-3 bg-sky-500 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 ${
+                    submitting ? 'opacity-70 cursor-not-allowed' : 'hover:bg-sky-600'
                   }`}
                 >
                   {submitting ? 'Enviando…' : 'Confirmar Inscripción'}

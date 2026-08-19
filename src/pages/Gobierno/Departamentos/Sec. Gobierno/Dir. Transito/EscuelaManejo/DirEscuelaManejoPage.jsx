@@ -45,19 +45,19 @@ export default function DirEscuelaManejoPage() {
       <Section>
         <div className="max-w-5xl mx-auto space-y-8">
           {/* Card de acción */}
-          <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white rounded-2xl p-6 md:p-8 shadow-lg flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="bg-gradient-to-br from-sky-500 to-sky-600 text-white rounded-2xl p-6 md:p-8 shadow-lg flex flex-col md:flex-row items-start md:items-center gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
                 <Icon name="directionsCarIcon" size={28} className="text-white" />
                 <h2 className="text-2xl font-bold">Reservá tu turno</h2>
               </div>
-              <p className="text-rose-50 mb-4">
+              <p className="text-sky-50 mb-4">
                 Inscripción online a clases prácticas. 2 alumnos por hora, de lunes a viernes de 14 a 18 hs,
                 en el Autódromo km 4. Hasta 6 clases por persona.
               </p>
               <Link
                 to="/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero"
-                className="inline-flex items-center gap-2 bg-white text-rose-600 px-5 py-3 rounded-xl font-semibold hover:bg-rose-50 transition-colors"
+                className="inline-flex items-center gap-2 bg-white text-sky-600 px-5 py-3 rounded-xl font-semibold hover:bg-sky-50 transition-colors"
               >
                 <Icon name="eventIcon" size={20} />
                 Sacar turno online
@@ -69,13 +69,13 @@ export default function DirEscuelaManejoPage() {
           {/* Requisitos */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 md:p-8">
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Icon name="assignmentIcon" size={22} className="text-rose-600" />
+              <Icon name="assignmentIcon" size={22} className="text-sky-600" />
               Requisitos
             </h3>
             <ul className="space-y-2 text-slate-700">
               {requisitos.map((r, i) => (
                 <li key={i} className="flex items-start gap-2">
-                  <span className="text-rose-500 font-bold mt-0.5">•</span>
+                  <span className="text-sky-500 font-bold mt-0.5">•</span>
                   <span>{r}</span>
                 </li>
               ))}
@@ -85,7 +85,7 @@ export default function DirEscuelaManejoPage() {
           {/* Pasos */}
           <div>
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Icon name="formatListNumberedIcon" size={22} className="text-rose-600" />
+              <Icon name="formatListNumberedIcon" size={22} className="text-sky-600" />
               ¿Cómo funciona?
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -94,7 +94,7 @@ export default function DirEscuelaManejoPage() {
                   key={p.n}
                   className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
                 >
-                  <div className="w-10 h-10 bg-rose-500 text-white rounded-full flex items-center justify-center font-bold mb-3">
+                  <div className="w-10 h-10 bg-sky-500 text-white rounded-full flex items-center justify-center font-bold mb-3">
                     {p.n}
                   </div>
                   <h4 className="font-semibold text-slate-800 mb-1">{p.titulo}</h4>
@@ -105,12 +105,12 @@ export default function DirEscuelaManejoPage() {
           </div>
 
           {/* Información adicional */}
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6">
-            <h3 className="font-semibold text-rose-800 mb-2 flex items-center gap-2">
+          <div className="bg-sky-50 border border-sky-200 rounded-2xl p-6">
+            <h3 className="font-semibold text-sky-800 mb-2 flex items-center gap-2">
               <Icon name="infoIcon" size={20} />
               Información importante
             </h3>
-            <ul className="space-y-1 text-sm text-rose-700">
+            <ul className="space-y-1 text-sm text-sky-700">
               <li>• Edad mínima: 16 años y 6 meses (validación automática al momento de inscripción).</li>
               <li>• Máximo 6 clases por persona.</li>
               <li>• Indicar si vas a traer vehículo propio.</li>

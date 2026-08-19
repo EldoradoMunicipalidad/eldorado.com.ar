@@ -132,8 +132,8 @@ export default function TurneroEscuelaManejoAdminPage() {
           <div className="w-[95%] max-w-md">
             <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name="settingsAlertIcon" size={32} className="text-rose-600" />
+                <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon name="settingsAlertIcon" size={32} className="text-sky-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-800">Panel de Administración</h3>
                 <p className="text-sm text-slate-500 mt-1">Escuela de Manejo · Ingresá tus credenciales</p>
@@ -145,7 +145,7 @@ export default function TurneroEscuelaManejoAdminPage() {
                     type="text"
                     value={loginUser}
                     onChange={(e) => setLoginUser(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="admin"
                     autoFocus
                   />
@@ -156,7 +156,7 @@ export default function TurneroEscuelaManejoAdminPage() {
                     type="password"
                     value={loginPass}
                     onChange={(e) => setLoginPass(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all"
                     placeholder="••••••"
                   />
                 </div>
@@ -168,7 +168,7 @@ export default function TurneroEscuelaManejoAdminPage() {
                 )}
                 <button
                   type="submit"
-                  className="w-full px-6 py-3 bg-rose-500 text-white rounded-xl font-semibold hover:bg-rose-600 transition-colors"
+                  className="w-full px-6 py-3 bg-sky-500 text-white rounded-xl font-semibold hover:bg-sky-600 transition-colors"
                 >
                   Ingresar
                 </button>
@@ -231,12 +231,12 @@ export default function TurneroEscuelaManejoAdminPage() {
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none"
+              className="px-4 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 outline-none"
             />
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-rose-500 outline-none bg-white"
+              className="px-4 py-2 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-sky-500 outline-none bg-white"
             >
               <option value="all">Todos los estados</option>
               <option value="pending">Pendientes</option>
@@ -258,7 +258,7 @@ export default function TurneroEscuelaManejoAdminPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
-              <div className="text-2xl font-bold text-rose-600">{appointments.length}</div>
+              <div className="text-2xl font-bold text-sky-600">{appointments.length}</div>
               <div className="text-xs text-slate-500 mt-1">Total</div>
             </div>
             <div className="bg-white p-4 rounded-2xl border border-slate-200 text-center">
@@ -283,7 +283,7 @@ export default function TurneroEscuelaManejoAdminPage() {
 
           {apptsLoading ? (
             <div className="p-10 bg-white rounded-2xl border border-slate-200 text-center">
-              <div className="animate-spin w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full mx-auto mb-3" />
+              <div className="animate-spin w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full mx-auto mb-3" />
               <p className="text-slate-500 text-sm">Cargando inscripciones...</p>
             </div>
           ) : paginatedAppts.length === 0 ? (
@@ -416,7 +416,7 @@ export default function TurneroEscuelaManejoAdminPage() {
                             onClick={() => setCurrentPage(i)}
                             className={`w-8 h-8 rounded-lg text-sm font-medium border transition-colors ${
                               i === currentPage
-                                ? 'bg-rose-500 text-white border-rose-500'
+                                ? 'bg-sky-500 text-white border-sky-500'
                                 : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                             }`}
                           >
