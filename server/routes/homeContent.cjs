@@ -12,7 +12,7 @@ const express = require('express')
 const router = express.Router()
 const pool = require('../db.cjs')
 const multer = require('multer')
-const { uploadToR2, R2_BUCKET, R2_PUBLIC_BASE_URL } = require('../lib/r2.cjs')
+const { uploadToR2, getSignedUrl, R2_BUCKET, R2_PUBLIC_BASE_URL } = require('../lib/r2.cjs')
 
 // ─── Multer config (en memoria — no escribimos a disco) ──────────────
 // El tope de 5MB es porque base64 infla 33% el tamaño original,
@@ -28,6 +28,94 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 })
 
+// ─── Helper: firmar URLs R2 dentro de un objeto recursivamente ─────
+// Detecta 3 formatos de URL/key de R2 y los convierte a signed URL
+// (si el bucket no es publico) o los deja como estan (si el bucket es
+// publico via R2_PUBLIC_BASE_URL).
+//
+// Formatos detectados:
+//   1) https://<ACCOUNT>.r2.cloudflarestorage.com/<BUCKET>/<key>
+//   2) https://pub-*.r2.dev/<BUCKET>/<key>
+//   3) <key>             (string crudo sin http)
+//
+// El <key> es la parte final (ej: 'home/migrated/...jpeg').
+
+const R2_URL_RE = /^https:\/\/[^/]+\.r2\.cloudflarestorage\.com\/.+?\/(.+)$|^https:\/\/pub-[^/]+\.r2\.dev\/.+?\/(.+)$/
+
+async function signR2UrlsInContent(content) {
+  if (!content) return content
+  if (R2_PUBLIC_BASE_URL) {
+    // Bucket publico: las URLs ya estan en formato publico, nada que firmar
+    return content
+  }
+  // Bucket privado: firmar cada URL de R2 detectada
+  const urlsToSign = new Set()
+
+  function walk(obj) {
+    if (!obj || typeof obj !== 'object') return
+    if (Array.isArray(obj)) {
+      obj.forEach(walk)
+      return
+    }
+    for (const k of Object.keys(obj)) {
+      const v = obj[k]
+      if (typeof v === 'string') {
+        const m = v.match(R2_URL_RE)
+        if (m) {
+          const key = m[1] || m[2]
+          urlsToSign.add(key)
+        } else if (/^home\//.test(v) && !v.startsWith('http')) {
+          urlsToSign.add(v)
+        }
+      } else if (typeof v === 'object') {
+        walk(v)
+      }
+    }
+  }
+  walk(content)
+
+  if (urlsToSign.size === 0) return content
+
+  // Firmar en paralelo
+  const signedMap = new Map()
+  await Promise.all(
+    Array.from(urlsToSign).map(async (key) => {
+      try {
+        const url = await getSignedUrl(key)
+        signedMap.set(key, url)
+      } catch (e) {
+        console.warn('signR2UrlsInContent: error firmando', key, e.message)
+        signedMap.set(key, key)
+      }
+    })
+  )
+
+  // Reemplazar URLs por firmadas
+  function replace(obj) {
+    if (!obj || typeof obj !== 'object') return
+    if (Array.isArray(obj)) {
+      obj.forEach(replace)
+      return
+    }
+    for (const k of Object.keys(obj)) {
+      const v = obj[k]
+      if (typeof v === 'string') {
+        const m = v.match(R2_URL_RE)
+        if (m) {
+          const key = m[1] || m[2]
+          if (signedMap.has(key)) obj[k] = signedMap.get(key)
+        } else if (/^home\//.test(v) && signedMap.has(v)) {
+          obj[k] = signedMap.get(v)
+        }
+      } else if (typeof v === 'object') {
+        replace(v)
+      }
+    }
+  }
+  replace(content)
+  return content
+}
+
 // ─── GET home content ────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
@@ -37,8 +125,9 @@ router.get('/', async (req, res) => {
     if (rows.length === 0) {
       return res.json({ content: null, updated_at: null })
     }
+    const content = await signR2UrlsInContent(rows[0].content)
     res.json({
-      content: rows[0].content,
+      content,
       updated_at: rows[0].updated_at,
     })
   } catch (err) {

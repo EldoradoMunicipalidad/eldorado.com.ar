@@ -6,17 +6,18 @@
 //   R2_SECRET_ACCESS_KEY
 //   R2_BUCKET_NAME           (default: 'sitiomunicipal')
 //   R2_ENDPOINT              (default: https://{ACCOUNT_ID}.r2.cloudflarestorage.com)
-//   R2_PUBLIC_BASE_URL       (OPCIONAL — default: URL publica de DESARROLLO
-//                            de Cloudflare R2, formato https://pub-*.r2.dev/{BUCKET}.
-//                            Funciona apenas el bucket tenga habilitada la opcion
-//                            "Public Development URL" en Cloudflare Dashboard.
-//                            Si en algun momento se configura un dominio custom
-//                            (assets.eldorado.gob.ar), setear R2_PUBLIC_BASE_URL
-//                            en Dokploy y este codigo lo respetara).
+//   R2_PUBLIC_BASE_URL       (OPCIONAL — si esta definido, se usa para construir
+//                            URLs publicas. Si NO esta definido, se generan
+//                            URLs FIRMADAS con getSignedUrl del SDK — esto
+//                            permite servir imagenes sin necesidad de hacer
+//                            el bucket publico en Cloudflare Dashboard).
 //
 // API expuesta:
 //   uploadToR2({ buffer, contentType, keyPrefix, originalName })
-//     -> { url, key, size, contentType }
+//     -> { url, key, size, contentType }  (URL firmada con expiracion 30 dias)
+//
+//   getSignedUrl(key, expiresIn)
+//     -> URL firmada con expiracion personalizable (segundos)
 //
 //   deleteFromR2(key)
 //     -> { ok: true }
@@ -24,20 +25,14 @@
 // Si las env vars no están cargadas, las funciones throw un error descriptivo
 // (no se rompe el server, solo el endpoint que intente usar R2).
 
-const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3')
+const { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3')
+const { getSignedUrl: awsGetSignedUrl } = require('@aws-sdk/s3-request-presigner')
 
 const R2_ENDPOINT = process.env.R2_ENDPOINT || `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
 const R2_BUCKET = process.env.R2_BUCKET_NAME || 'sitiomunicipal'
-// Default: URL publica de DESARROLLO de R2 (formato: https://pub-*.r2.dev/{BUCKET}).
-// Funciona apenas el bucket tenga habilitada la opcion "Public Development URL"
-// en Cloudflare Dashboard (es un toggle, no requiere custom domain ni DNS).
-// Esta URL es rate-limited (no para produccion de alto volumen), pero sirve para
-// volumen bajo/medio. Es la unica URL publica sin credenciales.
-// Si se configura un dominio custom (assets.eldorado.gob.ar), setear
-// R2_PUBLIC_BASE_URL en Dokploy y este codigo lo respetara.
-const R2_PUBLIC_BASE_URL = (process.env.R2_PUBLIC_BASE_URL
-  || `https://pub-8ee00443a7304320af03eb5c196650ce.r2.dev/${R2_BUCKET}`)
-  .replace(/\/+$/, '')
+const R2_PUBLIC_BASE_URL = process.env.R2_PUBLIC_BASE_URL
+  ? process.env.R2_PUBLIC_BASE_URL.replace(/\/+$/, '')
+  : null
 
 let _client = null
 
@@ -49,6 +44,7 @@ function getClient() {
   _client = new S3Client({
     region: 'auto',
     endpoint: R2_ENDPOINT,
+    forcePathStyle: false, // R2 usa virtual-hosted style: <bucket>.<account>.r2.cloudflarestorage.com
     credentials: {
       accessKeyId: process.env.R2_ACCESS_KEY_ID,
       secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
@@ -65,6 +61,20 @@ function sanitizeFilename(name) {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
     .substring(0, 80) || 'file'
+}
+
+// Default expiration: 30 dias. Las URLs se renuevan cada vez que el backend
+// serializa el JSONB (porque el bucket no es publico -> no podemos servir
+// URLs publicas estaticas).
+const DEFAULT_EXPIRES_IN = 30 * 24 * 60 * 60 // 30 dias en segundos
+
+async function getSignedUrl(key, expiresIn = DEFAULT_EXPIRES_IN) {
+  if (!key) throw new Error('getSignedUrl: key requerido')
+  const cmd = new GetObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+  })
+  return await awsGetSignedUrl(getClient(), cmd, { expiresIn })
 }
 
 async function uploadToR2({ buffer, contentType, keyPrefix = 'home', originalName }) {
@@ -85,8 +95,19 @@ async function uploadToR2({ buffer, contentType, keyPrefix = 'home', originalNam
   })
   await getClient().send(cmd)
 
+  // Si hay R2_PUBLIC_BASE_URL configurado, usamos esa URL (es publica).
+  // Si no, generamos URL firmada para servir el objeto sin necesidad
+  // de hacer el bucket publico. Esto es necesario porque R2 no siempre
+  // expone una opcion 'Public Access' en todos los planes.
+  let url
+  if (R2_PUBLIC_BASE_URL) {
+    url = `${R2_PUBLIC_BASE_URL}/${key}`
+  } else {
+    url = await getSignedUrl(key)
+  }
+
   return {
-    url: `${R2_PUBLIC_BASE_URL}/${key}`,
+    url,
     key,
     size: buffer.length,
     contentType,
@@ -106,6 +127,7 @@ async function deleteFromR2(key) {
 module.exports = {
   uploadToR2,
   deleteFromR2,
+  getSignedUrl,
   R2_BUCKET,
   R2_PUBLIC_BASE_URL,
   R2_ENDPOINT,

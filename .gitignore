@@ -21,6 +21,8 @@ dist-ssr
 scratch-*.env
 scratch-*.cjs
 .envrc
+server/backups/
+
 
 # Editor directories and files
 .vscode/*
