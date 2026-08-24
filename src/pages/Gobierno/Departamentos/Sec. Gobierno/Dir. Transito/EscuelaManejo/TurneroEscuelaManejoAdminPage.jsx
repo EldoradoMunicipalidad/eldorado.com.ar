@@ -66,13 +66,14 @@ export default function TurneroEscuelaManejoAdminPage() {
   }
 
   useEffect(() => {
-    const unsubAppts = subscribeAppointments((data) => {
-      setAppointments(data)
-    })
-    getConfig().then((cfg) => setTurneroPaused(cfg.turneroPaused || false))
-    setLoading(false)
-    return () => unsubAppts()
-  }, [])
+      if (!isAuthenticated) return
+      const unsubAppts = subscribeAppointments((data) => {
+        setAppointments(data)
+      })
+      getConfig().then((cfg) => setTurneroPaused(cfg.turneroPaused || false))
+      setLoading(false)
+      return () => unsubAppts()
+    }, [isAuthenticated])
 
   useEffect(() => {
     if (!isAuthenticated) return
