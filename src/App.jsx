@@ -132,6 +132,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
 
           {/* SECCIÓN CIUDAD */}
+          <Route path="/ciudad" element={<CiudadPage />} />
           <Route path="/ciudad/expo-eldorado" element={<ExpoEldoradoPage />} />
           <Route path="/ciudad/eldorado" element={<EldoradoPage />} />
       <Route path="/ciudad/escudo-e-insignias" element={<SimbolosPage />} />
@@ -143,6 +144,7 @@ function App() {
           <Route path="/ciudad/bus-eldorado" element={<BusEldoradoPage />} />
 
           {/* SECCIÓN GOBIERNO */}
+          <Route path="/gobierno" element={<GobiernoPage />} />
           <Route path="/gobierno/intendencia" element={<IntendenciaPage />} />
           <Route path="/gobierno/secretaria-accion-social" element={<SecretariaDeAccionSocialPage />} />
           <Route path="/gobierno/secretaria-de-ambiente" element={<SecretariaDeAmbientePage />} />

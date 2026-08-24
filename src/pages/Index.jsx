@@ -3,6 +3,7 @@ export { default as HomePage } from './HomePage';
 export { default as NotFound } from './NotFound';
 
 // Ficheros dentro de /pages/Ciudad/
+export { default as CiudadPage } from './Ciudad/CiudadPage';
 export { default as BarriosPage } from './Ciudad/BarriosPage';
 export { default as BusEldoradoPage } from './Ciudad/BusEldoradoPage';
 export { default as CartaOrganicaPage } from './Ciudad/CartaOrganicaPage';
@@ -13,6 +14,7 @@ export { default as SimbolosPage } from './Ciudad/SimbolosPage';
 export { default as TelefonosUtilesPage } from './Ciudad/TelefonosUtilesPage';
 
 //Ficheros dentro de /pages/Gobierno/
+export { default as GobiernoPage } from './Gobierno/GobiernoPage';
 export { default as IntendenciaPage } from './Gobierno/IntendenciaPage';
 export { default as SecretariaDeAccionSocialPage } from './Gobierno/SecretariaDeAccionSocialPage';
 export { default as SecretariaDeAmbientePage } from './Gobierno/SecretariaDeAmbientePage';
