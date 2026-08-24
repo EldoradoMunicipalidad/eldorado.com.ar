@@ -1,5 +1,13 @@
 export const LICITACIONES_DATA = [
     {
+        id: 20,
+        codigo: '05/2026',
+        tipo: 'publica',
+        fechaPublicacion: '20/08/2026',
+        descripcion: 'Licitación Pública N° 05/2026 — Adquisición de "Insumos para la ejecución de obras pendientes en distintos sectores de la ciudad". Apertura: 08/09/2026, 10:00 hs.',
+        enlacePliego: '/licitaciones/PLIEGO%20LICITACION%20PUBLICA%2005%202026.pdf'
+    },
+    {
         id: 19,
         codigo: '04/2026',
         tipo: 'publica',
