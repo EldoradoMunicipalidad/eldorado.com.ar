@@ -53,15 +53,12 @@ export function getAvailableDates(area, maxDays = 30) {
   if (!area?.active) return []
   const dates = []
   const today = new Date()
-  const nowTotal = today.getHours() * 60 + today.getMinutes()
-  for (let i = 0; i < maxDays; i++) {
+  // REGLA 2026-08-25: NO se permiten turnos para el mismo día.
+  // El loop arranca en i=1 (mañana). Antes incluía hoy si no había pasado el cierre.
+  for (let i = 1; i <= maxDays; i++) {
     const date = new Date(today)
     date.setDate(date.getDate() + i)
     const dow = date.getDay()
-    if (i === 0) {
-      const [eh, em] = area.end_time?.split(':').map(Number) || area.endTime?.split(':').map(Number) || [13, 0]
-      if (nowTotal >= eh * 60 + em) continue
-    }
     if (area.days?.includes(dow)) dates.push(date.toISOString().slice(0, 10))
   }
   return dates

@@ -173,21 +173,13 @@ export function getAvailableDates(area, maxDays = 30) {
   if (!area || !area.active) return []
   const dates = []
   const today = new Date()
-  // Start from tomorrow if we're past business hours
-  const currentHour = today.getHours()
-  const currentMin = today.getMinutes()
+  // REGLA 2026-08-25: NO se permiten turnos para el mismo día.
+  // El loop arranca en i=1 (mañana). Antes incluía hoy si no había pasado el cierre.
 
-  for (let i = 0; i < maxDays; i++) {
+  for (let i = 1; i <= maxDays; i++) {
     const date = new Date(today)
     date.setDate(date.getDate() + i)
     const dayOfWeek = date.getDay() // 0=Sun, 1=Mon...
-    // Only check from today+0 if we're before end time
-    if (i === 0) {
-      const [endH, endM] = area.endTime.split(':').map(Number)
-      const endTotal = endH * 60 + endM
-      const nowTotal = currentHour * 60 + currentMin
-      if (nowTotal >= endTotal) continue // skip today if past end time
-    }
     if (area.days.includes(dayOfWeek)) {
       dates.push(date.toISOString().slice(0, 10))
     }
