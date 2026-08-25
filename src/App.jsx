@@ -96,6 +96,7 @@ import {
   AdminReclamosPage,
   ContenidoPage,
   HomeAdminPage,
+  LicitacionesAdminPage,
   SetupPage,
   AdminUsersPage,
   CategoriasPage,
@@ -256,6 +257,7 @@ function App() {
           {/* Admin Content - editable pages CMS */}
           <Route path='/admin/contenido/:pageId' element={<ContenidoPage />} />
           <Route path='/admin/home' element={<HomeAdminPage />} />
+          <Route path='/admin/licitaciones' element={<LicitacionesAdminPage />} />
           {/* SECCIÓN GOBIERNO ABIERTO */}
           <Route path="/gobierno-abierto" element={<GobiernoAbiertoPage />} />
           <Route path="/gobierno-abierto/boletin-oficial" element={<BoletinOficialPage />} />

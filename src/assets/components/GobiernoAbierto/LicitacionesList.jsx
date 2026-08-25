@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { LICITACIONES_DATA } from '../../../data/GobiernoAbierto/licitacionesData'
+import { getLicitaciones } from '../../../lib/licitaciones'
 import Icon from '../../Icons/Icon'
 import DocumentTable from './DocumentTable'
 
@@ -113,6 +114,48 @@ const COLUMNS = [
 
 const LicitacionesList = () => {
   const [pdfModal, setPdfModal] = useState(null)
+  const [licitaciones, setLicitaciones] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [usedFallback, setUsedFallback] = useState(false)
+
+  // Carga desde API; si falla, usa el array legacy hardcodeado.
+  // Mantiene `licitacionesData.js` como fuente de respaldo mientras se valida
+  // la migración en producción (BLOQUE 4). Una vez validado, se eliminará el fallback.
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const data = await getLicitaciones()
+        if (cancelled) return
+        // Si la API devuelve items, los usamos; si no, fallback a LICITACIONES_DATA.
+        if (data && Array.isArray(data.items) && data.items.length > 0) {
+          // Mapear al shape esperado por DocumentTable/COLUMNS.
+          setLicitaciones(data.items.map((it) => ({
+            id: it.id,
+            codigo: it.codigo,
+            tipo: it.tipo,
+            fechaPublicacion: it.fechaPublicacion,
+            descripcion: it.descripcion,
+            // El API devuelve pdfUrl firmada; el componente lee `enlacePliego`.
+            enlacePliego: it.pdfUrl || null,
+          })))
+        } else {
+          console.warn('LicitacionesList: API devolvió items vacíos, usando fallback legacy.')
+          setLicitaciones(LICITACIONES_DATA)
+          setUsedFallback(true)
+        }
+      } catch (err) {
+        console.warn('LicitacionesList: API no disponible, usando fallback legacy.', err.message)
+        if (!cancelled) {
+          setLicitaciones(LICITACIONES_DATA)
+          setUsedFallback(true)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   const openPdf = (item) => {
     setPdfModal(item)
@@ -122,10 +165,26 @@ const LicitacionesList = () => {
     setPdfModal(null)
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="flex items-center gap-3 text-slate-500">
+          <Icon name="progress_activity" className="animate-spin text-xl" />
+          <span className="text-sm font-medium">Cargando licitaciones...</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
+      {usedFallback && (
+        <div className="mb-4 px-4 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
+          ⚠️ Mostrando datos de respaldo. El backend de licitaciones no está disponible.
+        </div>
+      )}
       <DocumentTable
-        data={LICITACIONES_DATA}
+        data={licitaciones}
         columns={COLUMNS}
         filters={TIPO_FILTERS}
         filterFn={(item, value) => item.tipo === value}
