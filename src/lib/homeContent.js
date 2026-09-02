@@ -1,3 +1,5 @@
+import { cmsAuthHeaders } from './cmsAuth'
+
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export async function getHomeContent() {
@@ -9,7 +11,7 @@ export async function getHomeContent() {
 export async function updateHomeContent(content) {
   const res = await fetch(`${API_URL}/api/home-content`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...cmsAuthHeaders() },
     body: JSON.stringify({ content }),
   })
   if (!res.ok) throw new Error('Error updating home content')
@@ -21,6 +23,7 @@ export async function uploadHomeImage(file) {
   formData.append('image', file)
   const res = await fetch(`${API_URL}/api/home-content/upload`, {
     method: 'POST',
+    headers: cmsAuthHeaders(),
     body: formData,
   })
   if (!res.ok) {

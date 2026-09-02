@@ -1,24 +1,25 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import SectionLayout from '../../assets/components/SectionLayout';
 import SectionCardGrid from '../../assets/components/SectionCardGrid';
-import {
-  SECRETARIA_GOBIERNO,
-  SECRETARIA_PRODUCCION,
-  SECRETARIA_AMBIENTE,
-  SECRETARIA_HACIENDA,
-  SECRETARIA_OBRAS_PUBLICAS,
-  SECRETARIA_ACCION_SOCIAL
-} from '../../data/Gobierno/gabineteMunicipalData';
+import { getPageContent } from '../../lib/pages'
+import { DEFAULT_GABINETE_MUNICIPAL_CONTENT } from '../../data/GobiernoAbierto/cmsDefaults'
 
 export const GabineteMunicipalPage = () => {
-  const seccionesGabinete = [
-    ...SECRETARIA_GOBIERNO,
-    ...SECRETARIA_PRODUCCION,
-    ...SECRETARIA_AMBIENTE,
-    ...SECRETARIA_HACIENDA,
-    ...SECRETARIA_OBRAS_PUBLICAS,
-    ...SECRETARIA_ACCION_SOCIAL
-  ];
+  const [content, setContent] = useState(DEFAULT_GABINETE_MUNICIPAL_CONTENT)
+
+  useEffect(() => {
+    getPageContent('gabinete-municipal').then((response) => {
+      if (response.content) {
+        setContent({
+          ...DEFAULT_GABINETE_MUNICIPAL_CONTENT,
+          ...response.content,
+          header: { ...DEFAULT_GABINETE_MUNICIPAL_CONTENT.header, ...(response.content.header || {}) },
+        })
+      }
+    })
+  }, [])
+
+  const seccionesGabinete = content.sections || []
 
   const mapIntegranteToCard = (integrante) => {
     const descriptionLines = [integrante.cargo, integrante.telefono, integrante.email].filter(Boolean);
@@ -37,9 +38,9 @@ export const GabineteMunicipalPage = () => {
   return (
     <>
       <SectionLayout
-        title="Gabinete"
-        highlight="Municipal"
-        description=""
+        title={content.header?.title}
+        highlight={content.header?.highlight}
+        description={content.header?.description}
       />
 
       {seccionesGabinete.map((section, index) => (
@@ -55,4 +56,4 @@ export const GabineteMunicipalPage = () => {
   )
 }
 
-export default GabineteMunicipalPage; 
+export default GabineteMunicipalPage;

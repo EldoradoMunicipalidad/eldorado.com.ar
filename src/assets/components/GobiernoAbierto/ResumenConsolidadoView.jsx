@@ -61,7 +61,7 @@ const CustomTooltip = ({ active, payload }) => {
     return null
 }
 
-const ResumenConsolidadoView = () => {
+const ResumenConsolidadoView = ({ data = RESUMEN_CONSOLIDADO }) => {
     const [tab, setTab] = useState('comparativo')
     const [isMobile, setIsMobile] = useState(() => window.innerWidth < 1024)
 
@@ -70,7 +70,7 @@ const ResumenConsolidadoView = () => {
         window.addEventListener('resize', check)
         return () => window.removeEventListener('resize', check)
     }, [])
-    const filas = RESUMEN_CONSOLIDADO[0]?.filas ?? []
+    const filas = data[0]?.filas ?? []
     const comparativoChartData = filas.map((fila) => ({
         concepto: fila.concepto,
         y2023: Number((fila.valores['31/12/2023'] / 1000000000).toFixed(2)),

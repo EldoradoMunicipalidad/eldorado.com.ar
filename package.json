@@ -11,7 +11,9 @@
     "start": "node server/index.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "db:init": "node server/init-db.js"
+    "db:init": "node server/init-db.js",
+    "uru:audit": "node scripts/audit-uru-coverage.cjs",
+    "uru:test": "node scripts/test-uru-context.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1113.0",

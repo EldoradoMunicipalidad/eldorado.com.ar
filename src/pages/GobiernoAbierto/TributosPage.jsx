@@ -2,18 +2,21 @@ import React from 'react'
 import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 import TributosDashboard from '../../assets/components/GobiernoAbierto/TributosDashboard'
+import { DEFAULT_GOBIERNO_ABIERTO_SUBPAGES } from '../../data/GobiernoAbierto/cmsDefaults'
+import { useCmsContent } from '../../lib/useCmsContent'
 
 const TributosPage = () => {
+  const content = useCmsContent('gobierno-abierto-tributos', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.tributos)
   return (
     <>
       <SectionLayout
-        title="Consolidado de"
-        highlight="Tributos"
-        description="Accede a la información consolidada de tributos municipales, incluyendo datos detallados sobre impuestos, tasas y contribuciones. Esta sección proporciona una visión clara y actualizada de las obligaciones tributarias para ciudadanos y empresas, facilitando el cumplimiento y promoviendo la transparencia en la gestión fiscal del municipio."
+        title={content.header?.title}
+        highlight={content.header?.highlight}
+        description={content.header?.description}
       />
 
       <Section>
-        <TributosDashboard />
+        <TributosDashboard data={content.rows} totals={content.totals} />
       </Section>
     </>
   )

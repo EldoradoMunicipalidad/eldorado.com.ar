@@ -288,7 +288,7 @@ function App() {
       </main>
 
       <Footer /> {/* Footer integrado al final */}
-      {/* <UruChatbot /> */} {/* TEMP: oculto temporalmente */}
+      <UruChatbot />
     </div>
   )
 }

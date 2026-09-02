@@ -3,6 +3,8 @@ import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 import { Search, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
 import { AUDIENCIAS_2025, AUDIENCIAS_2026 } from '../../data/GobiernoAbierto/audienciasData'
+import { DEFAULT_GOBIERNO_ABIERTO_SUBPAGES } from '../../data/GobiernoAbierto/cmsDefaults'
+import { useCmsContent } from '../../lib/useCmsContent'
 
 const ITEMS_PER_PAGE = 50
 
@@ -11,8 +13,9 @@ export default function AudienciasPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [expanded, setExpanded] = useState(null)
+  const content = useCmsContent('gobierno-abierto-audiencias', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.audiencias)
 
-  const data = year === '2025' ? AUDIENCIAS_2025 : AUDIENCIAS_2026
+  const data = content.years?.[year] || (year === '2025' ? AUDIENCIAS_2025 : AUDIENCIAS_2026)
 
   const filtered = useMemo(() => {
     if (!search.trim()) return data
@@ -33,9 +36,9 @@ export default function AudienciasPage() {
   return (
     <>
       <SectionLayout
-        title="Registro Único"
-        highlight="de Audiencias"
-        description="Audiencias de gestión de interés público — Registro actualizado de reuniones mantenidas por las autoridades municipales con ciudadanos e instituciones."
+        title={content.header?.title}
+        highlight={content.header?.highlight}
+        description={content.header?.description}
       />
 
       <Section>

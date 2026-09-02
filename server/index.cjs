@@ -1,6 +1,7 @@
 const express = require('express')
 const path = require('path')
 const cors = require('cors')
+const rateLimit = require('express-rate-limit')
 const pool = require('./db.cjs')
 const { askUru } = require('./uruService.cjs')
 const { verifyAdmin, requireAdminFor, makeLoginLimiter, bcrypt } = require('./authMiddleware.cjs')
@@ -13,6 +14,13 @@ app.use(express.json({ limit: '50mb' }))
 const ADMIN_TABLE = 'admins'
 const requireAdmin = requireAdminFor(pool, ADMIN_TABLE)
 const loginLimiter = makeLoginLimiter()
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas consultas al asistente. Esperá un minuto.' },
+})
 
 // Serve static files in production
 const distPath = path.join(__dirname, '..', 'dist')
@@ -371,14 +379,21 @@ app.post('/api/admins/change-password', requireAdmin, async (req, res) => {
 })
 
 // ─── CHAT (proxy a Uru) ─────────────────────────────────────────────
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   try {
-    const { messages, system } = req.body
-    const response = await askUru({ messages, system })
+    const { question, context, history, page } = req.body || {}
+    if (typeof question !== 'string' || !question.trim()) {
+      return res.status(400).json({ error: 'La pregunta es obligatoria' })
+    }
+
+    const response = await askUru({ question, context, history, page })
     res.json({ response })
   } catch (err) {
     console.error('POST /api/chat error:', err.message)
-    res.status(500).json({ error: 'Chat error' })
+    if (err.code === 'MISSING_MINIMAX_API_KEY') {
+      return res.status(503).json({ error: 'URU no está configurado en el servidor' })
+    }
+    res.status(502).json({ error: 'No se pudo obtener respuesta de URU' })
   }
 })
 

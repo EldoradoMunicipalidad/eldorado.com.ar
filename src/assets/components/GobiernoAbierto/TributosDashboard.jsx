@@ -54,31 +54,31 @@ const CustomTooltip = ({ active, payload, label }) => {
     )
 }
 
-const TributosDashboard = () => {
+const TributosDashboard = ({ data = TRIBUTOS_RECAUDACION_DATA, totals = TRIBUTOS_TOTALES }) => {
     const [distributionYear, setDistributionYear] = useState('2023')
 
     const comparativeData = useMemo(() => {
-        return TRIBUTOS_RECAUDACION_DATA.map((item) => ({
+        return data.map((item) => ({
             concepto: item.shortLabel,
             recaudo2023M: Number((item.recaudo2023 / 1000000).toFixed(2)),
             recaudo2024M: Number((item.recaudo2024 / 1000000).toFixed(2))
         }))
-    }, [])
+    }, [data])
 
     const distributionData = useMemo(() => {
         const key = distributionYear === '2024' ? 'recaudo2024' : 'recaudo2023'
-        return TRIBUTOS_RECAUDACION_DATA.map((item) => ({
+        return data.map((item) => ({
             name: item.shortLabel,
             value: item[key]
         }))
-    }, [distributionYear])
+    }, [data, distributionYear])
 
     const variationData = useMemo(() => {
-        return TRIBUTOS_RECAUDACION_DATA.map((item) => ({
+        return data.map((item) => ({
             concepto: item.shortLabel,
             variacionPct: item.variacionPct
         }))
-    }, [])
+    }, [data])
 
     return (
         <div className="space-y-6">
@@ -98,7 +98,7 @@ const TributosDashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {TRIBUTOS_RECAUDACION_DATA.map((item) => (
+                            {data.map((item) => (
                                 <tr key={item.tributo} className="border-t border-slate-200">
                                     <td className="px-4 py-3 text-slate-800">{item.tributo}</td>
                                     <td className="px-4 py-3 text-right text-slate-800 whitespace-nowrap">{formatCurrency(item.recaudo2024)}</td>
@@ -113,10 +113,10 @@ const TributosDashboard = () => {
                             ))}
                             <tr className="border-t border-slate-300 bg-slate-100 font-bold text-slate-900 text-[14px] sm:text-[15px]">
                                 <td className="px-4 py-3">TOTAL</td>
-                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatCurrency(TRIBUTOS_TOTALES.recaudo2024)}</td>
-                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatCurrency(TRIBUTOS_TOTALES.recaudo2023)}</td>
-                                <td className="px-4 py-3 text-right text-sky-600 whitespace-nowrap">{formatCurrency(TRIBUTOS_TOTALES.diferencia)}</td>
-                                <td className="px-4 py-3 text-right text-sky-600 whitespace-nowrap">{formatPercent(TRIBUTOS_TOTALES.variacionPct)}</td>
+                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatCurrency(totals.recaudo2024)}</td>
+                                <td className="px-4 py-3 text-right whitespace-nowrap">{formatCurrency(totals.recaudo2023)}</td>
+                                <td className="px-4 py-3 text-right text-sky-600 whitespace-nowrap">{formatCurrency(totals.diferencia)}</td>
+                                <td className="px-4 py-3 text-right text-sky-600 whitespace-nowrap">{formatPercent(totals.variacionPct)}</td>
                             </tr>
                         </tbody>
                     </table>

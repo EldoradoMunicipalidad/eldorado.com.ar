@@ -10,6 +10,66 @@ Backend Express + Postgres (Neon) + Cloudflare R2 para el sitio eldorado.gob.ar.
 - **Cloudflare R2** — almacenamiento de imágenes del home (CDN edge-cache, egress 0)
 - **bcrypt** — hash de passwords de admins
 
+## URU — asistente municipal
+
+URU responde consultas del sitio mediante la API compatible con OpenAI de MiniMax.
+La clave se usa exclusivamente en el backend; el frontend llama a `POST /api/chat`
+y nunca recibe la credencial.
+
+Variables de entorno requeridas:
+
+```text
+DATABASE_URL=...
+```
+
+```text
+MINIMAX_API_KEY=...
+```
+
+Variables opcionales:
+
+```text
+MINIMAX_MODEL=MiniMax-M2.7
+FIREBASE_PROJECT_ID=municipalidad-632de
+FIREBASE_SERVICE_ACCOUNT=...
+GOOGLE_APPLICATION_CREDENTIALS=...
+```
+
+El endpoint utilizado es `https://api.minimax.io/v1/chat/completions`. Para probarlo
+localmente, configurá `MINIMAX_API_KEY` en la sesión del proceso antes de ejecutar
+`npm run dev:server` o `npm run dev:all`. No uses `VITE_MINIMAX_API_KEY`: cualquier
+variable con prefijo `VITE_` puede terminar dentro del bundle público.
+
+El repositorio no contiene credenciales de base de datos ni claves privadas de
+Firebase. `DATABASE_URL` y las credenciales de Firebase deben configurarse en el
+entorno de ejecución o en el gestor de secretos del despliegue.
+
+Para medir la cobertura de rutas públicas de URU ejecutá:
+
+```text
+npm run uru:audit
+```
+
+Pruebas locales de contexto y manejo de credenciales:
+
+    npm run uru:test
+
+En cada consulta, el backend agrega automáticamente:
+
+- contenido CMS de home, planeamiento, direccion-ambiente y secretaria-ambiente;
+- licitaciones vigentes publicadas en PostgreSQL;
+- estado de los turneros de Planeamiento y Escuela de Manejo.
+
+Ese contexto se renueva cada 60 segundos. Si una tabla opcional todavía no existe,
+URU continúa funcionando con el resto de las fuentes disponibles.
+
+Puesta en marcha:
+
+    1. Configurá DATABASE_URL y MINIMAX_API_KEY en el entorno del servidor.
+    2. Ejecutá npm run uru:test
+    3. Ejecutá npm run uru:audit
+    4. Iniciá con npm run dev:all o desplegá con npm start
+
 ## Endpoints principales
 
 | Ruta | Método | Descripción |

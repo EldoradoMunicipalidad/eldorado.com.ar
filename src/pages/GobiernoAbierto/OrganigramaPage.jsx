@@ -3,8 +3,11 @@ import SectionLayout from '../../assets/components/SectionLayout'
 import Accordion from '../../assets/components/Accordion'
 import { ORGANIGRAMA_SECCIONES } from '../../data/GobiernoAbierto/organigramaData'
 import Icon from '../../assets/Icons/Icon'
+import { DEFAULT_GOBIERNO_ABIERTO_SUBPAGES } from '../../data/GobiernoAbierto/cmsDefaults'
+import { useCmsContent } from '../../lib/useCmsContent'
 
 const OrganigramaPage = () => {
+    const content = useCmsContent('gobierno-abierto-organigrama', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.organigrama)
   return (
     <>
         <SectionLayout 
@@ -15,7 +18,7 @@ const OrganigramaPage = () => {
 
         <section className="mt-10 max-w-5xl mx-auto px-4 pb-16">
           <div className="space-y-4">
-            {ORGANIGRAMA_SECCIONES.map((secretaria) => (
+            {(content.sections || ORGANIGRAMA_SECCIONES).map((secretaria) => (
               <Accordion
                 key={secretaria.id}
                 title={secretaria.title}

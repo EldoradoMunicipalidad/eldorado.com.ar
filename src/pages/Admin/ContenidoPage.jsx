@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import React, { useState, useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import {
   Shield, Save, Loader2, AlertCircle, CheckCircle2, LogOut,
   Plus, Trash2, Pencil, X, ArrowUp, ArrowDown,
@@ -7,6 +7,7 @@ import {
 import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 import { getPageContent, updatePageContent } from '../../lib/pages'
+import { clearCmsAuth, getCmsToken, getCmsUsername, loginCmsAdmin } from '../../lib/cmsAuth'
 import Icon from '../../assets/Icons/Icon'
 import { SECRETARIA_OBRAS_PUBLICAS, SECRETARIA_AMBIENTE } from '../../data/Gobierno/secretariasCards'
 import { AMBIENTE_DATA } from '../../data/Gobierno/secretariasData'
@@ -108,20 +109,15 @@ const ALL_ICONS = [
 
 export default function ContenidoPage() {
   const { pageId } = useParams()
-  const navigate = useNavigate()
-
   // ─── Auth (independiente del panel de reclamos) ─────
-  const ADMIN_USER = 'contenido'
-  const ADMIN_PASS = 'contenido2025'
-
   const [isAuthenticated, setIsAuthenticated] = useState(
-    () => sessionStorage.getItem('contenido_admin_auth') === 'true'
+    () => !!getCmsToken()
   )
   const [loginUser, setLoginUser] = useState('')
   const [loginPass, setLoginPass] = useState('')
   const [loginError, setLoginError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
-  const username = sessionStorage.getItem('contenido_admin_username') || ''
+  const username = getCmsUsername()
 
   // ─── Content state ─────────────────────────────────
   const [content, setContent] = useState(null)
@@ -258,27 +254,30 @@ export default function ContenidoPage() {
   }
 
   // ─── Logout ────────────────────────────────────────
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setLoginError('')
+    setAuthLoading(true)
     if (!loginUser.trim() || !loginPass.trim()) {
       setLoginError('Completá usuario y contraseña')
+      setAuthLoading(false)
       return
     }
-    if (loginUser.trim() !== ADMIN_USER || loginPass !== ADMIN_PASS) {
-      setLoginError('Usuario o contraseña incorrectos')
+    const result = await loginCmsAdmin(loginUser.trim(), loginPass)
+    setAuthLoading(false)
+    if (!result.ok) {
+      setLoginError(result.error || 'Usuario o contraseña incorrectos')
       return
     }
     sessionStorage.setItem('contenido_admin_auth', 'true')
-    sessionStorage.setItem('contenido_admin_username', loginUser.trim())
+    sessionStorage.setItem('contenido_admin_username', result.username)
     setIsAuthenticated(true)
     setLoginUser('')
     setLoginPass('')
   }
 
   const handleLogout = () => {
-    sessionStorage.removeItem('contenido_admin_auth')
-    sessionStorage.removeItem('contenido_admin_username')
+    clearCmsAuth()
     setIsAuthenticated(false)
   }
 

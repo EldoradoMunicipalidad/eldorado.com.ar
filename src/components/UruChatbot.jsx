@@ -3,7 +3,6 @@ import { uruKnowledge } from '../data/uruKnowledge';
 import './UruChatbot.css';
 
 const STORAGE_KEY = 'uru_chat_history';
-const MODEL = 'deepseek/deepseek-chat-v3-0324';
 
 const QUICK_REPLIES = [
   '¿Qué trámites puedo hacer?',
@@ -16,8 +15,20 @@ const QUICK_REPLIES = [
 // Intent patterns → direct answers (no LLM needed)
 const INTENT_ANSWERS = [
   {
-    patterns: [/turno.*planeamiento/i, /sacar.*turno/i, /reservar.*turno/i, /pedir.*turno/i, /turnero/i],
+    patterns: [/turno.*planeamiento/i, /planeamiento.*turno/i, /turnero.*planeamiento/i],
     answer: 'Podés sacar turno para Planeamiento en: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero',
+  },
+  {
+    patterns: [/turno.*escuela/i, /escuela.*manejo.*turno/i, /turnero.*manejo/i],
+    answer: 'El turnero de la Escuela de Manejo está en: eldorado.gob.ar/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero',
+  },
+  {
+    patterns: [/sacar.*turno/i, /reservar.*turno/i, /pedir.*turno/i, /turnero/i],
+    answer: 'Hay turneros para distintos servicios. Para Planeamiento: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero. Para la Escuela de Manejo: eldorado.gob.ar/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero',
+  },
+  {
+    patterns: [/denuncia.*ambiente/i, /ambiente.*denuncia/i, /denunciar.*ambiente/i],
+    answer: 'Las denuncias relacionadas con Ambiente se realizan mediante el formulario oficial enlazado desde la Guía de Trámites: eldorado.gob.ar/guia-de-tramites',
   },
   {
     patterns: [/reclamo/i, /denunciar/i],
@@ -81,7 +92,9 @@ function saveHistory(messages) {
   try {
     const trimmed = messages.slice(-20);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-  } catch {}
+  } catch {
+    // El almacenamiento puede estar bloqueado en modo privado o por políticas del navegador.
+  }
 }
 
 const INITIAL_MESSAGE = {
@@ -90,57 +103,74 @@ const INITIAL_MESSAGE = {
   id: Date.now(),
 };
 
-async function chatOpenRouter(question, context) {
-  const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-  if (!API_KEY) throw new Error('API key no configurada');
-
-  const pageCtx = getPageContext();
-  const systemPrompt = `Sos URU, el asistente virtual de la Municipalidad de Eldorado.
- Solo podés responder usando INFORMACIÓN que figure en el sitio web oficial: eldorado.gob.ar
- NO podés inventar, asumir ni completar datos que no estén explicitamente en el sitio.
-
- El usuario está actualmente en: ${pageCtx}
-
- SECCIONES PRINCIPALES DEL SITIO:
- - Trámites: /ciudadano-digital/reclamos, /ciudadano-digital/preinscripcion-comercial
- - Turnero: /gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero
- - Finanzas: /gobierno-abierto/finanzas-publicas, /gobierno-abierto/balancetes-trimestrales
- - Tributos: /gobierno-abierto/tributos
- - Licitaciones: /gobierno-abierto/licitaciones
- - Gobierno: /gobierno/intendencia, /gobierno/secretaria-gobierno, /gobierno/secretaria-hacienda
- - Contacto: /ciudad/contacto, /ciudad/telefonos-utiles
- - Noticias: prensa.eldorado.gob.ar
-
- REGLAS:
- - Si no estás seguro de un dato (horario, teléfono, dirección), decí que consultes la sección correspondiente del sitio.
- - Nunca inventés información de contacto.
- - Respondé en español, máximo 3 oraciones.
- - Solo hablá de contenidos que estén publicados en el sitio oficial.`;
-
-  const messages = [{ role: 'system', content: systemPrompt }];
-  if (context) messages.push({ role: 'system', content: 'Contexto del sitio:\n' + context });
-  messages.push({ role: 'user', content: question });
-
-  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+async function chatUru(question, context, history) {
+  const res = await fetch('/api/chat', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + API_KEY,
-      'HTTP-Referer': 'https://eldorado.gob.ar',
-      'X-Title': 'URU - Chatbot Municipal',
     },
-    body: JSON.stringify({ model: MODEL, messages, max_tokens: 350 }),
+    body: JSON.stringify({
+      question,
+      context,
+      history,
+      page: getPageContext(),
+    }),
   });
 
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message || 'Error de OpenRouter');
-  return data.choices?.[0]?.message?.content || 'No pude obtener una respuesta.';
+  if (!res.ok || data.error) throw new Error(data.error || 'Error de URU');
+  return data.response || 'No pude obtener una respuesta.';
 }
 
 let msgId = Date.now() + 1;
 
 function makeMsg(from, text) {
   return { from, text, id: msgId++ };
+}
+
+const URL_TOKEN_RE = /(https?:\/\/[^\s]+|(?:www\.)?eldorado\.(?:gob\.ar|com\.ar)\/[^\s]+)/gi;
+
+function isApprovedLink(value) {
+  try {
+    const url = new URL(value.startsWith('http') ? value : 'https://' + value);
+    const host = url.hostname.toLowerCase();
+    return (
+      url.protocol === 'https:' &&
+      (
+        host === 'eldorado.gob.ar' ||
+        host.endsWith('.eldorado.gob.ar') ||
+        host === 'eldorado.com.ar' ||
+        host.endsWith('.eldorado.com.ar') ||
+        host === 'docs.google.com' ||
+        host === 'drive.google.com' ||
+        host.endsWith('.argentina.gob.ar') ||
+        host === 'argentina.gob.ar' ||
+        host === 'seguridadvial.gob.ar' ||
+        host.endsWith('.misiones.gob.ar')
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
+function renderMessageText(text) {
+  if (typeof text !== 'string') return text;
+  return text.split(URL_TOKEN_RE).map((part, index) => {
+    const href = part.startsWith('http') ? part : 'https://' + part;
+    if (!isApprovedLink(part)) return <span key={index}>{part}</span>;
+    return (
+      <a
+        key={index}
+        className="uru-link"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {part}
+      </a>
+    );
+  });
 }
 
 export default function UruChatbot() {
@@ -151,7 +181,6 @@ export default function UruChatbot() {
   });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [hasNewReply, setHasNewReply] = useState(false);
   const [feedbackMap, setFeedbackMap] = useState({});
   const bottomRef = useRef(null);
   const panelRef = useRef(null);
@@ -160,15 +189,6 @@ export default function UruChatbot() {
   useEffect(() => {
     if (open && bottomRef.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, open]);
-
-  useEffect(() => {
-    if (!open && messages.length > 1) {
-      const last = messages[messages.length - 1];
-      if (last.from === 'uru') {
-        setHasNewReply(true);
-      }
     }
   }, [messages, open]);
 
@@ -191,7 +211,6 @@ export default function UruChatbot() {
     const text = (forcedText || input).trim();
     if (!text || loading) return;
     setInput('');
-    setHasNewReply(false);
 
     const userMsg = makeMsg('user', text);
     setMessages(m => {
@@ -216,14 +235,14 @@ export default function UruChatbot() {
     }
 
     try {
-      const answer = await chatOpenRouter(text, uruKnowledge);
+      const answer = await chatUru(text, uruKnowledge, messages);
       const uruMsg = makeMsg('uru', answer);
       setMessages(m => {
         const updated = [...m, uruMsg];
         saveHistory(updated);
         return updated;
       });
-    } catch (e) {
+    } catch {
       const errMsg = makeMsg('uru', 'Error al obtener respuesta. Podés consultar directamente en el sitio: eldorado.gob.ar');
       setMessages(m => {
         const updated = [...m, errMsg];
@@ -232,7 +251,7 @@ export default function UruChatbot() {
       });
     }
     setLoading(false);
-  }, [input, loading]);
+  }, [input, loading, messages]);
 
   const handleFeedback = (msgId, value) => {
     setFeedbackMap(f => ({ ...f, [msgId]: value }));
@@ -244,7 +263,6 @@ export default function UruChatbot() {
 
   const handleOpen = () => {
     setOpen(true);
-    setHasNewReply(false);
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
@@ -270,7 +288,7 @@ export default function UruChatbot() {
           <div className="uru-messages">
             {messages.map((m) => (
               <div key={m.id} className={`uru-msg uru-msg--${m.from}`}>
-                <div className="uru-bubble">{m.text}</div>
+                <div className="uru-bubble">{renderMessageText(m.text)}</div>
                 {m.from === 'uru' && feedbackMap[m.id] === undefined && (
                   <div className="uru-feedback">
                     <button

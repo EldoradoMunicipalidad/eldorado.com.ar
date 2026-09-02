@@ -183,6 +183,16 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
+.uru-link {
+  color: #0284c7;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.uru-link:hover {
+  color: #0369a1;
+}
+
 /* Feedback buttons */
 .uru-feedback {
   display: flex;

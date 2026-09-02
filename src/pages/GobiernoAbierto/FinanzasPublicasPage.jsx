@@ -6,63 +6,24 @@ import { FINANZAS_PUBLICAS_DATA } from '../../data/GobiernoAbierto/gobiernoAbier
 import BalancetesView from '../../assets/components/GobiernoAbierto/BalancetesView'
 import ResumenConsolidadoView from '../../assets/components/GobiernoAbierto/ResumenConsolidadoView'
 import Icon from '../../assets/Icons/Icon'
+import { DEFAULT_GOBIERNO_ABIERTO_SUBPAGES } from '../../data/GobiernoAbierto/cmsDefaults'
+import { useCmsContent } from '../../lib/useCmsContent'
+import { BALANCETES_DATA } from '../../data/GobiernoAbierto/balancetesData'
+import { RESUMEN_CONSOLIDADO } from '../../data/GobiernoAbierto/resumenConsolidadoData'
 
 const FinanzasPublicasPage = () => {
-    const categorias = FINANZAS_PUBLICAS_DATA[0]?.cards ?? []
-    const categoriasDetalle = {
-        'Ordenanza Presupuestaria': {
-            documentos: [
-                {
-                    titulo: 'Presupuesto 2026 ( Ord. 249/2026 - Dec. 259/2025 )',
-                    subtitulo: 'Estimacion de recursos y planificacion de los gastos previstos para el ejercicio 2026',
-                    enlace: 'https://drive.google.com/file/d/1vDMiKL42Od6AKXbprUzVkhgoNNepgN5P/view'
-                }
-            ]
-        },
-        'Ordenanza General Fiscal': {
-            documentos: [
-                {
-                    titulo: 'ORDENANZA N° 218/2.025 - ANEXO I - ORDENANZA GENERAL FISCAL EJERCICIO 2.026 PARTE TRIBUTARIA',
-                    enlace: 'https://drive.google.com/file/d/19klWWMDYFE1fOY2TlO2If2OzERg8kVV-/view'
-                },
-                {
-                    titulo: 'ORDENANZA N° 218/2.025 - ANEXO II - ORDENANZA GENERAL FISCAL EJERCICIO 2.026 PARTE TRIBUTARIA',
-                    enlace: 'https://drive.google.com/file/d/1-fgpCPz017LTgr6PcN32D8LsVhdJrHl7/view'
-                },
-                {
-                    titulo: 'ORDENANZA N° 218/2.025 - ANEXO III - ORDENANZA GENERAL FISCAL EJERCICIO 2.026 PARTE TRIBUTARIA',
-                    enlace: 'https://drive.google.com/file/d/1GanbPAULcBe1o8-VDEjoaCZh32EqOg2S/view'
-                }
-            ]
-        },
-        'Inventario de Bienes': {
-            documentos: [
-                {
-                    titulo: 'Alta 3° Trimestre, Impresión Inventario (2024)',
-                    enlace: 'https://drive.google.com/file/d/1wVInZ3YaK2RwHUBFdwr87nKXBs1dm-NK/view'
-                },
-                {
-                    titulo: 'Baja 3° Trimestre, Impresión Inventario (2024)',
-                    enlace: 'https://drive.google.com/file/d/1wVInZ3YaK2RwHUBFdwr87nKXBs1dm-NK/view'
-                },
-                {
-                    titulo: 'Alta 4° Trimestre, Impresión Inventario (2024)',
-                    enlace: 'https://drive.google.com/file/d/1-wUq9mp2A2-EQSS0oWKfL1DVZf3x5Hx-/preview'
-                },
-                {
-                    titulo: 'Baja 4° Trimestre, Impresión Inventario (2024)',
-                    enlace: 'https://drive.google.com/file/d/1salQ1o_NLUiT8W8AMGEqiSu5j48N4I2O/preview'
-                }
-            ]
-        }
-    }
+    const content = useCmsContent('gobierno-abierto-finanzas', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.finanzas)
+    const balancetes = useCmsContent('gobierno-abierto-balancetes', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.balancetes)
+    const resumen = useCmsContent('gobierno-abierto-resumen-consolidado', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.resumenConsolidado)
+    const categorias = content.categories || FINANZAS_PUBLICAS_DATA[0]?.cards || []
+    const categoriasDetalle = content.detalles || {}
 
     return (
         <>
             <SectionLayout
-                title="Informacion de"
-                highlight="Finanzas Publicas"
-                description="Accede a la información detallada sobre las finanzas públicas de la Municipalidad de Eldorado, incluyendo ordenanzas presupuestarias, inventarios de bienes y balancetes trimestrales."
+                title={content.header?.title}
+                highlight={content.header?.highlight}
+                description={content.header?.description}
             />
 
             <Section>
@@ -83,9 +44,9 @@ const FinanzasPublicasPage = () => {
                             </p>
 
                             {categoria.title === 'Balancetes trimestrales' ? (
-                                <BalancetesView />
+                                <BalancetesView data={balancetes.data || BALANCETES_DATA} />
                                 ) : categoria.title === 'Resumen Consolidado de Finanzas Públicas' ? (
-                                    <ResumenConsolidadoView />
+                                    <ResumenConsolidadoView data={resumen.data || RESUMEN_CONSOLIDADO} />
                                 ) : detalle?.documentos?.length > 0 ? (
                                 <div className="space-y-4">
                                     {detalle.documentos.map((documento, documentoIndex) => (

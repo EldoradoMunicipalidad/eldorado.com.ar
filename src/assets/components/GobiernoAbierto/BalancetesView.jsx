@@ -8,15 +8,15 @@ const iconoCategoria = {
     'accountBalanceWallet': 'text-sky-500'
 }
 
-const BalancetesView = () => {
-    const años = BALANCETES_DATA.map((d) => d.año)
+const BalancetesView = ({ data = BALANCETES_DATA }) => {
+    const años = data.map((d) => d.año)
     const [añoSeleccionado, setAñoSeleccionado] = useState(años[años.length - 1])
     const [trimestreSeleccionado, setTrimestreSeleccionado] = useState(1)
     const [busqueda, setBusqueda] = useState('')
 
     const añoData = useMemo(
-        () => BALANCETES_DATA.find((d) => d.año === añoSeleccionado),
-        [añoSeleccionado]
+        () => data.find((d) => d.año === añoSeleccionado),
+        [data, añoSeleccionado]
     )
 
     const trimestreData = useMemo(

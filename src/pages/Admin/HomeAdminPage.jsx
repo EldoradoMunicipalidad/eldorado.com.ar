@@ -6,6 +6,11 @@ import {
 } from 'lucide-react'
 import SectionLayout from '../../assets/components/SectionLayout'
 import { getHomeContent, updateHomeContent } from '../../lib/homeContent'
+import { clearCmsAuth, getCmsToken, loginCmsAdmin } from '../../lib/cmsAuth'
+import { getPageContent, updatePageContent } from '../../lib/pages'
+import { DEFAULT_GOBIERNO_ABIERTO_CONTENT, DEFAULT_GABINETE_MUNICIPAL_CONTENT, DEFAULT_GOBIERNO_ABIERTO_SUBPAGES, GOBIERNO_ABIERTO_SUBPAGE_IDS } from '../../data/GobiernoAbierto/cmsDefaults'
+import GobiernoAbiertoAdmin from './GobiernoAbiertoAdmin'
+import GabineteMunicipalAdmin from './GabineteMunicipalAdmin'
 
 // ─── Default content (mirrors initial SQL migration) ─────────────────
 const DEFAULT_CONTENT = {
@@ -57,6 +62,8 @@ const DEFAULT_CONTENT = {
 }
 
 const TABS = [
+  { id: 'gobierno-abierto', label: 'Gobierno Abierto' },
+  { id: 'gabinete', label: 'Gabinete Municipal' },
   { id: 'carousel', label: 'Carrusel' },
   { id: 'guia', label: 'Guía de Trámites' },
   { id: 'tramites', label: 'Trámites y Servicios' },
@@ -70,13 +77,16 @@ function LoginScreen({ onLogin }) {
   const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (creds.username === 'admin' && creds.password === 'admin') {
-      onLogin()
-    } else {
-      setError('Credenciales incorrectas')
-    }
+    setError('')
+    setLoading(true)
+    const result = await loginCmsAdmin(creds.username.trim(), creds.password)
+    setLoading(false)
+    if (result.ok) onLogin()
+    else setError(result.error || 'Credenciales incorrectas')
   }
 
   return (
@@ -112,8 +122,8 @@ function LoginScreen({ onLogin }) {
           </div>
         </div>
         {error && <div className="flex items-center gap-2 text-red-600 text-sm"><AlertCircle className="w-4 h-4" /> {error}</div>}
-        <button type="submit" className="w-full bg-sky-600 text-white rounded-lg py-2 font-semibold hover:bg-sky-700 transition-colors">
-          Ingresar
+        <button type="submit" disabled={loading} className="w-full bg-sky-600 text-white rounded-lg py-2 font-semibold hover:bg-sky-700 disabled:opacity-50 transition-colors">
+          {loading ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
     </div>
@@ -484,31 +494,70 @@ function AppSectionEditor({ data, onChange }) {
 
 // ─── Main HomeAdminPage ──────────────────────────────────────────────
 export default function HomeAdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!getCmsToken())
   const [content, setContent] = useState(null)
+  const [governmentContent, setGovernmentContent] = useState(null)
+  const [cabinetContent, setCabinetContent] = useState(null)
   const [activeTab, setActiveTab] = useState('carousel')
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState(null) // { type: 'success'|'error', msg: '' }
 
   const loadContent = useCallback(async () => {
     try {
-      const data = await getHomeContent()
+      const subpageEntries = Object.entries(GOBIERNO_ABIERTO_SUBPAGE_IDS)
+      const [homeData, governmentData, cabinetData, ...subpageResponses] = await Promise.all([
+        getHomeContent(),
+        getPageContent('gobierno-abierto'),
+        getPageContent('gabinete-municipal'),
+        ...subpageEntries.map(([, pageId]) => getPageContent(pageId)),
+      ])
+      const subpages = Object.fromEntries(subpageEntries.map(([key], index) => [
+        key,
+        { ...DEFAULT_GOBIERNO_ABIERTO_SUBPAGES[key], ...(subpageResponses[index]?.content || {}) },
+      ]))
       // Merge with defaults so any missing keys get filled
-      setContent({ ...DEFAULT_CONTENT, ...data.content })
-    } catch (err) {
+      setContent({ ...DEFAULT_CONTENT, ...homeData.content })
+      setGovernmentContent({
+        ...DEFAULT_GOBIERNO_ABIERTO_CONTENT,
+        ...(governmentData.content || {}),
+        header: { ...DEFAULT_GOBIERNO_ABIERTO_CONTENT.header, ...(governmentData.content?.header || {}) },
+        ordinance: { ...DEFAULT_GOBIERNO_ABIERTO_CONTENT.ordinance, ...(governmentData.content?.ordinance || {}) },
+        subpages,
+      })
+      setCabinetContent({
+        ...DEFAULT_GABINETE_MUNICIPAL_CONTENT,
+        ...(cabinetData.content || {}),
+        header: { ...DEFAULT_GABINETE_MUNICIPAL_CONTENT.header, ...(cabinetData.content?.header || {}) },
+      })
+    } catch {
       setContent(DEFAULT_CONTENT)
+      setGovernmentContent({ ...DEFAULT_GOBIERNO_ABIERTO_CONTENT, subpages: DEFAULT_GOBIERNO_ABIERTO_SUBPAGES })
+      setCabinetContent(DEFAULT_GABINETE_MUNICIPAL_CONTENT)
     }
   }, [])
 
   useEffect(() => {
-    if (isAuthenticated) loadContent()
+    if (!isAuthenticated) return
+    const load = async () => { await loadContent() }
+    load()
   }, [isAuthenticated, loadContent])
 
   const handleSave = async () => {
     setSaving(true)
     setStatus(null)
     try {
-      await updateHomeContent(content)
+      if (activeTab === 'gobierno-abierto') {
+        await Promise.all([
+          updatePageContent('gobierno-abierto', governmentContent),
+          ...Object.entries(GOBIERNO_ABIERTO_SUBPAGE_IDS).map(([key, pageId]) =>
+            updatePageContent(pageId, governmentContent.subpages?.[key] || DEFAULT_GOBIERNO_ABIERTO_SUBPAGES[key])
+          ),
+        ])
+      } else if (activeTab === 'gabinete') {
+        await updatePageContent('gabinete-municipal', cabinetContent)
+      } else {
+        await updateHomeContent(content)
+      }
       setStatus({ type: 'success', msg: 'Contenido guardado correctamente' })
     } catch (err) {
       setStatus({ type: 'error', msg: `Error: ${err.message}` })
@@ -520,6 +569,20 @@ export default function HomeAdminPage() {
   const updateSection = (key, value) => {
     setContent((prev) => ({ ...prev, [key]: value }))
   }
+
+  const handleLogout = () => {
+    clearCmsAuth()
+    setIsAuthenticated(false)
+    setContent(null)
+    setGovernmentContent(null)
+    setCabinetContent(null)
+  }
+
+  const previewHref = activeTab === 'gobierno-abierto'
+    ? '/gobierno-abierto'
+    : activeTab === 'gabinete'
+      ? '/gobierno/intendencia/gabinete-municipal'
+      : '/'
 
   if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />
 
@@ -534,13 +597,16 @@ export default function HomeAdminPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !content || (activeTab === 'gobierno-abierto' && !governmentContent) || (activeTab === 'gabinete' && !cabinetContent)}
             className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50 transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
-          <a href="/" target="_blank" className="flex items-center gap-1 px-3 py-2 text-slate-600 hover:text-sky-600 text-sm border border-slate-300 rounded-lg hover:border-sky-400 transition-colors">
+          <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-2 text-red-500 hover:text-red-700 text-sm border border-slate-300 rounded-lg hover:border-red-300 transition-colors">
+            <LogOut className="w-4 h-4" /> Salir
+          </button>
+          <a href={previewHref} target="_blank" rel="noreferrer" className="flex items-center gap-1 px-3 py-2 text-slate-600 hover:text-sky-600 text-sm border border-slate-300 rounded-lg hover:border-sky-400 transition-colors">
             <Eye className="w-4 h-4" /> Ver sitio
           </a>
         </div>
@@ -585,6 +651,12 @@ export default function HomeAdminPage() {
             </div>
           ) : (
             <>
+              {activeTab === 'gobierno-abierto' && governmentContent && (
+                <GobiernoAbiertoAdmin data={governmentContent} onChange={setGovernmentContent} />
+              )}
+              {activeTab === 'gabinete' && cabinetContent && (
+                <GabineteMunicipalAdmin data={cabinetContent} onChange={setCabinetContent} />
+              )}
               {activeTab === 'carousel' && (
                 <CarouselEditor data={content.carousel} onChange={(v) => updateSection('carousel', v)} />
               )}
@@ -606,7 +678,7 @@ export default function HomeAdminPage() {
 
         {/* Preview link */}
         <div className="mt-4 text-center">
-          <a href="/" target="_blank" className="text-sm text-sky-600 hover:text-sky-800 underline flex items-center justify-center gap-1">
+          <a href={previewHref} target="_blank" rel="noreferrer" className="text-sm text-sky-600 hover:text-sky-800 underline flex items-center justify-center gap-1">
             <Eye className="w-3 h-3" /> Ver cambios en el sitio (recargar home)
           </a>
         </div>

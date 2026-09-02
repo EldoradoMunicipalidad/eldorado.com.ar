@@ -1,4 +1,5 @@
 // Page Content API — editable content for dynamic pages
+import { cmsAuthHeaders } from './cmsAuth'
 
 const API = '/api/pages'
 
@@ -18,7 +19,7 @@ export async function updatePageContent(pageId, content) {
   try {
     const res = await fetch(`${API}/${pageId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...cmsAuthHeaders() },
       body: JSON.stringify({ content }),
     })
     if (!res.ok) throw new Error('Error al guardar')

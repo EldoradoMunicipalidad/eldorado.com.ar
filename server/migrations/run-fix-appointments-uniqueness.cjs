@@ -1,6 +1,6 @@
 // Run fix-appointments-uniqueness.sql against NeonDB
 // Uso: node server/migrations/run-fix-appointments-uniqueness.cjs
-// (con DATABASE_URL seteado, o usa el fallback del db.cjs)
+// (con DATABASE_URL seteado)
 //
 // Qué hace:
 //   1) Cancela duplicados preexistentes (mantiene el más nuevo)
@@ -13,13 +13,10 @@ const { Client } = require('pg')
 const fs = require('fs')
 const path = require('path')
 
-// Extrae el connectionString del db.cjs (patrón consistente con otros runners)
-const dbSrc = fs.readFileSync(path.join(__dirname, '..', 'db.cjs'), 'utf8')
-const match = dbSrc.match(/connectionString:\s*process\.env\.DATABASE_URL\s*\|\|\s*'([^']+)'/)
-const connStr = process.env.DATABASE_URL || match?.[1]
+const connStr = process.env.DATABASE_URL
 
 if (!connStr) {
-  console.error('❌ No se pudo obtener DATABASE_URL ni del env ni del db.cjs')
+  console.error('❌ Falta DATABASE_URL en el entorno')
   process.exit(1)
 }
 

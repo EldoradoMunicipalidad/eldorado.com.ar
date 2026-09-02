@@ -7,9 +7,12 @@ const { Client } = require('pg')
 const fs = require('fs')
 const path = require('path')
 
-const dbSrc = fs.readFileSync(path.join(__dirname, '..', 'db.cjs'), 'utf8')
-const match = dbSrc.match(/connectionString:\s*process\.env\.DATABASE_URL\s*\|\|\s*'([^']+)'/)
-const connStr = process.env.DATABASE_URL || match[1]
+const connStr = process.env.DATABASE_URL
+
+if (!connStr) {
+    console.error('❌ Falta DATABASE_URL en el entorno')
+    process.exit(1)
+}
 
 ;(async () => {
     const client = new Client({ connectionString: connStr, ssl: { rejectUnauthorized: false } })

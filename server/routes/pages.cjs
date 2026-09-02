@@ -4,6 +4,10 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db.cjs')
+const { requireAdminFor } = require('../authMiddleware.cjs')
+
+// Las lecturas son públicas; toda modificación del CMS requiere un admin global.
+const requireAdmin = requireAdminFor(pool, 'admins')
 
 // ─── GET page content ────────────────────────────────────────────────
 router.get('/:pageId', async (req, res) => {
@@ -27,7 +31,7 @@ router.get('/:pageId', async (req, res) => {
 })
 
 // ─── UPDATE page content ─────────────────────────────────────────────
-router.put('/:pageId', async (req, res) => {
+router.put('/:pageId', requireAdmin, async (req, res) => {
   try {
     const { pageId } = req.params
     const { content } = req.body

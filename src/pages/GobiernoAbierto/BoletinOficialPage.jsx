@@ -4,6 +4,8 @@ import { Section } from '../../assets/components/Section'
 import Icon from '../../assets/Icons/Icon'
 import DocumentTable from '../../assets/components/GobiernoAbierto/DocumentTable'
 import { BOLETINES_OFICIALES } from '../../data/GobiernoAbierto/boletinosData'
+import { DEFAULT_GOBIERNO_ABIERTO_SUBPAGES } from '../../data/GobiernoAbierto/cmsDefaults'
+import { useCmsContent } from '../../lib/useCmsContent'
 
 const TIPO_FILTERS = [
   { label: 'Todos', value: 'todos' },
@@ -55,6 +57,7 @@ const COLUMNS = [
 ]
 
 const BoletinOficialPage = () => {
+  const content = useCmsContent('gobierno-abierto-boletines', DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.boletines)
   return (
     <>
       <SectionLayout
@@ -64,7 +67,7 @@ const BoletinOficialPage = () => {
       />
       <Section>
         <DocumentTable
-          data={BOLETINES_OFICIALES}
+          data={content.items || BOLETINES_OFICIALES}
           columns={COLUMNS}
           filters={TIPO_FILTERS}
           filterFn={(b, value) =>

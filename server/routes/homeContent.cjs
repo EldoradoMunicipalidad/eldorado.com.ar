@@ -19,6 +19,9 @@ const router = express.Router()
 const pool = require('../db.cjs')
 const multer = require('multer')
 const { uploadToR2, getSignedUrl, R2_BUCKET, R2_PUBLIC_BASE_URL } = require('../lib/r2.cjs')
+const { requireAdminFor } = require('../authMiddleware.cjs')
+
+const requireAdmin = requireAdminFor(pool, 'admins')
 
 // ─── Multer config (en memoria — no escribimos a disco) ──────────────
 // El tope de 5MB es porque base64 infla 33% el tamaño original,
@@ -145,7 +148,7 @@ router.get('/', async (req, res) => {
 })
 
 // ─── UPDATE home content ──────────────────────────────────────────────
-router.put('/', async (req, res) => {
+router.put('/', requireAdmin, async (req, res) => {
   try {
     const { content } = req.body
 
@@ -179,7 +182,7 @@ router.put('/', async (req, res) => {
 // La URL es una presigned URL con 6 dias de expiracion (maximo permitido
 // por AWS Signature V4). El backend renueva la firma en cada GET del
 // JSONB, asi que el frontend no necesita preocuparse.
-router.post('/upload', upload.single('image'), async (req, res) => {
+router.post('/upload', requireAdmin, upload.single('image'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No se envió ninguna imagen' })
