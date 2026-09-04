@@ -59,7 +59,7 @@ export const SECRETARIA_GOBIERNO = [{
             icon: "eco"
         },
         {
-            nombre: "Lic. Lorena Marina Merochenich",
+            nombre: "Prof. Maria Emilia Soledad Vera",
             cargo: "Dirección de Deportes y Recreación",
             telefono: "+549 3751 421151",
             email: "deportes@eldorado.gob.ar",
