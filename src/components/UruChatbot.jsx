@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { uruKnowledge } from '../data/uruKnowledge';
+import { getUruContext } from '../data/uruKnowledge';
 import './UruChatbot.css';
 
 const STORAGE_KEY = 'uru_chat_history';
@@ -14,6 +14,22 @@ const QUICK_REPLIES = [
 
 // Intent patterns → direct answers (no LLM needed)
 const INTENT_ANSWERS = [
+  {
+    patterns: [
+      /qui[eé]n.*vice[ -]?intendenta?/i,
+      /c[oó]mo.*llama.*vice[ -]?intendenta?/i,
+      /nombre.*vice[ -]?intendenta?/i,
+    ],
+    answer: 'La viceintendenta de la Ciudad de Eldorado es la Dra. Lorena Cardozo. Podés conocer más sobre ella en https://eldorado.gob.ar/gobierno/intendencia/autoridad/viceintendente',
+  },
+  {
+    patterns: [
+      /qui[eé]n.*\bintendente\b/i,
+      /c[oó]mo.*llama.*\bintendente\b/i,
+      /nombre.*\bintendente\b/i,
+    ],
+    answer: 'El intendente de la Ciudad de Eldorado es el Dr. Rodrigo Durán. Podés conocer más sobre él en https://eldorado.gob.ar/gobierno/intendencia/autoridad/intendente',
+  },
   {
     patterns: [/turno.*planeamiento/i, /planeamiento.*turno/i, /turnero.*planeamiento/i],
     answer: 'Podés sacar turno para Planeamiento en: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero',
@@ -128,7 +144,7 @@ function makeMsg(from, text) {
   return { from, text, id: msgId++ };
 }
 
-const URL_TOKEN_RE = /(https?:\/\/[^\s]+|(?:www\.)?eldorado\.(?:gob\.ar|com\.ar)\/[^\s]+)/gi;
+const URL_TOKEN_RE = /(https?:\/\/[^\s<>()[\]{}"',!?;]+|(?:www\.)?eldorado\.(?:gob\.ar|com\.ar)\/[^\s<>()[\]{}"',!?;]+)/gi;
 
 function isApprovedLink(value) {
   try {
@@ -235,7 +251,7 @@ export default function UruChatbot() {
     }
 
     try {
-      const answer = await chatUru(text, uruKnowledge, messages);
+      const answer = await chatUru(text, getUruContext(text, getPageContext()), messages);
       const uruMsg = makeMsg('uru', answer);
       setMessages(m => {
         const updated = [...m, uruMsg];

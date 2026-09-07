@@ -61,9 +61,9 @@ const BoletinOficialPage = () => {
   return (
     <>
       <SectionLayout
-        title="Sistema de"
-        highlight="Boletines Oficiales"
-        description="Accede a los boletines oficiales de la Municipalidad de Eldorado"
+        title={content.header?.title || 'Sistema de'}
+        highlight={content.header?.highlight || 'Boletines Oficiales'}
+        description={content.header?.description || 'Accede a los boletines oficiales de la Municipalidad de Eldorado'}
       />
       <Section>
         <DocumentTable

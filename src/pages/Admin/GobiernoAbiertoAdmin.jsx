@@ -16,7 +16,6 @@ function TextArea({ value, onChange, ...props }) {
 }
 
 const SUBPAGE_LABELS = {
-  boletines: 'Boletines oficiales',
   finanzas: 'Finanzas públicas',
   balancetes: 'Balancetes trimestrales',
   tributos: 'Tributos',

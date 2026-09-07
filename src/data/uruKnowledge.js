@@ -1,8 +1,44 @@
 // Base de conocimiento para URU — asistente virtual de la Municipalidad de Eldorado
 // URU SOLO debe usar información del sitio web oficial: eldorado.gob.ar
 // NO debe inventar, completar ni asumir datos que no estén en el sitio.
+
+// Estos módulos son las fuentes que renderizan las páginas públicas. Se mantienen
+// en un índice local para que URU pueda recuperar información concreta de cualquier
+// sección sin depender de que el modelo conozca el código fuente.
+import * as barrios from './barriosSectionData';
+import * as buses from './busEldoradoData';
+import * as contacto from './contactoSectionData';
+import * as ciudad from './Ciudad/ciudadData';
+import * as ciudadanoDigital from './CiudadanoDigital/ciudadanoDigitalData';
+import * as eldorado from './eldoradoSectionsData';
+import * as escudo from './escudoAndInsigniasData';
+import * as gobierno from './Gobierno/gobiernoData';
+import * as gabinete from './Gobierno/gabineteMunicipalData';
+import * as intendencia from './Gobierno/intendenciaData';
+import * as secretarias from './Gobierno/secretariasData';
+import * as secretariasCards from './Gobierno/secretariasCards';
+import * as gobiernoAbierto from './GobiernoAbierto/gobiernoAbiertoData';
+import * as audiencias from './GobiernoAbierto/audienciasData';
+import * as balancetes from './GobiernoAbierto/balancetesData';
+import * as boletin from './GobiernoAbierto/boletinosData';
+import * as escalaSalarial from './GobiernoAbierto/escalaSalarialData';
+import * as licitaciones from './GobiernoAbierto/licitacionesData';
+import * as organigrama from './GobiernoAbierto/organigramaData';
+import * as plantaPersonal from './GobiernoAbierto/plantaPersonalData';
+import * as resumen from './GobiernoAbierto/resumenConsolidadoData';
+import * as tributos from './GobiernoAbierto/tributosData';
+import * as guia from './guiaDeTramitesData';
+import * as navigation from './navigationData';
+import * as telefonos from './telefonosUtilesData';
+import * as preinscripcion from './preinscripcionFieldsConfig';
+
 export const uruKnowledge = `
 SITIO WEB OFICIAL: eldorado.gob.ar
+
+AUTORIDADES MUNICIPALES PUBLICADAS EN EL SITIO:
+- El intendente de la Ciudad de Eldorado es el Dr. Rodrigo Durán: /gobierno/intendencia/autoridad/intendente
+- La viceintendenta de la Ciudad de Eldorado es la Dra. Lorena Cardozo: /gobierno/intendencia/autoridad/viceintendente
+- La información del gabinete municipal está en: /gobierno/intendencia/gabinete-municipal
 
 SECCIONES DEL SITIO (usar estas rutas para orientar al usuario):
 - / : Inicio — noticias, servicios destacados
@@ -170,3 +206,109 @@ NOTICIAS: prensa.eldorado.gob.ar
 
 URU NO DEBE inventar teléfonos, direcciones, horarios ni datos de contacto. Solo debe indicar las rutas del sitio donde el usuario puede encontrar esa información.
 `;
+
+const SITE_DATASETS = [
+  ['Ciudad y barrios', ciudad, barrios, eldorado, escudo],
+  ['Contacto y teléfonos', contacto, telefonos],
+  ['Transporte y colectivos', buses],
+  ['Gobierno e intendencia', gobierno, intendencia, gabinete, secretarias, secretariasCards],
+  ['Gobierno Abierto', gobiernoAbierto, audiencias, balancetes, boletin, escalaSalarial, licitaciones, organigrama, plantaPersonal, resumen, tributos],
+  ['Ciudadano Digital y trámites', ciudadanoDigital, guia, preinscripcion],
+  ['Navegación pública', navigation],
+];
+
+const OMITTED_DATA_KEYS = /^(image|imageSrc|icon|icono|logo|svg|base64|password|token|secret|privateKey|credential)$/i;
+
+function flattenSiteData(value, path = [], output = []) {
+  if (value === null || value === undefined || typeof value === 'function') return output;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    const text = String(value).trim();
+    if (text) output.push(`${path.join(' › ')}: ${text}`);
+    return output;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => flattenSiteData(item, [...path, `elemento ${index + 1}`], output));
+    return output;
+  }
+  Object.entries(value).forEach(([key, child]) => {
+    if (OMITTED_DATA_KEYS.test(key)) return;
+    flattenSiteData(child, [...path, key], output);
+  });
+  return output;
+}
+
+function buildSiteDocuments() {
+  const documents = [];
+  SITE_DATASETS.forEach(([group, ...modules]) => {
+    const lines = [];
+    modules.forEach(module => {
+      Object.entries(module).forEach(([exportName, value]) => {
+        flattenSiteData(value, [exportName], lines);
+      });
+    });
+    const text = lines.join('\n');
+    // Fragmentar evita que una tabla grande (audiencias, colectivos, etc.)
+    // desplace del contexto los datos relevantes de otra sección.
+    for (let start = 0; start < text.length; start += 6000) {
+      documents.push({
+        group,
+        content: text.slice(start, start + 6000),
+      });
+    }
+  });
+  return documents;
+}
+
+const SITE_DOCUMENTS = buildSiteDocuments();
+const QUERY_STOP_WORDS = new Set([
+  'para', 'como', 'cómo', 'donde', 'dónde', 'queda', 'hay', 'que', 'qué', 'del', 'los',
+  'las', 'una', 'uno', 'por', 'con', 'sobre', 'este', 'esta', 'ese', 'esa', 'puedo',
+  'quiero', 'necesito', 'saber', 'decime', 'decir', 'hola', 'sitio', 'municipalidad',
+]);
+
+function normalizeQuery(value) {
+  return String(value || '')
+    .toLocaleLowerCase('es')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function queryTokens(value) {
+  return normalizeQuery(value)
+    .split(/[^a-z0-9]+/)
+    .filter(token => token.length >= 3 && !QUERY_STOP_WORDS.has(token));
+}
+
+function scoreDocument(document, tokens, normalizedPage) {
+  const haystack = normalizeQuery(`${document.group} ${document.content}`);
+  let score = 0;
+  tokens.forEach(token => {
+    const occurrences = haystack.split(token).length - 1;
+    score += Math.min(occurrences, 5) * (token.length >= 6 ? 3 : 1);
+  });
+  if (normalizedPage && haystack.includes(normalizedPage.replace(/^\//, ''))) score += 8;
+  return score;
+}
+
+// Devuelve el resumen estable más los fragmentos de datos del sitio relevantes
+// para la pregunta. El límite permite respetar la ventana de contexto del modelo.
+export function getUruContext(question, page = '') {
+  const tokens = queryTokens(question);
+  const normalizedPage = normalizeQuery(page);
+  const ranked = SITE_DOCUMENTS
+    .map((document, index) => ({ document, index, score: scoreDocument(document, tokens, normalizedPage) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    // El resumen estable ocupa parte del límite del backend; tres fragmentos
+    // de 6.000 caracteres dejan margen para que no se corte el contexto.
+    .slice(0, 3)
+    .filter(item => item.score > 0 || tokens.length === 0);
+
+  const retrieved = ranked.map(({ document }) =>
+    `FUENTE PÚBLICA: ${document.group}\n${document.content}`
+  ).join('\n\n');
+  return [uruKnowledge, retrieved && `DATOS ESTRUCTURADOS DEL SITIO (recuperados por relevancia):\n${retrieved}`]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+export const uruKnowledgeDocumentCount = SITE_DOCUMENTS.length;

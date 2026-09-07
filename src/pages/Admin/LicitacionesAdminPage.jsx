@@ -15,6 +15,7 @@ import {
   loginAdmin, listLicitaciones, createLicitacion,
   updateLicitacion, deleteLicitacion, clearStoredToken, getStoredToken,
 } from '../../lib/licitacionesAdmin'
+import { getCmsToken } from '../../lib/cmsAuth'
 
 // ─── Login screen ─────────────────────────────────────────────────────
 function LoginScreen({ onLogin }) {
@@ -110,13 +111,6 @@ const isoToDMY = (iso) => {
   // Si ya viene en DD/MM/YYYY (caso legacy), devolver tal cual
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(iso)) return iso
   return ''
-}
-
-const dmyToIso = (dmy) => {
-  if (!dmy) return ''
-  const m = dmy.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
-  if (!m) return ''
-  return `${m[3]}-${m[2]}-${m[1]}`
 }
 
 // ─── Form Modal (crear / editar) ──────────────────────────────────────
@@ -315,22 +309,19 @@ function ConfirmDeleteModal({ item, onClose, onConfirm }) {
 }
 
 // ─── Main admin page ─────────────────────────────────────────────────
-export default function LicitacionesAdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!getStoredToken())
+export function LicitacionesAdminManager({ embedded = false }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(!!(getStoredToken() || getCmsToken()))
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const [filterTipo, setFilterTipo] = useState('todos')
   const [modal, setModal] = useState(null) // null | { type: 'create' } | { type: 'edit', item } | { type: 'delete', item }
   const [status, setStatus] = useState(null) // { type: 'success'|'error', msg }
-  const [unauthorized, setUnauthorized] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
-    setUnauthorized(false)
     const res = await listLicitaciones()
     if (res.unauthorized) {
-      setUnauthorized(true)
       setIsAuthenticated(false)
       clearStoredToken()
     } else {
@@ -340,7 +331,9 @@ export default function LicitacionesAdminPage() {
   }, [])
 
   useEffect(() => {
-    if (isAuthenticated) load()
+    if (!isAuthenticated) return undefined
+    const timer = window.setTimeout(load, 0)
+    return () => window.clearTimeout(timer)
   }, [isAuthenticated, load])
 
   const handleSaved = (saved) => {
@@ -383,13 +376,31 @@ export default function LicitacionesAdminPage() {
 
   // ─── Login ────────────────────────────────────────────────────────
   if (!isAuthenticated) {
+    if (embedded) {
+      return (
+        <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm">
+          <AlertCircle className="w-4 h-4 shrink-0" /> La sesión venció. Volvé a ingresar al panel para administrar licitaciones.
+        </div>
+      )
+    }
     return <LoginScreen onLogin={() => setIsAuthenticated(true)} />
   }
 
   // ─── Admin ────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className={embedded ? 'space-y-4' : 'min-h-screen bg-slate-100'}>
       {/* Header */}
+      {embedded ? (
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Licitaciones</h2>
+            <p className="text-sm text-slate-500 mt-1">Administrá convocatorias y pliegos PDF sin salir del panel principal.</p>
+          </div>
+          <a href="/gobierno-abierto/licitaciones" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1 px-3 py-2 text-slate-600 hover:text-sky-600 text-sm border border-slate-300 rounded-lg hover:border-sky-400 transition-colors">
+            <Eye className="w-4 h-4" /> Ver licitaciones publicadas
+          </a>
+        </div>
+      ) : (
       <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-30 shadow-sm">
         <div className="flex items-center gap-3">
           <Shield className="w-6 h-6 text-sky-600" />
@@ -415,10 +426,11 @@ export default function LicitacionesAdminPage() {
           </button>
         </div>
       </div>
+      )}
 
       {/* Status banner */}
       {status && (
-        <div className={`mx-6 mt-4 flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium ${
+        <div className={`${embedded ? '' : 'mx-6 mt-4'} flex items-center gap-2 px-4 py-3 rounded-lg text-sm font-medium ${
           status.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
         }`}>
           {status.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
@@ -428,7 +440,7 @@ export default function LicitacionesAdminPage() {
       )}
 
       {/* Toolbar */}
-      <div className="mx-6 mt-4 bg-white rounded-2xl shadow-sm border border-slate-200 p-4">
+      <div className={`${embedded ? '' : 'mx-6 mt-4 bg-white rounded-2xl shadow-sm'} border border-slate-200 p-4`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="flex flex-1 items-center gap-2">
             <input
@@ -468,7 +480,7 @@ export default function LicitacionesAdminPage() {
       </div>
 
       {/* Tabla */}
-      <div className="mx-6 my-4 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div className={`${embedded ? '' : 'mx-6 my-4 bg-white rounded-2xl shadow-sm'} border border-slate-200 rounded-xl overflow-hidden`}>
         {loading && items.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-8 h-8 animate-spin text-sky-600" />
@@ -574,4 +586,8 @@ export default function LicitacionesAdminPage() {
       )}
     </div>
   )
+}
+
+export default function LicitacionesAdminPage() {
+  return <LicitacionesAdminManager />
 }

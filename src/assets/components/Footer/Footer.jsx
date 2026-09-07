@@ -5,8 +5,15 @@ import { FacebookIcon } from '../../Icons/RedesSociales/FacebookIcon';
 import { XIcon } from '../../Icons/RedesSociales/XIcon';
 import { YoutubeIcon } from '../../Icons/RedesSociales/YoutubeIcon';
 import { ThreadsIcon } from '../../Icons/RedesSociales/ThreadsIcon';
+import { useCmsContent } from '../../../lib/useCmsContent';
+import { DEFAULT_SITE_SETTINGS, SITE_SETTINGS_PAGE_ID } from '../../../data/siteSettings';
 
 export const Footer = () => {
+  const settings = useCmsContent(SITE_SETTINGS_PAGE_ID, DEFAULT_SITE_SETTINGS);
+  const municipality = { ...DEFAULT_SITE_SETTINGS.municipality, ...(settings.municipality || {}) };
+  const social = { ...DEFAULT_SITE_SETTINGS.social, ...(settings.social || {}) };
+  const footerLinks = settings.footerLinks || DEFAULT_SITE_SETTINGS.footerLinks;
+
   return (
     <footer className="bg-gray-50 text-slate-600 pt-14 pb-8 px-6">
       <div className="max-w-7xl mx-auto">
@@ -19,7 +26,7 @@ export const Footer = () => {
             <div className="flex items-center gap-4">
               <img
                 src="/logo_muni.png"
-                alt="Municipalidad de Eldorado"
+                alt={municipality.name}
                 className="h-16 w-auto object-contain"
               />
               <img
@@ -29,8 +36,10 @@ export const Footer = () => {
               />
             </div>
             <div className="text-sm text-slate-500 font-medium space-y-1">
-              <p>Simón J. Bolívar N° 73, Eldorado, Misiones.</p>
-              <p>(+54) 03751 - 421787</p>
+              {municipality.address && <p>{municipality.address}</p>}
+              {municipality.phone && <p><a href={`tel:${municipality.phone.replace(/[^\d+]/g, '')}`} className="hover:text-blue-600">{municipality.phone}</a></p>}
+              {municipality.email && <p><a href={`mailto:${municipality.email}`} className="hover:text-blue-600 break-all">{municipality.email}</a></p>}
+              {municipality.hours && <p>{municipality.hours}</p>}
             </div>
             <a
               href="/empleado-municipal"
@@ -63,10 +72,13 @@ export const Footer = () => {
           <div>
             <h4 className="text-gray-500 font-bold text-lg mb-4">Explorar</h4>
             <ul className="space-y-2 text-sm">
-              <li><Link to="/gobierno-abierto" className="text-slate-500 hover:text-blue-600 transition-colors">Gobierno abierto</Link></li>
-              <li><a href="https://www.municipalidad.com/eldo/home/menu" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors">Portal tributario</a></li>
-              <li><a href="/ciudadano-digital/reclamos" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors">Reclamos</a></li>
-              <li><Link to="/gobierno-abierto/boletin-oficial" className="text-slate-500 hover:text-blue-600 transition-colors">Boletín oficial</Link></li>
+              {footerLinks.filter((item) => item.label && item.href).map((item) => (
+                <li key={item.id || `${item.label}-${item.href}`}>
+                  {item.href.startsWith('/') && !item.href.startsWith('//')
+                    ? <Link to={item.href} className="text-slate-500 hover:text-blue-600 transition-colors">{item.label}</Link>
+                    : <a href={item.href} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-blue-600 transition-colors">{item.label}</a>}
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -74,11 +86,11 @@ export const Footer = () => {
           <div>
             <h4 className="text-gray-500 font-bold text-lg mb-4">Seguinos</h4>
             <div className="flex flex-wrap gap-4 text-gray-500">
-              <InstagramIcon to='https://www.instagram.com/munieldorado/' />
-              <FacebookIcon to='https://www.facebook.com/profile.php?id=61550302085992' />
-              <XIcon to='https://x.com/munieldorado' />
-              <YoutubeIcon to='https://www.youtube.com/@munieldoradook' />
-              <ThreadsIcon to='https://www.threads.net/@munieldorado' />
+              {social.instagram && <InstagramIcon to={social.instagram} />}
+              {social.facebook && <FacebookIcon to={social.facebook} />}
+              {social.x && <XIcon to={social.x} />}
+              {social.youtube && <YoutubeIcon to={social.youtube} />}
+              {social.threads && <ThreadsIcon to={social.threads} />}
             </div>
           </div>
 
@@ -86,7 +98,7 @@ export const Footer = () => {
 
         {/* Línea Divisoria y Copyright */}
         <div className="mt-12 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] uppercase tracking-[0.2em] font-bold text-slate-400">
-          <p>Copyright 2025 © Municipalidad de la ciudad de Eldorado. Dpto Desarrollo Tecnológico Robótica e Innovación. Todos los derechos reservados.</p>
+          <p>Copyright {new Date().getFullYear()} © {settings.copyright || DEFAULT_SITE_SETTINGS.copyright}</p>
         </div>
       </div>
     </footer>

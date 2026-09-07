@@ -6,6 +6,9 @@ import { AppSection } from '../assets/components/HomePage/AppSection.jsx/AppSect
 import { NoticiasSection } from '../assets/components/HomePage/Noticias/NoticiasSection'
 import { getHomeContent } from '../lib/homeContent'
 import * as Icons from '../assets/Icons/TramitesAndServicios/AllIcons'
+import AgendaMunicipalSection from '../assets/components/HomePage/AgendaMunicipalSection'
+import { useCmsContent } from '../lib/useCmsContent'
+import { AGENDA_PAGE_ID, DEFAULT_AGENDA } from '../data/siteSettings'
 
 // ─── Default content ─────────────────────────────────────────────────
 const DEFAULT_CONTENT = {
@@ -56,7 +59,7 @@ const DEFAULT_CONTENT = {
 
 export const HomePage = () => {
   const [homeData, setHomeData] = useState(DEFAULT_CONTENT)
-  const [loading, setLoading] = useState(true)
+  const agenda = useCmsContent(AGENDA_PAGE_ID, DEFAULT_AGENDA)
 
   useEffect(() => {
     getHomeContent()
@@ -67,7 +70,6 @@ export const HomePage = () => {
       .catch(() => {
         // Use defaults on error
       })
-      .finally(() => setLoading(false))
   }, [])
 
   const { carousel, guiaTramites, tramites, infoAdicional, appSection } = homeData
@@ -133,6 +135,9 @@ export const HomePage = () => {
         cardsData={infoCards}
         statsData={infoAdicional?.stats || []}
       />
+
+      {/* Agenda municipal administrable */}
+      <AgendaMunicipalSection data={agenda} />
 
       {/* App Section dinámica */}
       {appSection?.enabled !== false && (

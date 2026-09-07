@@ -4,6 +4,8 @@
 // { authenticated, username, token: "username:password" } para usar como Bearer.
 // Token persistido en sessionStorage bajo 'licitaciones_admin_token'.
 
+import { getCmsToken } from './cmsAuth'
+
 const API = '/api/licitaciones'
 const AUTH_API = '/api/auth/login'
 const TOKEN_KEY = 'licitaciones_admin_token'
@@ -21,19 +23,25 @@ export function setStoredToken(token) {
   try {
     if (token) sessionStorage.setItem(TOKEN_KEY, token)
     else sessionStorage.removeItem(TOKEN_KEY)
-  } catch {}
+  } catch {
+    // sessionStorage puede no estar disponible en contextos embebidos.
+  }
 }
 
 export function clearStoredToken() {
   try {
     sessionStorage.removeItem(TOKEN_KEY)
-  } catch {}
+  } catch {
+    // sessionStorage puede no estar disponible en contextos embebidos.
+  }
 }
 
 // ─── Auth helper ──────────────────────────────────────────────────────
 // Devuelve header Authorization: Bearer <token> si hay token guardado.
 function authHeader() {
-  const t = getStoredToken()
+  // Cuando el gestor se usa dentro de /admin/home, reutiliza la sesión del CMS.
+  // Se mantiene el token propio para que /admin/licitaciones siga funcionando.
+  const t = getStoredToken() || getCmsToken()
   return t ? { Authorization: `Bearer ${t}` } : {}
 }
 
@@ -52,14 +60,15 @@ export async function loginAdmin(username, password) {
     }
     if (data.token) setStoredToken(data.token)
     return { ok: true, username: data.username }
-  } catch (e) {
+  } catch {
     return { ok: false, error: 'No se pudo conectar al servidor' }
   }
 }
 
 // ─── Listar (todas, incluso soft-deleted opcionalmente) ──────────────
 export async function listLicitaciones({ includeDeleted = false } = {}) {
-  const res = await fetch(API, { headers: authHeader() })
+  const query = includeDeleted ? '?includeDeleted=true' : ''
+  const res = await fetch(`${API}${query}`, { headers: authHeader() })
   if (res.status === 401) return { items: [], unauthorized: true }
   if (!res.ok) throw new Error('Error al listar licitaciones')
   const data = await res.json()

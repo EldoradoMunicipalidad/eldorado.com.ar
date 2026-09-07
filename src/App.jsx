@@ -119,9 +119,15 @@ const isExpoHost = typeof window !== 'undefined' && window.location.host === EXP
 
 function App() {
   // Reverse-proxy a nivel SPA: cuando el host es expo.eldorado.gob.ar,
-  // se monta solo la página de Expo, sin Navbar/Footer/Breadcrumbs.
+  // se monta la página de Expo sin Navbar/Footer/Breadcrumbs, pero conservando
+  // el asistente URU para que también esté disponible en esta vista.
   if (isExpoHost) {
-    return <ExpoEldoradoPage />
+    return (
+      <>
+        <ExpoEldoradoPage />
+        <UruChatbot />
+      </>
+    )
   }
 
   return (

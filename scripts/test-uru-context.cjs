@@ -43,6 +43,14 @@ assert.match(contextWithTurner, /ESTADO DINÁMICO DE TURNEROS/)
 assert.match(contextWithTurner, /Planeamiento/)
 assert.match(contextWithTurner, /activo/)
 
+const contextWithNews = formatDynamicContext([], [], [], [{
+  titulo: 'Obras en el barrio',
+  resumen: 'Se inauguró una nueva obra municipal',
+  status: 'published',
+}])
+assert.match(contextWithNews, /NOTICIAS PUBLICADAS/)
+assert.match(contextWithNews, /Obras en el barrio/)
+
 const messages = buildMessages({
   question: '¿Qué hay disponible?',
   context,
@@ -53,6 +61,15 @@ const messages = buildMessages({
 assert.strictEqual(messages.at(-1).role, 'user')
 assert.strictEqual(messages.at(-1).content, '¿Qué hay disponible?')
 assert.match(messages[1].content, /Información de contexto del sitio municipal/)
+assert.match(messages[0].content, /respondelo de forma directa/)
+assert.match(messages[0].content, /No uses enlaces Markdown/)
+
+const knowledgeSource = require('fs').readFileSync(
+  require('path').join(__dirname, '../src/data/uruKnowledge.js'),
+  'utf8'
+)
+assert.match(knowledgeSource, /El intendente de la Ciudad de Eldorado es el Dr\. Rodrigo Durán/)
+assert.match(knowledgeSource, /La viceintendenta de la Ciudad de Eldorado es la Dra\. Lorena Cardozo/)
 
 process.env.MINIMAX_API_KEY = ''
 

@@ -11,6 +11,11 @@ import { getPageContent, updatePageContent } from '../../lib/pages'
 import { DEFAULT_GOBIERNO_ABIERTO_CONTENT, DEFAULT_GABINETE_MUNICIPAL_CONTENT, DEFAULT_GOBIERNO_ABIERTO_SUBPAGES, GOBIERNO_ABIERTO_SUBPAGE_IDS } from '../../data/GobiernoAbierto/cmsDefaults'
 import GobiernoAbiertoAdmin from './GobiernoAbiertoAdmin'
 import GabineteMunicipalAdmin from './GabineteMunicipalAdmin'
+import BoletinesAdmin from './BoletinesAdmin'
+import { LicitacionesAdminManager } from './LicitacionesAdminPage'
+import AgendaAdmin from './AgendaAdmin'
+import SiteSettingsAdmin from './SiteSettingsAdmin'
+import { AGENDA_PAGE_ID, DEFAULT_AGENDA, DEFAULT_SITE_SETTINGS, SITE_SETTINGS_PAGE_ID } from '../../data/siteSettings'
 
 // ─── Default content (mirrors initial SQL migration) ─────────────────
 const DEFAULT_CONTENT = {
@@ -64,6 +69,10 @@ const DEFAULT_CONTENT = {
 const TABS = [
   { id: 'gobierno-abierto', label: 'Gobierno Abierto' },
   { id: 'gabinete', label: 'Gabinete Municipal' },
+  { id: 'boletines', label: 'Boletines Oficiales' },
+  { id: 'licitaciones', label: 'Licitaciones' },
+  { id: 'agenda', label: 'Agenda Municipal' },
+  { id: 'configuracion', label: 'Configuración General' },
   { id: 'carousel', label: 'Carrusel' },
   { id: 'guia', label: 'Guía de Trámites' },
   { id: 'tramites', label: 'Trámites y Servicios' },
@@ -498,6 +507,8 @@ export default function HomeAdminPage() {
   const [content, setContent] = useState(null)
   const [governmentContent, setGovernmentContent] = useState(null)
   const [cabinetContent, setCabinetContent] = useState(null)
+  const [agendaContent, setAgendaContent] = useState(null)
+  const [siteSettings, setSiteSettings] = useState(null)
   const [activeTab, setActiveTab] = useState('carousel')
   const [saving, setSaving] = useState(false)
   const [status, setStatus] = useState(null) // { type: 'success'|'error', msg: '' }
@@ -505,10 +516,12 @@ export default function HomeAdminPage() {
   const loadContent = useCallback(async () => {
     try {
       const subpageEntries = Object.entries(GOBIERNO_ABIERTO_SUBPAGE_IDS)
-      const [homeData, governmentData, cabinetData, ...subpageResponses] = await Promise.all([
+      const [homeData, governmentData, cabinetData, agendaData, settingsData, ...subpageResponses] = await Promise.all([
         getHomeContent(),
         getPageContent('gobierno-abierto'),
         getPageContent('gabinete-municipal'),
+        getPageContent(AGENDA_PAGE_ID),
+        getPageContent(SITE_SETTINGS_PAGE_ID),
         ...subpageEntries.map(([, pageId]) => getPageContent(pageId)),
       ])
       const subpages = Object.fromEntries(subpageEntries.map(([key], index) => [
@@ -529,10 +542,19 @@ export default function HomeAdminPage() {
         ...(cabinetData.content || {}),
         header: { ...DEFAULT_GABINETE_MUNICIPAL_CONTENT.header, ...(cabinetData.content?.header || {}) },
       })
+      setAgendaContent({ ...DEFAULT_AGENDA, ...(agendaData.content || {}) })
+      setSiteSettings({
+        ...DEFAULT_SITE_SETTINGS,
+        ...(settingsData.content || {}),
+        municipality: { ...DEFAULT_SITE_SETTINGS.municipality, ...(settingsData.content?.municipality || {}) },
+        social: { ...DEFAULT_SITE_SETTINGS.social, ...(settingsData.content?.social || {}) },
+      })
     } catch {
       setContent(DEFAULT_CONTENT)
       setGovernmentContent({ ...DEFAULT_GOBIERNO_ABIERTO_CONTENT, subpages: DEFAULT_GOBIERNO_ABIERTO_SUBPAGES })
       setCabinetContent(DEFAULT_GABINETE_MUNICIPAL_CONTENT)
+      setAgendaContent(DEFAULT_AGENDA)
+      setSiteSettings(DEFAULT_SITE_SETTINGS)
     }
   }, [])
 
@@ -555,6 +577,17 @@ export default function HomeAdminPage() {
         ])
       } else if (activeTab === 'gabinete') {
         await updatePageContent('gabinete-municipal', cabinetContent)
+      } else if (activeTab === 'boletines') {
+        await updatePageContent(
+          GOBIERNO_ABIERTO_SUBPAGE_IDS.boletines,
+          governmentContent.subpages?.boletines || DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.boletines
+        )
+      } else if (activeTab === 'agenda') {
+        await updatePageContent(AGENDA_PAGE_ID, agendaContent)
+      } else if (activeTab === 'configuracion') {
+        await updatePageContent(SITE_SETTINGS_PAGE_ID, siteSettings)
+      } else if (activeTab === 'licitaciones') {
+        return
       } else {
         await updateHomeContent(content)
       }
@@ -570,19 +603,30 @@ export default function HomeAdminPage() {
     setContent((prev) => ({ ...prev, [key]: value }))
   }
 
+  const updateBoletines = (value) => {
+    setGovernmentContent((prev) => ({
+      ...prev,
+      subpages: { ...(prev?.subpages || {}), boletines: value },
+    }))
+  }
+
   const handleLogout = () => {
     clearCmsAuth()
     setIsAuthenticated(false)
     setContent(null)
     setGovernmentContent(null)
     setCabinetContent(null)
+    setAgendaContent(null)
+    setSiteSettings(null)
   }
 
-  const previewHref = activeTab === 'gobierno-abierto'
-    ? '/gobierno-abierto'
-    : activeTab === 'gabinete'
-      ? '/gobierno/intendencia/gabinete-municipal'
-      : '/'
+  const previewHref = {
+    'gobierno-abierto': '/gobierno-abierto',
+    gabinete: '/gobierno/intendencia/gabinete-municipal',
+    boletines: '/gobierno-abierto/boletin-oficial',
+    licitaciones: '/gobierno-abierto/licitaciones',
+    configuracion: '/ciudad/contacto',
+  }[activeTab] || '/'
 
   if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />
 
@@ -595,14 +639,14 @@ export default function HomeAdminPage() {
           <h1 className="text-lg font-bold text-slate-800">Admin Home — Gestión de Contenido</h1>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          {activeTab !== 'licitaciones' && <button
             onClick={handleSave}
-            disabled={saving || !content || (activeTab === 'gobierno-abierto' && !governmentContent) || (activeTab === 'gabinete' && !cabinetContent)}
+            disabled={saving || !content || ((activeTab === 'gobierno-abierto' || activeTab === 'boletines') && !governmentContent) || (activeTab === 'gabinete' && !cabinetContent) || (activeTab === 'agenda' && !agendaContent) || (activeTab === 'configuracion' && !siteSettings)}
             className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50 transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             {saving ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+          </button>}
           <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-2 text-red-500 hover:text-red-700 text-sm border border-slate-300 rounded-lg hover:border-red-300 transition-colors">
             <LogOut className="w-4 h-4" /> Salir
           </button>
@@ -657,6 +701,21 @@ export default function HomeAdminPage() {
               {activeTab === 'gabinete' && cabinetContent && (
                 <GabineteMunicipalAdmin data={cabinetContent} onChange={setCabinetContent} />
               )}
+              {activeTab === 'boletines' && governmentContent && (
+                <BoletinesAdmin
+                  data={governmentContent.subpages?.boletines || DEFAULT_GOBIERNO_ABIERTO_SUBPAGES.boletines}
+                  onChange={updateBoletines}
+                />
+              )}
+              {activeTab === 'licitaciones' && (
+                <LicitacionesAdminManager embedded />
+              )}
+              {activeTab === 'agenda' && agendaContent && (
+                <AgendaAdmin data={agendaContent} onChange={setAgendaContent} />
+              )}
+              {activeTab === 'configuracion' && siteSettings && (
+                <SiteSettingsAdmin data={siteSettings} onChange={setSiteSettings} />
+              )}
               {activeTab === 'carousel' && (
                 <CarouselEditor data={content.carousel} onChange={(v) => updateSection('carousel', v)} />
               )}
@@ -679,7 +738,7 @@ export default function HomeAdminPage() {
         {/* Preview link */}
         <div className="mt-4 text-center">
           <a href={previewHref} target="_blank" rel="noreferrer" className="text-sm text-sky-600 hover:text-sky-800 underline flex items-center justify-center gap-1">
-            <Eye className="w-3 h-3" /> Ver cambios en el sitio (recargar home)
+            <Eye className="w-3 h-3" /> Ver cambios en el sitio
           </a>
         </div>
       </div>

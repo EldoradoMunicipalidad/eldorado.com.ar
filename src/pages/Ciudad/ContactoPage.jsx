@@ -4,9 +4,14 @@ import { ContactCard } from '../../assets/components/Ciudad/Contacto/ContactCard
 import { ContactInfo } from '../../assets/components/Ciudad/Contacto/ContactInfo'
 import { contactData } from '../../data/contactoSectionData'
 import Icon from '../../assets/Icons/Icon'
+import { Clock3, Mail, MapPin, Phone } from 'lucide-react'
+import { useCmsContent } from '../../lib/useCmsContent'
+import { DEFAULT_SITE_SETTINGS, SITE_SETTINGS_PAGE_ID } from '../../data/siteSettings'
 
 export const ContactoPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
+  const settings = useCmsContent(SITE_SETTINGS_PAGE_ID, DEFAULT_SITE_SETTINGS)
+  const municipality = { ...DEFAULT_SITE_SETTINGS.municipality, ...(settings.municipality || {}) }
 
   const filteredContacts = contactData.filter(contact =>
     contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -18,8 +23,17 @@ export const ContactoPage = () => {
       <SectionLayout
         title="Contacto"
         highlight=""
-        description=""
+        description={`Información de atención de ${municipality.name}`}
       />
+
+      <section className="px-10 md:px-16 py-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 bg-sky-50 border border-sky-100 rounded-2xl p-5">
+          {municipality.phone && <a href={`tel:${municipality.phone.replace(/[^\d+]/g, '')}`} className="flex items-start gap-3 text-slate-700 hover:text-sky-700"><Phone className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" /><span><strong className="block text-xs uppercase tracking-wide text-slate-500">Teléfono principal</strong><span className="text-sm font-semibold">{municipality.phone}</span></span></a>}
+          {municipality.email && <a href={`mailto:${municipality.email}`} className="flex items-start gap-3 text-slate-700 hover:text-sky-700 min-w-0"><Mail className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" /><span className="min-w-0"><strong className="block text-xs uppercase tracking-wide text-slate-500">Correo</strong><span className="text-sm font-semibold break-all">{municipality.email}</span></span></a>}
+          {municipality.address && <a href={municipality.mapUrl || undefined} target={municipality.mapUrl ? '_blank' : undefined} rel={municipality.mapUrl ? 'noopener noreferrer' : undefined} className="flex items-start gap-3 text-slate-700 hover:text-sky-700"><MapPin className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" /><span><strong className="block text-xs uppercase tracking-wide text-slate-500">Dirección</strong><span className="text-sm font-semibold">{municipality.address}</span></span></a>}
+          {municipality.hours && <div className="flex items-start gap-3 text-slate-700"><Clock3 className="w-5 h-5 text-sky-600 shrink-0 mt-0.5" /><span><strong className="block text-xs uppercase tracking-wide text-slate-500">Horario</strong><span className="text-sm font-semibold">{municipality.hours}</span></span></div>}
+        </div>
+      </section>
       
       {/* Buscador */}
       <div className="px-10 md:px-16 py-2">
