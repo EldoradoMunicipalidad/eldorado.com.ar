@@ -21,6 +21,7 @@ import { AGENDA_PAGE_ID, DEFAULT_AGENDA, DEFAULT_SITE_SETTINGS, SITE_SETTINGS_PA
 const DEFAULT_CONTENT = {
   carousel: [
     { id: 1, img: '/slider-2.jpg', title: '', subtitle: '' },
+    { id: 202609, img: '/slider-vencimientos-septiembre-2026.jpg', title: 'Calendario de vencimientos', subtitle: 'Septiembre 2026' },
   ],
   guiaTramites: {
     title: 'Guía de Trámites',
@@ -242,7 +243,13 @@ function CarouselEditor({ data, onChange }) {
                     <Loader2 className="w-6 h-6 animate-spin text-sky-600" />
                   </div>
                 ) : slide.img ? (
-                  <img src={slide.img} alt="" className="w-full h-full object-cover" onError={(e) => e.target.style.display = 'none'} />
+                  <img
+                    src={slide.img}
+                    alt=""
+                    className="w-full h-full object-cover"
+                    onLoad={(e) => { e.currentTarget.style.display = 'block' }}
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-slate-400">
                     <Image className="w-8 h-8" />
@@ -262,7 +269,7 @@ function CarouselEditor({ data, onChange }) {
                     disabled={uploading?.id === slide.id}
                   />
                 </label>
-                <p className="text-xs text-slate-400">JPG, PNG, GIF, WebP, SVG — máx 10MB</p>
+                <p className="text-xs text-slate-400">JPG, PNG, GIF, WebP, SVG — máx 25MB</p>
               </div>
             </div>
 

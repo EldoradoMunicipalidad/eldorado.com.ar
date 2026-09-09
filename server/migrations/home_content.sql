@@ -12,6 +12,12 @@ VALUES (
         "img": "/slider-2.jpg",
         "title": "",
         "subtitle": ""
+      },
+      {
+        "id": 202609,
+        "img": "/slider-vencimientos-septiembre-2026.jpg",
+        "title": "Calendario de vencimientos",
+        "subtitle": "Septiembre 2026"
       }
     ],
     "guiaTramites": {

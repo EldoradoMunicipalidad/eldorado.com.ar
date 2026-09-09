@@ -53,12 +53,68 @@ const upload = multer({
 //
 // El <key> es la parte final (ej: 'home/migrated/...jpeg').
 
-const R2_URL_RE = /^https:\/\/[^/]+\.r2\.cloudflarestorage\.com\/.+?\/(.+)$|^https:\/\/pub-[^/]+\.r2\.dev\/.+?\/(.+)$/
+function extractR2Key(value) {
+  if (typeof value !== 'string') return null
+  if (/^home\//.test(value) && !value.startsWith('http')) return value
+
+  try {
+    const url = new URL(value)
+    const isR2Storage = url.hostname.endsWith('.r2.cloudflarestorage.com')
+    const isR2Public = /^pub-[^.]+\.r2\.dev$/i.test(url.hostname)
+    if (!isR2Storage && !isR2Public) return null
+
+    const pathParts = decodeURIComponent(url.pathname).split('/').filter(Boolean)
+    if (pathParts[0] === R2_BUCKET) pathParts.shift()
+    return pathParts.join('/') || null
+  } catch {
+    return null
+  }
+}
+
+function normalizeR2RefsInContent(content) {
+  if (!content || typeof content !== 'object') return content
+
+  function walk(obj) {
+    if (Array.isArray(obj)) {
+      obj.forEach(walk)
+      return
+    }
+    for (const key of Object.keys(obj)) {
+      const value = obj[key]
+      if (typeof value === 'string') {
+        const r2Key = extractR2Key(value)
+        if (r2Key) obj[key] = r2Key
+      } else if (value && typeof value === 'object') {
+        walk(value)
+      }
+    }
+  }
+
+  walk(content)
+  return content
+}
 
 async function signR2UrlsInContent(content) {
   if (!content) return content
   if (R2_PUBLIC_BASE_URL) {
-    // Bucket publico: las URLs ya estan en formato publico, nada que firmar
+    // Bucket público: convertir keys o URLs R2 antiguas a la URL definitiva.
+    function makePublic(obj) {
+      if (!obj || typeof obj !== 'object') return
+      if (Array.isArray(obj)) {
+        obj.forEach(makePublic)
+        return
+      }
+      for (const key of Object.keys(obj)) {
+        const value = obj[key]
+        if (typeof value === 'string') {
+          const r2Key = extractR2Key(value)
+          if (r2Key) obj[key] = `${R2_PUBLIC_BASE_URL}/${r2Key}`
+        } else if (value && typeof value === 'object') {
+          makePublic(value)
+        }
+      }
+    }
+    makePublic(content)
     return content
   }
   // Bucket privado: firmar cada URL de R2 detectada
@@ -70,12 +126,8 @@ async function signR2UrlsInContent(content) {
     for (const k of Object.keys(obj)) {
       const v = obj[k]
       if (typeof v === 'string') {
-        const m = v.match(R2_URL_RE)
-        if (m) {
-          urlsToSign.add(m[1] || m[2])
-        } else if (/^home\//.test(v) && !v.startsWith('http')) {
-          urlsToSign.add(v)
-        }
+        const key = extractR2Key(v)
+        if (key) urlsToSign.add(key)
       } else if (typeof v === 'object') {
         walk(v)
       }
@@ -111,13 +163,8 @@ async function signR2UrlsInContent(content) {
     for (const k of Object.keys(obj)) {
       const v = obj[k]
       if (typeof v === 'string') {
-        const m = v.match(R2_URL_RE)
-        if (m) {
-          const key = m[1] || m[2]
-          if (signedMap.has(key)) obj[k] = signedMap.get(key)
-        } else if (/^home\//.test(v) && signedMap.has(v)) {
-          obj[k] = signedMap.get(v)
-        }
+        const key = extractR2Key(v)
+        if (key && signedMap.has(key)) obj[k] = signedMap.get(key)
       } else if (typeof v === 'object') {
         replace(v)
       }
@@ -156,6 +203,10 @@ router.put('/', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Content must be a JSON object' })
     }
 
+    // Las URLs firmadas sólo sirven para mostrar la imagen. En la base guardamos
+    // la key estable para poder generar una firma nueva en cada GET.
+    const storedContent = R2_PUBLIC_BASE_URL ? content : normalizeR2RefsInContent(content)
+
     const { rows } = await pool.query(
       `INSERT INTO page_content (page_id, content, updated_at)
        VALUES ('home', $1::jsonb, NOW())
@@ -163,7 +214,7 @@ router.put('/', requireAdmin, async (req, res) => {
          content = EXCLUDED.content,
          updated_at = NOW()
        RETURNING content, updated_at`,
-      [JSON.stringify(content)]
+      [JSON.stringify(storedContent)]
     )
 
     console.log('📝 Home content updated')

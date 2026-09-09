@@ -12,7 +12,10 @@ import { AGENDA_PAGE_ID, DEFAULT_AGENDA } from '../data/siteSettings'
 
 // ─── Default content ─────────────────────────────────────────────────
 const DEFAULT_CONTENT = {
-  carousel: [{ id: 1, img: '/slider-2.jpg', title: '', subtitle: '' }],
+  carousel: [
+    { id: 1, img: '/slider-2.jpg', title: '', subtitle: '' },
+    { id: 202609, img: '/slider-vencimientos-septiembre-2026.jpg', title: 'Calendario de vencimientos', subtitle: 'Septiembre 2026' },
+  ],
   guiaTramites: {
     title: 'Guía de Trámites',
     subtitle: 'Consulta todos los pasos para realizar tus trámites municipales',
