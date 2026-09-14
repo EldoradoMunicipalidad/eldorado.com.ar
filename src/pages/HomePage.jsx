@@ -12,10 +12,8 @@ import { AGENDA_PAGE_ID, DEFAULT_AGENDA } from '../data/siteSettings'
 
 // ─── Default content ─────────────────────────────────────────────────
 const DEFAULT_CONTENT = {
-  carousel: [
-    { id: 1, img: '/slider-2.jpg', title: '', subtitle: '' },
-    { id: 202609, img: '/slider-vencimientos-septiembre-2026.jpg', title: 'Calendario de vencimientos', subtitle: 'Septiembre 2026' },
-  ],
+  // El carrusel no tiene imágenes de respaldo: el CMS es la única fuente.
+  carousel: [],
   guiaTramites: {
     title: 'Guía de Trámites',
     subtitle: 'Consulta todos los pasos para realizar tus trámites municipales',
@@ -67,7 +65,7 @@ export const HomePage = () => {
   useEffect(() => {
     getHomeContent()
       .then((res) => {
-        const merged = { ...DEFAULT_CONTENT, ...res.content }
+        const merged = { ...DEFAULT_CONTENT, ...(res.content || {}) }
         setHomeData(merged)
       })
       .catch(() => {

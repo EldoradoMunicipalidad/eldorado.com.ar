@@ -3,7 +3,7 @@ import { cmsAuthHeaders } from './cmsAuth'
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export async function getHomeContent() {
-  const res = await fetch(`${API_URL}/api/home-content`)
+  const res = await fetch(`${API_URL}/api/home-content`, { cache: 'no-store' })
   if (!res.ok) throw new Error('Error fetching home content')
   return res.json()
 }

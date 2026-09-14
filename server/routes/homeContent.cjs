@@ -177,6 +177,7 @@ async function signR2UrlsInContent(content) {
 // ─── GET home content ────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate')
     const { rows } = await pool.query(
       "SELECT content, updated_at FROM page_content WHERE page_id = 'home'"
     )

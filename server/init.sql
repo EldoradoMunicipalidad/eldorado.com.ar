@@ -58,46 +58,35 @@ CREATE TABLE IF NOT EXISTS page_content (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Publicación única del calendario de vencimientos de septiembre 2026.
--- La marca de migración permite retirarlo luego desde el CMS sin que reaparezca.
+-- Limpieza única del slide que antes se inyectaba desde código.
+-- Desde esta versión, el carrusel del CMS es la única fuente de verdad.
 UPDATE page_content
 SET content = jsonb_set(
   jsonb_set(
     content,
     '{carousel}',
-    CASE
-      WHEN jsonb_typeof(content->'carousel') = 'array' THEN content->'carousel'
-      ELSE '[]'::jsonb
-    END || CASE
-      WHEN EXISTS (
-        SELECT 1
-        FROM jsonb_array_elements(
-          CASE
-            WHEN jsonb_typeof(content->'carousel') = 'array' THEN content->'carousel'
-            ELSE '[]'::jsonb
-          END
-        ) AS slide
-        WHERE slide->>'img' = '/slider-vencimientos-septiembre-2026.jpg'
-      ) THEN '[]'::jsonb
-      ELSE '[{
-        "id": 202609,
-        "img": "/slider-vencimientos-septiembre-2026.jpg",
-        "title": "Calendario de vencimientos",
-        "subtitle": "Septiembre 2026"
-      }]'::jsonb
-    END,
+    COALESCE((
+      SELECT jsonb_agg(slide ORDER BY position)
+      FROM jsonb_array_elements(
+        CASE
+          WHEN jsonb_typeof(content->'carousel') = 'array' THEN content->'carousel'
+          ELSE '[]'::jsonb
+        END
+      ) WITH ORDINALITY AS items(slide, position)
+      WHERE slide->>'img' IS DISTINCT FROM '/slider-vencimientos-septiembre-2026.jpg'
+    ), '[]'::jsonb),
     true
   ),
   '{_migrations}',
   CASE
     WHEN jsonb_typeof(content->'_migrations') = 'object' THEN content->'_migrations'
     ELSE '{}'::jsonb
-  END || '{"carousel_septiembre_2026": true}'::jsonb,
+  END || '{"carousel_admin_authoritative_v1": true}'::jsonb,
   true
 ),
 updated_at = NOW()
 WHERE page_id = 'home'
-  AND content->'_migrations'->>'carousel_septiembre_2026' IS DISTINCT FROM 'true';
+  AND content->'_migrations'->>'carousel_admin_authoritative_v1' IS DISTINCT FROM 'true';
 
 -- Seed default config
 INSERT INTO config (id, max_per_day, turnero_paused)

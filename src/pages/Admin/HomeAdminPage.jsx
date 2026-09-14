@@ -19,10 +19,8 @@ import { AGENDA_PAGE_ID, DEFAULT_AGENDA, DEFAULT_SITE_SETTINGS, SITE_SETTINGS_PA
 
 // ─── Default content (mirrors initial SQL migration) ─────────────────
 const DEFAULT_CONTENT = {
-  carousel: [
-    { id: 1, img: '/slider-2.jpg', title: '', subtitle: '' },
-    { id: 202609, img: '/slider-vencimientos-septiembre-2026.jpg', title: 'Calendario de vencimientos', subtitle: 'Septiembre 2026' },
-  ],
+  // El carrusel se administra exclusivamente desde el CMS.
+  carousel: [],
   guiaTramites: {
     title: 'Guía de Trámites',
     subtitle: 'Consulta todos los pasos para realizar tus trámites municipales',
@@ -186,25 +184,26 @@ function Toggle({ checked, onChange, label }) {
 }
 
 // ─── Section: Carrusel ───────────────────────────────────────────────
-function CarouselEditor({ data, onChange }) {
+function CarouselEditor({ data, onChange, onUploadingChange }) {
   const slides = data || []
-  const [uploading, setUploading] = useState(null) // { id, uploading }
+  const [uploading, setUploading] = useState(null)
 
   const addSlide = () => {
-    onChange([...slides, { id: Date.now(), img: '/slider-2.jpg', title: '', subtitle: '' }])
+    onChange((current = []) => [...current, { id: Date.now(), img: '', title: '', subtitle: '' }])
   }
 
   const removeSlide = (id) => {
     if (slides.length === 1) { alert('Debe haber al menos una imagen'); return }
-    onChange(slides.filter((s) => s.id !== id))
+    onChange((current = []) => current.filter((s) => s.id !== id))
   }
 
   const updateSlide = (id, key, value) => {
-    onChange(slides.map((s) => s.id === id ? { ...s, [key]: value } : s))
+    onChange((current = []) => current.map((s) => s.id === id ? { ...s, [key]: value } : s))
   }
 
   const handleUpload = async (id, file) => {
-    setUploading({ id })
+    setUploading(id)
+    onUploadingChange(true)
     try {
       const { uploadHomeImage } = await import('../../lib/homeContent')
       const { url } = await uploadHomeImage(file)
@@ -213,6 +212,7 @@ function CarouselEditor({ data, onChange }) {
       alert('Error subiendo imagen: ' + err.message)
     } finally {
       setUploading(null)
+      onUploadingChange(false)
     }
   }
 
@@ -238,7 +238,7 @@ function CarouselEditor({ data, onChange }) {
             {/* Preview + Upload */}
             <div className="flex gap-4 items-start">
               <div className="relative w-40 h-24 rounded-lg overflow-hidden bg-slate-200 shrink-0">
-                {uploading?.id === slide.id ? (
+                {uploading === slide.id ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-slate-200">
                     <Loader2 className="w-6 h-6 animate-spin text-sky-600" />
                   </div>
@@ -260,13 +260,13 @@ function CarouselEditor({ data, onChange }) {
               <div className="flex-1 space-y-2">
                 <label className="flex items-center gap-2 px-3 py-2 bg-white border border-sky-300 text-sky-700 rounded-lg text-sm font-medium cursor-pointer hover:bg-sky-50 transition-colors w-fit">
                   <Image className="w-4 h-4" />
-                  <span>{uploading?.id === slide.id ? 'Subiendo...' : 'Subir imagen'}</span>
+                  <span>{uploading === slide.id ? 'Subiendo...' : 'Subir imagen'}</span>
                   <input
                     type="file"
                     accept="image/*"
                     className="sr-only"
                     onChange={(e) => { if (e.target.files[0]) handleUpload(slide.id, e.target.files[0]) }}
-                    disabled={uploading?.id === slide.id}
+                    disabled={uploading !== null}
                   />
                 </label>
                 <p className="text-xs text-slate-400">JPG, PNG, GIF, WebP, SVG — máx 25MB</p>
@@ -518,12 +518,17 @@ export default function HomeAdminPage() {
   const [siteSettings, setSiteSettings] = useState(null)
   const [activeTab, setActiveTab] = useState('carousel')
   const [saving, setSaving] = useState(false)
+  const [loadingContent, setLoadingContent] = useState(true)
+  const [homeLoadError, setHomeLoadError] = useState(null)
+  const [carouselUploading, setCarouselUploading] = useState(false)
   const [status, setStatus] = useState(null) // { type: 'success'|'error', msg: '' }
 
   const loadContent = useCallback(async () => {
+    setLoadingContent(true)
+    setHomeLoadError(null)
+    const subpageEntries = Object.entries(GOBIERNO_ABIERTO_SUBPAGE_IDS)
     try {
-      const subpageEntries = Object.entries(GOBIERNO_ABIERTO_SUBPAGE_IDS)
-      const [homeData, governmentData, cabinetData, agendaData, settingsData, ...subpageResponses] = await Promise.all([
+      const [homeResult, governmentResult, cabinetResult, agendaResult, settingsResult, ...subpageResults] = await Promise.allSettled([
         getHomeContent(),
         getPageContent('gobierno-abierto'),
         getPageContent('gabinete-municipal'),
@@ -531,12 +536,25 @@ export default function HomeAdminPage() {
         getPageContent(SITE_SETTINGS_PAGE_ID),
         ...subpageEntries.map(([, pageId]) => getPageContent(pageId)),
       ])
+
+      if (homeResult.status === 'fulfilled') {
+        setContent({ ...DEFAULT_CONTENT, ...(homeResult.value.content || {}) })
+      } else {
+        setContent(null)
+        setHomeLoadError(`No se pudo cargar el contenido actual del Home: ${homeResult.reason?.message || 'error desconocido'}. No se habilitó el guardado para evitar sobrescribir el carrusel.`)
+      }
+
+      const governmentData = governmentResult.status === 'fulfilled' ? governmentResult.value : { content: null }
+      const cabinetData = cabinetResult.status === 'fulfilled' ? cabinetResult.value : { content: null }
+      const agendaData = agendaResult.status === 'fulfilled' ? agendaResult.value : { content: null }
+      const settingsData = settingsResult.status === 'fulfilled' ? settingsResult.value : { content: null }
       const subpages = Object.fromEntries(subpageEntries.map(([key], index) => [
         key,
-        { ...DEFAULT_GOBIERNO_ABIERTO_SUBPAGES[key], ...(subpageResponses[index]?.content || {}) },
+        {
+          ...DEFAULT_GOBIERNO_ABIERTO_SUBPAGES[key],
+          ...(subpageResults[index]?.status === 'fulfilled' ? subpageResults[index].value.content : {}),
+        },
       ]))
-      // Merge with defaults so any missing keys get filled
-      setContent({ ...DEFAULT_CONTENT, ...homeData.content })
       setGovernmentContent({
         ...DEFAULT_GOBIERNO_ABIERTO_CONTENT,
         ...(governmentData.content || {}),
@@ -556,12 +574,15 @@ export default function HomeAdminPage() {
         municipality: { ...DEFAULT_SITE_SETTINGS.municipality, ...(settingsData.content?.municipality || {}) },
         social: { ...DEFAULT_SITE_SETTINGS.social, ...(settingsData.content?.social || {}) },
       })
-    } catch {
-      setContent(DEFAULT_CONTENT)
+    } catch (err) {
+      setContent(null)
+      setHomeLoadError(`No se pudo cargar el contenido actual del Home: ${err.message}. No se habilitó el guardado para evitar sobrescribir el carrusel.`)
       setGovernmentContent({ ...DEFAULT_GOBIERNO_ABIERTO_CONTENT, subpages: DEFAULT_GOBIERNO_ABIERTO_SUBPAGES })
       setCabinetContent(DEFAULT_GABINETE_MUNICIPAL_CONTENT)
       setAgendaContent(DEFAULT_AGENDA)
       setSiteSettings(DEFAULT_SITE_SETTINGS)
+    } finally {
+      setLoadingContent(false)
     }
   }, [])
 
@@ -572,6 +593,7 @@ export default function HomeAdminPage() {
   }, [isAuthenticated, loadContent])
 
   const handleSave = async () => {
+    if (carouselUploading) return
     setSaving(true)
     setStatus(null)
     try {
@@ -597,6 +619,8 @@ export default function HomeAdminPage() {
         return
       } else {
         await updateHomeContent(content)
+        const freshHomeData = await getHomeContent()
+        setContent({ ...DEFAULT_CONTENT, ...(freshHomeData.content || {}) })
       }
       setStatus({ type: 'success', msg: 'Contenido guardado correctamente' })
     } catch (err) {
@@ -607,7 +631,11 @@ export default function HomeAdminPage() {
   }
 
   const updateSection = (key, value) => {
-    setContent((prev) => ({ ...prev, [key]: value }))
+    setContent((prev) => {
+      if (!prev) return prev
+      const nextValue = typeof value === 'function' ? value(prev[key]) : value
+      return { ...prev, [key]: nextValue }
+    })
   }
 
   const updateBoletines = (value) => {
@@ -621,6 +649,7 @@ export default function HomeAdminPage() {
     clearCmsAuth()
     setIsAuthenticated(false)
     setContent(null)
+    setHomeLoadError(null)
     setGovernmentContent(null)
     setCabinetContent(null)
     setAgendaContent(null)
@@ -648,11 +677,11 @@ export default function HomeAdminPage() {
         <div className="flex items-center gap-3">
           {activeTab !== 'licitaciones' && <button
             onClick={handleSave}
-            disabled={saving || !content || ((activeTab === 'gobierno-abierto' || activeTab === 'boletines') && !governmentContent) || (activeTab === 'gabinete' && !cabinetContent) || (activeTab === 'agenda' && !agendaContent) || (activeTab === 'configuracion' && !siteSettings)}
+            disabled={saving || loadingContent || !content || carouselUploading || ((activeTab === 'gobierno-abierto' || activeTab === 'boletines') && !governmentContent) || (activeTab === 'gabinete' && !cabinetContent) || (activeTab === 'agenda' && !agendaContent) || (activeTab === 'configuracion' && !siteSettings)}
             className="flex items-center gap-2 px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700 disabled:opacity-50 transition-colors"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Guardando...' : 'Guardar cambios'}
+            {carouselUploading ? 'Esperando imagen...' : saving ? 'Guardando...' : 'Guardar cambios'}
           </button>}
           <button onClick={handleLogout} className="flex items-center gap-1 px-3 py-2 text-red-500 hover:text-red-700 text-sm border border-slate-300 rounded-lg hover:border-red-300 transition-colors">
             <LogOut className="w-4 h-4" /> Salir
@@ -696,9 +725,17 @@ export default function HomeAdminPage() {
       {/* Editor */}
       <div className="mx-6 my-4">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          {!content ? (
+          {loadingContent ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-sky-600" />
+            </div>
+          ) : homeLoadError ? (
+            <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+              <p className="max-w-2xl text-sm text-red-700">{homeLoadError}</p>
+              <button onClick={loadContent} className="px-4 py-2 bg-sky-600 text-white rounded-lg text-sm font-semibold hover:bg-sky-700">
+                Reintentar carga
+              </button>
             </div>
           ) : (
             <>
@@ -724,7 +761,11 @@ export default function HomeAdminPage() {
                 <SiteSettingsAdmin data={siteSettings} onChange={setSiteSettings} />
               )}
               {activeTab === 'carousel' && (
-                <CarouselEditor data={content.carousel} onChange={(v) => updateSection('carousel', v)} />
+                <CarouselEditor
+                  data={content.carousel}
+                  onChange={(v) => updateSection('carousel', v)}
+                  onUploadingChange={setCarouselUploading}
+                />
               )}
               {activeTab === 'guia' && (
                 <GuiaEditor data={content.guiaTramites} onChange={(v) => updateSection('guiaTramites', v)} />
