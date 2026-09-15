@@ -326,21 +326,91 @@ router.get('/stats', requireAdmin, async (req, res) => {
   }
 })
 
+// ─── ANALYTICS ──────────────────────────────────────────────────────
+// ADMIN: métricas agregadas para el panel de inteligencia de reclamos.
+router.get('/analytics', requireAdmin, async (req, res) => {
+  try {
+    const requestedDays = parseInt(req.query.days, 10) || 30
+    const days = Math.min(365, Math.max(7, requestedDays))
+
+    const [summaryResult, trendResult, categoryResult] = await Promise.all([
+      pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE r.created_at >= NOW() - ($1::int * INTERVAL '1 day'))::int AS total_periodo,
+          COUNT(*) FILTER (WHERE r.estado NOT IN ('resuelto', 'rechazado'))::int AS abiertos,
+          COUNT(*) FILTER (WHERE r.created_at >= NOW() - ($1::int * INTERVAL '1 day') AND r.estado = 'resuelto')::int AS resueltos_periodo,
+          COUNT(*) FILTER (WHERE r.created_at >= NOW() - ($1::int * INTERVAL '1 day') AND r.lat IS NOT NULL AND r.lng IS NOT NULL)::int AS geolocalizados,
+          ROUND(AVG(EXTRACT(EPOCH FROM (h.created_at - r.created_at)) / 3600)
+            FILTER (WHERE h.created_at IS NOT NULL AND h.created_at >= NOW() - ($1::int * INTERVAL '1 day')), 1) AS promedio_horas_resolucion
+        FROM reclamos r
+        LEFT JOIN LATERAL (
+          SELECT created_at
+          FROM reclamos_historial
+          WHERE reclamo_id = r.id AND estado_nuevo = 'resuelto'
+          ORDER BY created_at ASC
+          LIMIT 1
+        ) h ON true
+      `, [days]),
+      pool.query(`
+        SELECT
+          TO_CHAR(dia::date, 'YYYY-MM-DD') AS fecha,
+          COUNT(r.id)::int AS recibidos,
+          COUNT(r.id) FILTER (WHERE r.estado = 'resuelto')::int AS resueltos
+        FROM generate_series(
+          CURRENT_DATE - ($1::int - 1),
+          CURRENT_DATE,
+          INTERVAL '1 day'
+        ) AS serie(dia)
+        LEFT JOIN reclamos r
+          ON r.created_at >= serie.dia
+         AND r.created_at < serie.dia + INTERVAL '1 day'
+        GROUP BY dia::date
+        ORDER BY dia::date ASC
+      `, [days]),
+      pool.query(`
+        SELECT
+          COALESCE(NULLIF(categoria, ''), 'Sin categoría') AS categoria,
+          COUNT(*)::int AS total,
+          COUNT(*) FILTER (WHERE estado = 'resuelto')::int AS resueltos,
+          ROUND(COUNT(*) FILTER (WHERE estado = 'resuelto') * 100.0 / NULLIF(COUNT(*), 0), 1) AS porcentaje_resuelto
+        FROM reclamos
+        WHERE created_at >= NOW() - ($1::int * INTERVAL '1 day')
+        GROUP BY COALESCE(NULLIF(categoria, ''), 'Sin categoría')
+        ORDER BY total DESC, categoria ASC
+        LIMIT 10
+      `, [days]),
+    ])
+
+    res.json({
+      days,
+      summary: summaryResult.rows[0],
+      trend: trendResult.rows,
+      categories: categoryResult.rows,
+    })
+  } catch (err) {
+    console.error('GET /api/reclamos/analytics error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // ─── CREATE ──────────────────────────────────────────────────────────
 // PUBLICO: cualquier ciudadano puede crear un reclamo
 router.post('/', async (req, res) => {
+  const client = await pool.connect()
   try {
     const body = req.body
+
+    await client.query('BEGIN')
 
     // Generate unique code (retry on collision)
     let codigo, existing
     do {
       codigo = generarCodigo()
-      const { rows } = await pool.query('SELECT id FROM reclamos WHERE codigo = $1', [codigo])
+      const { rows } = await client.query('SELECT id FROM reclamos WHERE codigo = $1', [codigo])
       existing = rows.length > 0
     } while (existing)
 
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `INSERT INTO reclamos (codigo, categoria, titulo, descripcion, direccion, lat, lng, fotos, email, telefono, nombre, estado)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, 'pendiente')
        RETURNING id, codigo`,
@@ -358,11 +428,20 @@ router.post('/', async (req, res) => {
         body.nombre || '',
       ]
     )
+    await client.query(
+      `INSERT INTO reclamos_historial (reclamo_id, accion, estado_nuevo)
+       VALUES ($1, 'creado', 'pendiente')`,
+      [rows[0].id]
+    )
+    await client.query('COMMIT')
     res.json({ id: rows[0].id, codigo: rows[0].codigo })
     console.log(`📋 Nuevo reclamo: ${codigo}`)
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {})
     console.error('POST /api/reclamos error:', err.message)
     res.status(500).json({ error: err.message })
+  } finally {
+    client.release()
   }
 })
 
@@ -382,11 +461,23 @@ router.post('/upload', uploadLimiter, upload.single('file'), (req, res) => {
 // ─── UPDATE by ID ────────────────────────────────────────────────────
 // ADMIN: cambiar estado, agregar notas internas, asignar, responder
 router.patch('/:id', requireAdmin, async (req, res) => {
+  const client = await pool.connect()
   try {
     const { estado, notas_internas, respuesta_ciudadano, asignado_a } = req.body
     const id = parseInt(req.params.id)
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' })
 
+    await client.query('BEGIN')
+    const currentResult = await client.query(
+      'SELECT estado, asignado_a FROM reclamos WHERE id = $1 FOR UPDATE',
+      [id]
+    )
+    if (currentResult.rows.length === 0) {
+      await client.query('ROLLBACK')
+      return res.status(404).json({ error: 'No encontrado' })
+    }
+
+    const current = currentResult.rows[0]
     const setClauses = []
     const params = []
     let idx = 1
@@ -414,15 +505,33 @@ router.patch('/:id', requireAdmin, async (req, res) => {
     setClauses.push(`updated_at = NOW()`)
 
     params.push(id)
-    const { rows } = await pool.query(
+    const { rows } = await client.query(
       `UPDATE reclamos SET ${setClauses.join(', ')} WHERE id = $${idx} RETURNING *`,
       params
     )
-    if (rows.length === 0) return res.status(404).json({ error: 'No encontrado' })
+    await client.query(
+      `INSERT INTO reclamos_historial (
+         reclamo_id, accion, estado_anterior, estado_nuevo,
+         asignado_anterior, asignado_nuevo, cambiado_por
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [
+        id,
+        estado !== undefined && estado !== current.estado ? 'cambio_estado' : 'actualizado',
+        current.estado,
+        estado !== undefined ? estado : current.estado,
+        current.asignado_a || '',
+        asignado_a !== undefined ? asignado_a : current.asignado_a || '',
+        req.admin?.username || '',
+      ]
+    )
+    await client.query('COMMIT')
     res.json(rows[0])
   } catch (err) {
+    await client.query('ROLLBACK').catch(() => {})
     console.error('PATCH /api/reclamos/:id error:', err.message)
     res.status(500).json({ error: err.message })
+  } finally {
+    client.release()
   }
 })
 

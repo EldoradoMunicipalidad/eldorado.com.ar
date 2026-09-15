@@ -23,8 +23,10 @@ import {
   Plus,
   UserPlus,
   Pencil,
+  BarChart3,
+  TrendingUp,
 } from 'lucide-react'
-import { authenticateAdmin, authenticateWithGoogle, getReclamos, getReclamosStats, updateReclamo, deleteReclamo, ESTADO_LABELS, ESTADO_COLORS } from '../../lib/reclamos'
+import { authenticateAdmin, authenticateWithGoogle, getReclamos, getReclamosStats, getReclamosAnalytics, updateReclamo, deleteReclamo, ESTADO_LABELS, ESTADO_COLORS } from '../../lib/reclamos'
 import SectionLayout from '../../assets/components/SectionLayout'
 import { Section } from '../../assets/components/Section'
 
@@ -91,6 +93,8 @@ export default function AdminReclamosPage() {
   const [reclamos, setReclamos] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
+  const [analytics, setAnalytics] = useState(null)
+  const [analyticsDays, setAnalyticsDays] = useState(30)
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalReclamos, setTotalReclamos] = useState(0)
@@ -193,10 +197,22 @@ export default function AdminReclamosPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const s = await getReclamosStats()
+      const [s, analyticsResult] = await Promise.all([
+        getReclamosStats(),
+        getReclamosAnalytics(analyticsDays),
+      ])
       setStats(s)
+      if (!analyticsResult.unauthorized) setAnalytics(analyticsResult)
     } catch {}
-  }, [])
+  }, [analyticsDays])
+
+  const handleAnalyticsDaysChange = (e) => {
+    const nextDays = Number(e.target.value)
+    setAnalyticsDays(nextDays)
+    getReclamosAnalytics(nextDays).then((result) => {
+      if (!result.unauthorized) setAnalytics(result)
+    })
+  }
 
   // Initial load
   useEffect(() => {
@@ -524,6 +540,95 @@ export default function AdminReclamosPage() {
               <div className="bg-white p-3 rounded-xl border border-red-200 text-center">
                 <div className="text-lg font-bold text-red-500">{stats.rechazados}</div>
                 <div className="text-[10px] text-red-400 mt-0.5">Rechazado</div>
+              </div>
+            </div>
+          )}
+
+          {analytics && (
+            <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-sky-500" />
+                  <div>
+                    <h2 className="font-semibold text-slate-800">Inteligencia operativa</h2>
+                    <p className="text-xs text-slate-500">Indicadores agregados para tomar decisiones</p>
+                  </div>
+                </div>
+                <select
+                  value={analyticsDays}
+                  onChange={handleAnalyticsDaysChange}
+                  className="px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white focus:ring-2 focus:ring-sky-500 outline-none"
+                  aria-label="Período de analítica"
+                >
+                  <option value={7}>Últimos 7 días</option>
+                  <option value={30}>Últimos 30 días</option>
+                  <option value={90}>Últimos 90 días</option>
+                  <option value={365}>Último año</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                <div className="rounded-xl bg-sky-50 p-3">
+                  <div className="text-xl font-bold text-sky-700">{analytics.summary?.total_periodo ?? 0}</div>
+                  <div className="text-xs text-sky-600">Recibidos en el período</div>
+                </div>
+                <div className="rounded-xl bg-amber-50 p-3">
+                  <div className="text-xl font-bold text-amber-700">{analytics.summary?.abiertos ?? 0}</div>
+                  <div className="text-xs text-amber-600">Abiertos actualmente</div>
+                </div>
+                <div className="rounded-xl bg-emerald-50 p-3">
+                  <div className="text-xl font-bold text-emerald-700">{analytics.summary?.resueltos_periodo ?? 0}</div>
+                  <div className="text-xs text-emerald-600">Resueltos del período</div>
+                </div>
+                <div className="rounded-xl bg-violet-50 p-3">
+                  <div className="text-xl font-bold text-violet-700">
+                    {analytics.summary?.promedio_horas_resolucion != null
+                      ? `${analytics.summary.promedio_horas_resolucion} h`
+                      : '—'}
+                  </div>
+                  <div className="text-xs text-violet-600">Promedio hasta resolver</div>
+                </div>
+              </div>
+
+              <div className="grid lg:grid-cols-2 gap-5">
+                <div>
+                  <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700">
+                    <TrendingUp className="w-4 h-4 text-sky-500" /> Evolución diaria
+                  </div>
+                  <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    {analytics.trend.map((day) => {
+                      const max = Math.max(...analytics.trend.map((item) => Number(item.recibidos)), 1)
+                      return (
+                        <div key={day.fecha} className="flex items-center gap-2 text-xs">
+                          <span className="w-20 text-slate-400">{day.fecha.slice(5)}</span>
+                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div className="h-full rounded-full bg-sky-400" style={{ width: `${(Number(day.recibidos) / max) * 100}%` }} />
+                          </div>
+                          <span className="w-6 text-right font-medium text-slate-600">{day.recibidos}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-3 text-sm font-semibold text-slate-700">Categorías principales</div>
+                  <div className="space-y-2">
+                    {analytics.categories.length === 0 ? (
+                      <p className="text-xs text-slate-400">No hay datos en el período seleccionado.</p>
+                    ) : analytics.categories.map((category) => (
+                      <div key={category.categoria} className="flex items-center gap-3 text-xs">
+                        <span className="w-36 truncate text-slate-600" title={category.categoria}>{category.categoria}</span>
+                        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-indigo-400"
+                            style={{ width: `${(Number(category.total) / Math.max(Number(analytics.categories[0].total), 1)) * 100}%` }}
+                          />
+                        </div>
+                        <span className="w-8 text-right font-medium text-slate-600">{category.total}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}

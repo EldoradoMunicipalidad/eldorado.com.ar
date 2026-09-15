@@ -154,6 +154,20 @@ export async function getReclamosStats() {
   }
 }
 
+// ─── Obtener analítica agregada (requiere admin auth) ───────────────
+export async function getReclamosAnalytics(days = 30) {
+  try {
+    const params = new URLSearchParams({ days: String(days) })
+    const res = await fetch(`${API}/analytics?${params}`, { headers: getAuthHeaders(false) })
+    if (res.status === 401) return { unauthorized: true }
+    if (!res.ok) throw new Error('Error al cargar analítica')
+    return await res.json()
+  } catch (e) {
+    console.warn('getReclamosAnalytics error:', e.message)
+    return { days, summary: null, trend: [], categories: [] }
+  }
+}
+
 // ─── Actualizar reclamo (requiere admin auth) ──────────────────────
 export async function updateReclamo(id, data) {
   try {

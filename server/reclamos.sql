@@ -33,6 +33,24 @@ CREATE TABLE IF NOT EXISTS reclamos (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Audit trail used by the analytics module to measure process times.
+CREATE TABLE IF NOT EXISTS reclamos_historial (
+  id SERIAL PRIMARY KEY,
+  reclamo_id INTEGER NOT NULL REFERENCES reclamos(id) ON DELETE CASCADE,
+  accion VARCHAR(30) NOT NULL DEFAULT 'actualizado',
+  estado_anterior VARCHAR(30),
+  estado_nuevo VARCHAR(30),
+  asignado_anterior VARCHAR(255),
+  asignado_nuevo VARCHAR(255),
+  cambiado_por VARCHAR(255) DEFAULT '',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reclamos_historial_reclamo_fecha
+  ON reclamos_historial (reclamo_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_reclamos_historial_estado_fecha
+  ON reclamos_historial (estado_nuevo, created_at);
+
 -- Seed default categories
 INSERT INTO reclamos_categorias (nombre, icono, color, activa, orden)
 SELECT * FROM (VALUES
