@@ -252,8 +252,8 @@ export const SECRETARIA_ACCION_SOCIAL = [
             {
                 nombre: "Zunilda Amarilla",
                 cargo: "Directora de Adultos Mayores",
-                telefono: "",
-                email: "",
+                telefono: "3751-37945",
+                email: "adultosmayores@eldorado.gob.ar",
                 icon: "eco"
             }
         ]
