@@ -123,6 +123,13 @@ export const SECRETARIA_AMBIENTE = [
                 telefono: "+549 3751 430926",
                 email: "bromatologia@eldorado.gob.ar",
                 icon: "eco"
+            },
+            {
+                nombre: "Jorge Maximiliano González",
+                cargo: "Director de Ambiente",
+                telefono: "",
+                email: "",
+                icon: "eco"
             }
         ]
     }
@@ -240,6 +247,13 @@ export const SECRETARIA_ACCION_SOCIAL = [
                 cargo: "Directora de Prevención y Atención a la Salud Comunitaria",
                 telefono: "+549 3751 427484",
                 email: "saludcomunitaria@eldorado.gob.ar",
+                icon: "eco"
+            },
+            {
+                nombre: "Zunilda Amarilla",
+                cargo: "Directora de Adultos Mayores",
+                telefono: "",
+                email: "",
                 icon: "eco"
             }
         ]
