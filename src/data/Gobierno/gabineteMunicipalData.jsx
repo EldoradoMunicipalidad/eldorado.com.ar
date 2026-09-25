@@ -127,8 +127,8 @@ export const SECRETARIA_AMBIENTE = [
             {
                 nombre: "Jorge Maximiliano González",
                 cargo: "Director de Ambiente",
-                telefono: "",
-                email: "",
+                telefono: "3751-438499",
+                email: "directorambiente@eldorado.gob.ar",
                 icon: "eco"
             }
         ]
