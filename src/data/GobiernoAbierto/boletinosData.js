@@ -1,5 +1,12 @@
 export const BOLETINES_OFICIALES = [
     {
+        id: 21,
+        fechaPublicacion: "01/09/2026",
+        tipo: "BOLETÍN OFICIAL",
+        titulo: "Boletín Nº19 Municipalidad de Eldorado Septiembre 2026",
+        enlace: "/boletines/boletin-septiembre-2026.pdf",
+    },
+    {
         id: 20,
         fechaPublicacion: "01/08/2026",
         tipo: "BOLETÍN OFICIAL",
