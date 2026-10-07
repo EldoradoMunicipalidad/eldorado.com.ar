@@ -162,50 +162,6 @@ export const itemsCiudad = [
     ]
   },
   {
-    label: "Contacto",
-    breadcrumbLabel: "Contacto",
-    to: "/ciudad/contacto",
-    subItems: [
-      {
-        title: "Secretaría de Gobierno",
-        keywords: [
-          { label: "03751-426470", to: "" },
-          { label: "gobierno@eldorado.gob.ar", to: "" },
-          { label: "Peatonal Simón. Bolívar N° 73", to: "https://www.google.com.ar/maps/place/26%C2%B024'31.3%22S+54%C2%B036'23.7%22W/@-26.4086944,-54.608772,668m/data=!3m2!1e3!4b1!4m6!3m5!1s0x0:0x0!7e2!8m2!3d-26.408691!4d-54.6065952" }
-        ],
-        to: "/ciudad/contacto#secretaria-de-gobierno"
-      },
-      {
-        title: "Mesa de Entrada",
-        keywords: [
-          { label: "03751-421787", to: "" },
-          { label: "Peatonal Simón. Bolívar N° 73", to: "https://www.google.com.ar/maps/place/26%C2%B024'31.3%22S+54%C2%B036'23.7%22W/@-26.4086944,-54.608772,668m/data=!3m2!1e3!4b1!4m6!3m5!1s0x0:0x0!7e2!8m2!3d-26.408691!4d-54.6065952" },
-          { label: "Atención al Público", to: "" }
-        ],
-        to: "/ciudad/contacto#mesa-de-entrada"
-      },
-      {
-        title: "Direccion Transito",
-        keywords: [
-          { label: "03751-424276", to: "" },
-          { label: "Chacabuco 187", to: "https://www.google.com.ar/maps/place/Direcci%C3%B3n+de+Tr%C3%A1nsito/@-26.4070559,-54.5825011,20z/data=!4m5!3m4!1s0x94f76e75fef9e129:0x5192f67c5989d7bf!8m2!3d-26.4070012!4d-54.5822715" },
-          { label: "Consultas", to: "" },
-          { label: "Emision de Carnet", to: "" }
-        ],
-        to: "/ciudad/contacto#direccion-de-transito"
-      },
-      {
-        title: "Juzgado de Faltas",
-        keywords: [
-          { label: "03751-420521", to: "" },
-          { label: "juzgadodefaltas@eldorado.gob.ar", to: "/ciudad/contacto" },
-          { label: "Malvinas 1691", to: "https://www.google.com/maps/dir/-26.4011514,-54.59853/juzgado+de+faltas+eldorado+misiones/@-26.4048074,-54.6058348,16z/data=!3m1!4b1!4m9!4m8!1m1!4e1!1m5!1m1!1s0x94f76e826cd9f6db:0x773913b2bea25509!2m2!1d-54.6059155!2d-26.4072516" }
-        ],
-        to: "/ciudad/contacto#juzgado-de-faltas"
-      }
-    ]
-  },
-  {
     label: "Teléfonos",
     breadcrumbLabel: "Teléfonos Útiles",
     to: "/ciudad/telefonos-utiles",
@@ -253,6 +209,51 @@ export const itemsCiudad = [
     ]
   }
 ];
+
+export const itemContacto = {
+  label: "Contacto",
+  breadcrumbLabel: "Contacto",
+  to: "/ciudad/contacto",
+  subItems: [
+    {
+      title: "Secretaría de Gobierno",
+      keywords: [
+        { label: "03751-426470", to: "" },
+        { label: "gobierno@eldorado.gob.ar", to: "" },
+        { label: "Peatonal Simón. Bolívar N° 73", to: "https://www.google.com.ar/maps/place/26%C2%B024'31.3%22S+54%C2%B036'23.7%22W/@-26.4086944,-54.608772,668m/data=!3m2!1e3!4b1!4m6!3m5!1s0x0:0x0!7e2!8m2!3d-26.408691!4d-54.6065952" }
+      ],
+      to: "/ciudad/contacto#secretaria-de-gobierno"
+    },
+    {
+      title: "Mesa de Entrada",
+      keywords: [
+        { label: "03751-421787", to: "" },
+        { label: "Peatonal Simón. Bolívar N° 73", to: "https://www.google.com.ar/maps/place/26%C2%B024'31.3%22S+54%C2%B036'23.7%22W/@-26.4086944,-54.608772,668m/data=!3m2!1e3!4b1!4m6!3m5!1s0x0:0x0!7e2!8m2!3d-26.408691!4d-54.6065952" },
+        { label: "Atención al Público", to: "" }
+      ],
+      to: "/ciudad/contacto#mesa-de-entrada"
+    },
+    {
+      title: "Direccion Transito",
+      keywords: [
+        { label: "03751-424276", to: "" },
+        { label: "Chacabuco 187", to: "https://www.google.com.ar/maps/place/Direcci%C3%B3n+de+Tr%C3%A1nsito/@-26.4070559,-54.5825011,20z/data=!4m5!3m4!1s0x94f76e75fef9e129:0x5192f67c5989d7bf!8m2!3d-26.4070012!4d-54.5822715" },
+        { label: "Consultas", to: "" },
+        { label: "Emision de Carnet", to: "" }
+      ],
+      to: "/ciudad/contacto#direccion-de-transito"
+    },
+    {
+      title: "Juzgado de Faltas",
+      keywords: [
+        { label: "03751-420521", to: "" },
+        { label: "juzgadodefaltas@eldorado.gob.ar", to: "/ciudad/contacto" },
+        { label: "Malvinas 1691", to: "https://www.google.com/maps/dir/-26.4011514,-54.59853/juzgado+de+faltas+eldorado+misiones/@-26.4048074,-54.6058348,16z/data=!3m1!4b1!4m9!4m8!1m1!1s0x94f76e826cd9f6db:0x773913b2bea25509!2m2!1d-54.6059155!2d-26.4072516" }
+      ],
+      to: "/ciudad/contacto#juzgado-de-faltas"
+    }
+  ]
+};
 
 export const itemsGobierno = [
   {
@@ -842,7 +843,8 @@ export const allNavigationLinks = [
   ...itemsCiudad,
   ...itemsGobierno,
   ...itemsCiudadanoDigital,
-  ...itemsGobiernoAbierto
+  ...itemsGobiernoAbierto,
+  itemContacto
 ];
 
 

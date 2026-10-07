@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import NavDropdown from './NavDropdown';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import {
   itemsCiudad,
   itemsGobierno,
   itemsCiudadanoDigital,
   itemsGobiernoAbierto,
-  allNavigationLinks,
+  itemContacto,
 } from '../../../data/navigationData';
 import { Search, X, ChevronRight } from 'lucide-react';
 
@@ -86,6 +86,7 @@ const Navbar = () => {
     walkItems(itemsGobierno);
     walkItems(itemsCiudadanoDigital);
     walkItems(itemsGobiernoAbierto);
+    walkItems([itemContacto]);
 
     return results.slice(0, 8);
   }, [searchQuery]);
@@ -149,6 +150,20 @@ const Navbar = () => {
             onToggle={() => toggleDropdown('gobiernoAbierto')}
             onMouseEnter={() => handleMouseEnter('gobiernoAbierto')}
           />
+          <li className="list-none">
+            <NavLink
+              to={itemContacto.to}
+              end
+              onClick={closeEverything}
+              className={({ isActive }) => `relative flex items-center gap-1.5 font-medium outline-none px-3 py-2 rounded-xl transition-all duration-200 ${
+                isActive
+                  ? 'text-sky-600 bg-sky-50'
+                  : 'text-slate-600 hover:text-sky-600 hover:bg-slate-50'
+              }`}
+            >
+              <span className="text-sm">{itemContacto.label}</span>
+            </NavLink>
+          </li>
         </ul>
 
         {/* Búsqueda + Hamburguesa */}
@@ -275,6 +290,20 @@ const Navbar = () => {
             closeMenu={closeEverything}
             isMobile={true}
           />
+          <li className="list-none">
+            <NavLink
+              to={itemContacto.to}
+              end
+              onClick={closeEverything}
+              className={({ isActive }) => `block w-full py-3.5 px-1 rounded-xl font-semibold text-sm transition-all ${
+                isActive
+                  ? 'text-sky-600 bg-sky-50'
+                  : 'text-slate-700 hover:text-sky-600 hover:bg-slate-50'
+              }`}
+            >
+              {itemContacto.label}
+            </NavLink>
+          </li>
         </ul>
       </div>
     </nav>
