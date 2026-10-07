@@ -112,6 +112,7 @@ import HomeVehiculos from './pages/RegistroVehiculos/HomeVehiculos'
 import RegistroColectivoVehiculos from './pages/RegistroVehiculos/RegistroColectivoVehiculos'
 import RegistroEspecializadoVehiculos from './pages/RegistroVehiculos/RegistroEspecializadoVehiculos'
 import LoginVehiculos from './pages/RegistroVehiculos/LoginVehiculos'
+import UruFeedbackAdminPage from './pages/Admin/UruFeedbackAdminPage'
 
 // ─── Subdominio dedicado: expo.eldorado.gob.ar → Expo Eldorado ───────
 const EXPO_HOST = 'expo.eldorado.gob.ar'
@@ -264,6 +265,7 @@ function App() {
           <Route path='/admin/contenido/:pageId' element={<ContenidoPage />} />
           <Route path='/admin/home' element={<HomeAdminPage />} />
           <Route path='/admin/licitaciones' element={<LicitacionesAdminPage />} />
+          <Route path='/admin/uru-feedback' element={<UruFeedbackAdminPage />} />
           {/* SECCIÓN GOBIERNO ABIERTO */}
           <Route path="/gobierno-abierto" element={<GobiernoAbiertoPage />} />
           <Route path="/gobierno-abierto/boletin-oficial" element={<BoletinOficialPage />} />

@@ -2,8 +2,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { getUruContext } from '../data/uruKnowledge';
 import './UruChatbot.css';
 
-const STORAGE_KEY = 'uru_chat_history';
-
 const QUICK_REPLIES = [
   '¿Qué trámites puedo hacer?',
   '¿Cómo saco un turno?',
@@ -12,105 +10,40 @@ const QUICK_REPLIES = [
   '¿Qué es la Expo Eldorado?',
 ];
 
-// Intent patterns → direct answers (no LLM needed)
-const INTENT_ANSWERS = [
-  {
-    patterns: [
-      /qui[eé]n.*vice[ -]?intendenta?/i,
-      /c[oó]mo.*llama.*vice[ -]?intendenta?/i,
-      /nombre.*vice[ -]?intendenta?/i,
-    ],
-    answer: 'La viceintendenta de la Ciudad de Eldorado es la Dra. Lorena Cardozo. Podés conocer más sobre ella en https://eldorado.gob.ar/gobierno/intendencia/autoridad/viceintendente',
-  },
-  {
-    patterns: [
-      /qui[eé]n.*\bintendente\b/i,
-      /c[oó]mo.*llama.*\bintendente\b/i,
-      /nombre.*\bintendente\b/i,
-    ],
-    answer: 'El intendente de la Ciudad de Eldorado es el Dr. Rodrigo Durán. Podés conocer más sobre él en https://eldorado.gob.ar/gobierno/intendencia/autoridad/intendente',
-  },
-  {
-    patterns: [/turno.*planeamiento/i, /planeamiento.*turno/i, /turnero.*planeamiento/i],
-    answer: 'Podés sacar turno para Planeamiento en: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero',
-  },
-  {
-    patterns: [/turno.*escuela/i, /escuela.*manejo.*turno/i, /turnero.*manejo/i],
-    answer: 'El turnero de la Escuela de Manejo está en: eldorado.gob.ar/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero',
-  },
-  {
-    patterns: [/sacar.*turno/i, /reservar.*turno/i, /pedir.*turno/i, /turnero/i],
-    answer: 'Hay turneros para distintos servicios. Para Planeamiento: eldorado.gob.ar/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero. Para la Escuela de Manejo: eldorado.gob.ar/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero',
-  },
-  {
-    patterns: [/denuncia.*ambiente/i, /ambiente.*denuncia/i, /denunciar.*ambiente/i],
-    answer: 'Las denuncias relacionadas con Ambiente se realizan mediante el formulario oficial enlazado desde la Guía de Trámites: eldorado.gob.ar/guia-de-tramites',
-  },
-  {
-    patterns: [/reclamo/i, /denunciar/i],
-    answer: 'Podés hacer un reclamo ciudadano en: eldorado.gob.ar/ciudadano-digital/reclamos. También podés seguir el estado de tu reclamo desde el mismo link.',
-  },
-  {
-    patterns: [/preinscrip.*comercial/i, /habilitación.*comercio/i, /comercio.*nuevo/i, /registrar.*comercio/i],
-    answer: 'La preinscripción comercial está en: eldorado.gob.ar/ciudadano-digital/preinscripcion-comercial',
-  },
-  {
-    patterns: [/expo eldorado/i, /qué.*expo/i, /expo.*es/i],
-    answer: 'La Expo Eldorado es el evento anual más importante de la ciudad. Más información en: eldorado.gob.ar/ciudad/expo-eldorado',
-  },
-  {
-    patterns: [/balancete/i, /balance.*trimestral/i, /finanzas/i, /tributo/i],
-    answer: 'Encontrás los balances y finanzas públicas en: eldorado.gob.ar/gobierno-abierto/finanzas-publicas y eldorado.gob.ar/gobierno-abierto/balancetes-trimestrales',
-  },
-  {
-    patterns: [/licitacion/i, /compra.*municipal/i, /proveedor/i],
-    answer: 'Las licitaciones públicas están en: eldorado.gob.ar/gobierno-abierto/licitaciones',
-  },
-  {
-    patterns: [/organigrama/i, /planta.*personal/i, /empleado/i, /escal.*salari/i],
-    answer: 'Encontrás esa info en la sección de Gobierno Abierto: eldorado.gob.ar/gobierno-abierto/organigrama y eldorado.gob.ar/gobierno-abierto/planta-personal',
-  },
-  {
-    patterns: [/horario/i, /atención/i, /hora/i],
-    answer: 'Consultá la sección de contacto o teléfonos útiles del sitio municipal para conocer los horarios actualizados: eldorado.gob.ar/ciudad/contacto',
-  },
-  {
-    patterns: [/teléfono/i, /contacto/i, /llamar/i],
-    answer: 'Los teléfonos útiles están en: eldorado.gob.ar/ciudad/telefonos-utiles',
-  },
-  {
-    patterns: [/dirección/i, /ubicación/i, /donde.*queda/i],
-    answer: 'La dirección y ubicación están en la sección de contacto: eldorado.gob.ar/ciudad/contacto',
-  },
-];
+const WORKFLOW_ACTIONS = {
+  turnos: [
+    { label: 'Turnero de Planeamiento', href: '/gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero' },
+    { label: 'Turnero de Escuela de Manejo', href: '/gobierno/secretaria-gobierno/transito-y-transporte/centro-emision-licencias/escuela-manejo/turnero' },
+  ],
+  reclamos: [{ label: 'Iniciar o seguir un reclamo', href: '/ciudadano-digital/reclamos' }],
+  ambiente: [{ label: 'Ver trámites de Ambiente', href: '/guia-de-tramites' }],
+  preinscripcion: [{ label: 'Abrir preinscripción comercial', href: '/ciudadano-digital/preinscripcion-comercial' }],
+  tramites: [{ label: 'Abrir Guía de Trámites', href: '/guia-de-tramites' }],
+};
 
-function matchesIntent(text) {
-  for (const { patterns, answer } of INTENT_ANSWERS) {
-    if (patterns.some(p => p.test(text))) return answer;
-  }
-  return null;
+function getWorkflowActions(text) {
+  const normalized = text.toLocaleLowerCase('es');
+  if (/turno|turnero/.test(normalized)) return WORKFLOW_ACTIONS.turnos;
+  if (/ambient/.test(normalized) && /denuncia|reclamo/.test(normalized)) return WORKFLOW_ACTIONS.ambiente;
+  if (/reclamo|denuncia/.test(normalized)) return WORKFLOW_ACTIONS.reclamos;
+  if (/preinscrip|habilitaci[oó]n comercial|comercio/.test(normalized)) return WORKFLOW_ACTIONS.preinscripcion;
+  if (/tr[aá]mite/.test(normalized)) return WORKFLOW_ACTIONS.tramites;
+  return [];
+}
+
+function getFeedbackTopic(text) {
+  const normalized = text.toLocaleLowerCase('es');
+  if (/turno|turnero/.test(normalized)) return 'turnos';
+  if (/ambient/.test(normalized)) return 'ambiente';
+  if (/reclamo|denuncia/.test(normalized)) return 'reclamos';
+  if (/preinscrip|habilitaci[oó]n comercial|comercio/.test(normalized)) return 'preinscripcion';
+  if (/tel[eé]fono|contacto|direcci[oó]n|horario/.test(normalized)) return 'contacto';
+  if (/tr[aá]mite/.test(normalized)) return 'tramites';
+  return 'general';
 }
 
 function getPageContext() {
   return window.location.pathname;
-}
-
-function loadHistory() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveHistory(messages) {
-  try {
-    const trimmed = messages.slice(-20);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
-  } catch {
-    // El almacenamiento puede estar bloqueado en modo privado o por políticas del navegador.
-  }
 }
 
 const INITIAL_MESSAGE = {
@@ -133,15 +66,19 @@ async function chatUru(question, context, history) {
     }),
   });
 
-  const data = await res.json();
-  if (!res.ok || data.error) throw new Error(data.error || 'Error de URU');
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.error) {
+    const error = new Error(data.error || 'No se pudo obtener una respuesta.');
+    error.status = res.status;
+    throw error;
+  }
   return data.response || 'No pude obtener una respuesta.';
 }
 
 let msgId = Date.now() + 1;
 
-function makeMsg(from, text) {
-  return { from, text, id: msgId++ };
+function makeMsg(from, text, extra = {}) {
+  return { from, text, id: msgId++, ...extra };
 }
 
 const URL_TOKEN_RE = /(https?:\/\/[^\s<>()[\]{}"',!?;]+|(?:www\.)?eldorado\.(?:gob\.ar|com\.ar)\/[^\s<>()[\]{}"',!?;]+)/gi;
@@ -191,16 +128,21 @@ function renderMessageText(text) {
 
 export default function UruChatbot() {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState(() => {
-    const saved = loadHistory();
-    return saved && saved.length > 0 ? saved : [INITIAL_MESSAGE];
-  });
+  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [feedbackMap, setFeedbackMap] = useState({});
   const bottomRef = useRef(null);
   const panelRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem('uru_chat_history');
+    } catch {
+      // El almacenamiento puede estar bloqueado en modo privado o por políticas del navegador.
+    }
+  }, []);
 
   useEffect(() => {
     if (open && bottomRef.current) {
@@ -210,6 +152,10 @@ export default function UruChatbot() {
 
   useEffect(() => {
     const handler = (e) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        return;
+      }
       if (e.ctrlKey && e.key === 'k') {
         e.preventDefault();
         setOpen(o => !o);
@@ -219,58 +165,50 @@ export default function UruChatbot() {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
-  useEffect(() => {
-    saveHistory(messages);
-  }, [messages]);
-
   const sendMessage = useCallback(async (forcedText) => {
     const text = (forcedText || input).trim();
     if (!text || loading) return;
     setInput('');
 
     const userMsg = makeMsg('user', text);
-    setMessages(m => {
-      const updated = [...m, userMsg];
-      saveHistory(updated);
-      return updated;
-    });
+    setMessages(m => [...m, userMsg]);
 
     setLoading(true);
 
-    const intentAnswer = matchesIntent(text);
-    if (intentAnswer) {
-      await new Promise(r => setTimeout(r, 400));
-      const uruMsg = makeMsg('uru', intentAnswer);
-      setMessages(m => {
-        const updated = [...m, uruMsg];
-        saveHistory(updated);
-        return updated;
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
       const answer = await chatUru(text, getUruContext(text, getPageContext()), messages);
-      const uruMsg = makeMsg('uru', answer);
-      setMessages(m => {
-        const updated = [...m, uruMsg];
-        saveHistory(updated);
-        return updated;
+      const uruMsg = makeMsg('uru', answer, {
+        actions: getWorkflowActions(text),
+        topic: getFeedbackTopic(text),
       });
-    } catch {
-      const errMsg = makeMsg('uru', 'Error al obtener respuesta. Podés consultar directamente en el sitio: eldorado.gob.ar');
-      setMessages(m => {
-        const updated = [...m, errMsg];
-        saveHistory(updated);
-        return updated;
+      setMessages(m => [...m, uruMsg]);
+    } catch (error) {
+      const message = error.status === 503
+        ? 'URU no está disponible en este momento. Podés consultar las opciones oficiales en el sitio municipal.'
+        : 'No pude conectarme para responder. Revisá tu conexión e intentá de nuevo.';
+      const errMsg = makeMsg('uru', message, {
+        retryText: text,
+        actions: getWorkflowActions(text),
+        topic: getFeedbackTopic(text),
       });
+      setMessages(m => [...m, errMsg]);
     }
     setLoading(false);
   }, [input, loading, messages]);
 
-  const handleFeedback = (msgId, value) => {
-    setFeedbackMap(f => ({ ...f, [msgId]: value }));
+  const handleFeedback = async (message, value) => {
+    setFeedbackMap(f => ({ ...f, [message.id]: { value, status: 'sending' } }));
+    try {
+      const response = await fetch('/api/chat/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: value, topic: message.topic || 'general', page: getPageContext() }),
+      });
+      if (!response.ok) throw new Error('No se pudo guardar la valoración');
+      setFeedbackMap(f => ({ ...f, [message.id]: { value, status: 'sent' } }));
+    } catch {
+      setFeedbackMap(f => ({ ...f, [message.id]: { value, status: 'error' } }));
+    }
   };
 
   const handleQuickReply = (text) => {
@@ -291,7 +229,7 @@ export default function UruChatbot() {
       )}
 
       {open && (
-        <div className="uru-panel" ref={panelRef}>
+        <div className="uru-panel" ref={panelRef} role="region" aria-label="Asistente virtual URU">
           <div className="uru-header">
             <div className="uru-avatar">URU</div>
             <div className="uru-header-text">
@@ -301,27 +239,44 @@ export default function UruChatbot() {
             <button className="uru-close" onClick={() => setOpen(false)} aria-label="Cerrar">×</button>
           </div>
 
-          <div className="uru-messages">
+          <div className="uru-messages" aria-live="polite" aria-relevant="additions text">
             {messages.map((m) => (
               <div key={m.id} className={`uru-msg uru-msg--${m.from}`}>
                 <div className="uru-bubble">{renderMessageText(m.text)}</div>
-                {m.from === 'uru' && feedbackMap[m.id] === undefined && (
+                {m.actions?.length > 0 && (
+                  <div className="uru-actions">
+                    {m.actions.map(action => (
+                      <a key={action.href} className="uru-action" href={action.href}>
+                        {action.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {m.retryText && (
+                  <button className="uru-retry" onClick={() => sendMessage(m.retryText)}>
+                    Reintentar
+                  </button>
+                )}
+                {m.from === 'uru' && (!feedbackMap[m.id] || feedbackMap[m.id].status === 'error') && (
                   <div className="uru-feedback">
                     <button
-                      className={`uru-feedback-btn ${feedbackMap[m.id] === 'up' ? 'active' : ''}`}
-                      onClick={() => handleFeedback(m.id, 'up')}
-                      title="Útil">👍</button>
+                      className="uru-feedback-btn"
+                      onClick={() => handleFeedback(m, 'up')}
+                      disabled={feedbackMap[m.id]?.status === 'sending'}
+                      title="Útil" aria-label="Esta respuesta fue útil">👍</button>
                     <button
-                      className={`uru-feedback-btn ${feedbackMap[m.id] === 'down' ? 'active' : ''}`}
-                      onClick={() => handleFeedback(m.id, 'down')}
-                      title="No útil">👎</button>
+                      className="uru-feedback-btn"
+                      onClick={() => handleFeedback(m, 'down')}
+                      disabled={feedbackMap[m.id]?.status === 'sending'}
+                      title="No útil" aria-label="Esta respuesta no fue útil">👎</button>
                   </div>
                 )}
-                {m.from === 'uru' && feedbackMap[m.id] !== undefined && (
+                {m.from === 'uru' && feedbackMap[m.id]?.status === 'sent' && (
                   <div className="uru-feedback-done">
-                    {feedbackMap[m.id] === 'up' ? '👍 Gracias!' : '👎 Voy a mejorar'}
+                    {feedbackMap[m.id].value === 'up' ? '👍 ¡Gracias!' : '👎 Gracias, revisaremos esta respuesta.'}
                   </div>
                 )}
+                {feedbackMap[m.id]?.status === 'error' && <div className="uru-feedback-error">No se pudo guardar. Podés volver a valorar.</div>}
               </div>
             ))}
 
@@ -356,6 +311,7 @@ export default function UruChatbot() {
               ref={inputRef}
               className="uru-input"
               value={input}
+              aria-label="Escribí tu pregunta para URU"
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
               placeholder="Escribí tu pregunta…"

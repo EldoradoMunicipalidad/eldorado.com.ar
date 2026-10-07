@@ -35,10 +35,9 @@ import * as preinscripcion from './preinscripcionFieldsConfig';
 export const uruKnowledge = `
 SITIO WEB OFICIAL: eldorado.gob.ar
 
-AUTORIDADES MUNICIPALES PUBLICADAS EN EL SITIO:
-- El intendente de la Ciudad de Eldorado es el Dr. Rodrigo Durán: /gobierno/intendencia/autoridad/intendente
-- La viceintendenta de la Ciudad de Eldorado es la Dra. Lorena Cardozo: /gobierno/intendencia/autoridad/viceintendente
-- La información del gabinete municipal está en: /gobierno/intendencia/gabinete-municipal
+AUTORIDADES MUNICIPALES:
+- Consultá los datos vigentes en los módulos publicados de Intendencia y Gabinete incluidos en los datos estructurados recuperados por relevancia.
+- Rutas de referencia: /gobierno/intendencia y /gobierno/intendencia/gabinete-municipal
 
 SECCIONES DEL SITIO (usar estas rutas para orientar al usuario):
 - / : Inicio — noticias, servicios destacados
@@ -167,40 +166,9 @@ CATÁLOGO COMPLETO DE RUTAS PÚBLICAS:
 - /gobierno/secretaria-obras-publicas/planta-hormigon
 - /guia-de-tramites
 
-INFORMACIÓN ESTÁTICA PUBLICADA EN EL SITIO:
-- La página de Eldorado describe a la ciudad sobre la Ruta Nacional 12, con una distancia aproximada de 200 km a Posadas y 100 km a Puerto Iguazú: /ciudad/eldorado
-- La actividad económica incluye explotación forestal, industrialización de productos primarios, agricultura y comercio local: /ciudad/eldorado
-- Atractivos mencionados por el sitio: Parque Schwelm, vivero municipal, Plazoleta de las Naciones, campings y saltos de la zona: /ciudad/eldorado
-
-GUÍA DE TRÁMITES PUBLICADA:
-- Automotor: consulta de patente IPA, baja y alta de automotor: /guia-de-tramites
-- Licencias de conducir: charla, CENAT, obtención, renovación y ampliación de categorías: /guia-de-tramites
-- Transporte: habilitación, baja, renovación, cambio de unidad y transferencia de licencia de taxi: /guia-de-tramites
-- Zoonosis: esterilización de animales y denuncia por mordedura: /guia-de-tramites
-- Habilitaciones y Bromatología: carnet de manipulador de alimentos, cursos, renovación e informes de habilitación comercial: /guia-de-tramites
-- Ambiente: denuncias relacionadas con ambiente: /guia-de-tramites
-- Obras Particulares: conexión de energía, certificados de obra y presentación de documentación técnica: /guia-de-tramites
-- Polo Académico: becas, albergues, residencias, fotocopias, orientación vocacional y tarjetas universitarias: /guia-de-tramites
-- Juzgado de Faltas: pago voluntario, descargo, libre de multas, turnos y restitución de licencia o vehículo: /gobierno/juzgado-de-faltas
-- Proveedores: solicitud de inscripción al Registro de Proveedores: /guia-de-tramites
-
-CONTACTOS MUNICIPALES PUBLICADOS:
-- Secretaría de Gobierno: 03751 - 426470. Mesa de Entrada: 03751 - 421787 / 421153.
-- Juzgado de Faltas: 03751 - 420521. Secretaría de Acción Social: 03751 - 427484.
-- Secretaría de Obras Públicas: 03751 - 430101. Dirección de Tránsito Km 11: 03751 - 424276.
-- Saneamiento Ambiental: 03751 - 432121. Centro de Zoonosis: 03751 - 430926.
-- Oficina de Empleo: 03751 - 421600. Concejo Deliberante: 03751 - 424340.
-- Verificá teléfonos, direcciones y horarios en /ciudad/contacto y /ciudad/telefonos-utiles antes de presentarlos como vigentes.
-
 FUENTES DINÁMICAS:
 - El contenido editable de páginas y del inicio se consulta desde el servidor municipal.
 - Las licitaciones vigentes se consultan desde /api/licitaciones y se muestran en /gobierno-abierto/licitaciones.
-
-TRÁMITES PRINCIPALES:
-- Turnero de Planeamiento: /gobierno/secretaria-de-obras-y-servicios-publicos/planeamiento/turnero
-- Preinscripción Comercial: /ciudadano-digital/preinscripcion-comercial
-- Reclamos: /ciudadano-digital/reclamos
-- Bolsa de Empleo: Linked desde el sitio
 
 NOTICIAS: prensa.eldorado.gob.ar
 

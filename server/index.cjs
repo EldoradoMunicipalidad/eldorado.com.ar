@@ -21,6 +21,13 @@ const chatLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Demasiadas consultas al asistente. Esperá un minuto.' },
 })
+const chatFeedbackLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Recibimos muchas valoraciones. Esperá unos minutos.' },
+})
 
 // Serve static files in production
 const distPath = path.join(__dirname, '..', 'dist')
@@ -393,7 +400,51 @@ app.post('/api/chat', chatLimiter, async (req, res) => {
     if (err.code === 'MISSING_MINIMAX_API_KEY') {
       return res.status(503).json({ error: 'URU no está configurado en el servidor' })
     }
+    if (/tiempo de espera agotado/i.test(err.message || '')) {
+      return res.status(504).json({ error: 'URU tardó demasiado en responder. Intentá de nuevo.' })
+    }
     res.status(502).json({ error: 'No se pudo obtener respuesta de URU' })
+  }
+})
+
+// ─── VALORACIONES DE URU (sin almacenar texto de la conversación) ────────
+const URU_FEEDBACK_TOPICS = new Set([
+  'general', 'tramites', 'turnos', 'reclamos', 'ambiente', 'preinscripcion', 'contacto',
+])
+app.post('/api/chat/feedback', chatFeedbackLimiter, async (req, res) => {
+  const { rating, topic, page } = req.body || {}
+  if (!['up', 'down'].includes(rating) || !URU_FEEDBACK_TOPICS.has(topic)) {
+    return res.status(400).json({ error: 'Valoración inválida' })
+  }
+
+  const safePage = typeof page === 'string' && page.startsWith('/')
+    ? page.slice(0, 160)
+    : '/'
+  try {
+    await pool.query(
+      'INSERT INTO uru_feedback (rating, topic, page) VALUES ($1, $2, $3)',
+      [rating === 'up' ? 1 : -1, topic, safePage]
+    )
+    res.status(201).json({ success: true })
+  } catch (err) {
+    console.error('POST /api/chat/feedback error:', err.message)
+    res.status(503).json({ error: 'No se pudo guardar la valoración' })
+  }
+})
+
+app.get('/api/chat/feedback/summary', requireAdmin, async (_req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT topic, rating, COUNT(*)::int AS votes
+      FROM uru_feedback
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY topic, rating
+      ORDER BY topic, rating DESC
+    `)
+    res.json({ periodDays: 30, results: rows })
+  } catch (err) {
+    console.error('GET /api/chat/feedback/summary error:', err.message)
+    res.status(503).json({ error: 'No se pudieron cargar las valoraciones' })
   }
 })
 

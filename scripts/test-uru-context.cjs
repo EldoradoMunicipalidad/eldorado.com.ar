@@ -68,8 +68,12 @@ const knowledgeSource = require('fs').readFileSync(
   require('path').join(__dirname, '../src/data/uruKnowledge.js'),
   'utf8'
 )
-assert.match(knowledgeSource, /El intendente de la Ciudad de Eldorado es el Dr\. Rodrigo Durán/)
-assert.match(knowledgeSource, /La viceintendenta de la Ciudad de Eldorado es la Dra\. Lorena Cardozo/)
+assert.doesNotMatch(knowledgeSource, /El intendente de la Ciudad de Eldorado es el Dr\. Rodrigo Durán/)
+assert.doesNotMatch(knowledgeSource, /La viceintendenta de la Ciudad de Eldorado es la Dra\. Lorena Cardozo/)
+assert.match(knowledgeSource, /import \* as intendencia/)
+assert.match(knowledgeSource, /import \* as gabinete/)
+assert.match(knowledgeSource, /Rutas de referencia: \/gobierno\/intendencia/)
+assert.match(messages[0].content, /No solicites DNI/)
 
 process.env.MINIMAX_API_KEY = ''
 
