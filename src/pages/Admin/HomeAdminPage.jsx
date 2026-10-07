@@ -218,6 +218,15 @@ function CarouselEditor({ data, onChange, onUploadingChange }) {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+        <p>
+          El Home muestra únicamente las imágenes guardadas en este carrusel; no hay imágenes predeterminadas que reaparezcan automáticamente.
+          Para volver a publicar una imagen anterior, cargala otra vez o ingresá su URL y guardá los cambios.
+        </p>
+        <p className="mt-1 text-sky-800">
+          Quitar una diapositiva elimina su referencia del carrusel, pero no borra el archivo original. Debe quedar al menos una diapositiva; podés reemplazar la imagen de la última.
+        </p>
+      </div>
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-slate-800">Imágenes del Carrusel</h3>
         <button onClick={addSlide} className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 text-white rounded-lg text-sm font-medium hover:bg-sky-700">
@@ -230,7 +239,13 @@ function CarouselEditor({ data, onChange, onUploadingChange }) {
           <div key={slide.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-slate-700">Imagen {idx + 1}</span>
-              <button onClick={() => removeSlide(slide.id)} className="text-red-500 hover:text-red-700 p-1">
+              <button
+                onClick={() => removeSlide(slide.id)}
+                disabled={slides.length === 1}
+                title={slides.length === 1 ? 'Debe quedar al menos una diapositiva. Podés reemplazar su imagen.' : 'Quitar diapositiva'}
+                aria-label={`Quitar imagen ${idx + 1}`}
+                className="p-1 text-red-500 hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-300"
+              >
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
